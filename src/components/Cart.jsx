@@ -34,6 +34,9 @@ function Cart({ cart, onRemove, onChangeQuantity, done }) {
                         <button onClcik={done}>
                             {done ? (<p> Đã thanh toán </p>) : (<p>Thanh toán</p>)}
                         </button>
+                        <button>
+                            <p>Why</p>
+                        </button>
                     </div>
 
                 </>
