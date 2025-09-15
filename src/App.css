@@ -11,7 +11,11 @@
   padding: 2rem;
 }
 
+.Show {
+  display: flex;
+  justify-content: center;
 
+}
 
 .logo {
   height: 6em;
@@ -50,4 +54,72 @@
 
 .read-the-docs {
   color: #888;
+}
+
+
+
+/* src/App.css */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #10243a;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 32px;
+  background: #f5f9fb;
+  border-bottom: 1px solid #e6eef6;
+}
+
+.product-list {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 24px;
+  justify-content: center;
+}
+
+.product-card {
+  border: 1px solid #e4eef6;
+  padding: 12px;
+  width: 220px;
+  text-align: center;
+  border-radius: 8px;
+  background: white;
+}
+
+.cart {
+  border: 1px solid #e4eef6;
+  padding: 12px;
+  width: 360px;
+  background: white;
+  border-radius: 8px;
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f1f6fb;
+}
+
+.cart-controls button {
+  padding: 4px 8px;
+}
+
+main {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+}
+
+.cart-aside {
+  position: sticky;
+  top: 24px;
+  align-self: flex-start;
 }

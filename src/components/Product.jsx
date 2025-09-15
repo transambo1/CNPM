@@ -1,16 +1,16 @@
-import { useState } from "react";
-import "./App.css";
-function Product({ name, price }) {
-    const [quantity, setQuantity] = useState(0);
+
+import React from "react";
+
+function Product({ product, onAdd }) {
+    const { id, name, price } = product;
 
     return (
-        <div>
-            <h1>{name}</h1>
-            <p> Gia: {price} /vnd </p>
-            <p>Số lượng: {quantity}</p>
-            <button onClick={() => setQuantity(quantity + 1)}>Thêm</button>
-            <button onClick={() => setQuantity(Math.max(quantity - 1, 0))}>Bớt</button>
+        <div className="product-card">
+            <h3>{name}</h3>
+            <p>Giá: {price.toLocaleString()} VND</p>
+            <button onClick={() => onAdd(product)}>Thêm vào giỏ</button>
         </div>
     );
 }
+
 export default Product;
