@@ -2,19 +2,37 @@
         "products": [
             {
                 "id": 1,
-                "name": "Iphone 15",
+                "name": "Hamburrg",
                 "price": 25000000
             },
             {
                 "id": 2,
-                "name": "Samsung S24",
+                "name": "Tacos",
                 "price": 20000000
             },
             {
                 "id": 3,
-                "name": "Xiaomi 14",
+                "name": "Bami",
                 "url_anh": "1.webp",
                 "price": 15000000
+            },
+            {
+                "id": 4,
+                "name": "Bami",
+                "url_anh": "1.webp",
+                "price": 15000000
+            },
+            {
+                "id": 5,
+                "name": "Bami",
+                "url_anh": "1.webp",
+                "price": 15000000
+            },
+            {
+                "id": 6,
+                "name": "Sandwich",
+                "url_anh": "1.webp",
+                "price": 18000000
             }
         ]
     }
