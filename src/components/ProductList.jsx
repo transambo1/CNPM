@@ -5,7 +5,7 @@ function ProductList({ onAdd }) {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
-        fetch("http://localhost:5001/products")
+        fetch("http://localhost:5002/products")
             .then((res) => res.json())
             .then((data) => setProducts(data))
             .catch((err) => console.error("Lỗi khi fetch API:", err));

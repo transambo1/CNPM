@@ -1,6 +1,7 @@
 // src/App.jsx
 import React, { useEffect, useState } from "react";
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import ProductList from "./components/ProductList";
 import Cart from "./components/Cart";
 import "./App.css";
@@ -67,6 +68,8 @@ function App() {
           </aside>
         )}
       </main>
+
+      <Footer />
     </div>
   );
 }

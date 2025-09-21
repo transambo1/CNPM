@@ -5,23 +5,41 @@ function Header({ cartCount, onToggleCart, showCart }) {
     return (
         <>
             <header className="header">
-                <h1>Mini Web Bán Hàng</h1>
-                <div>
-                    <button onClick={onToggleCart}>
-                        {showCart ? ".//App.jsx" : "Trang chủ"}
-                    </button>
+                <div className="header-left">
+                    <h1>Mini Web Bán Hàng</h1>
                 </div>
-                <div>
-                    <button onClick={onToggleCart}>
-                        {showCart ? "Đóng giỏ" : "Đăng nhập"}
-                    </button>
+                <div className="header-right">
+                    <div>
+                        <button >
+                            Trang chủ
+                        </button>
+                    </div>
+                    <div>
+                        <button >
+                            Thực đơn
+                        </button>
+                    </div>
+                    <div>
+                        <button >
+                            Ưu đãi
+                        </button>
+                    </div>
+                    <div>
+                        <button >
+                            Nhà hàng
+                        </button>
+                    </div>
+                    <div>
+                        <button >
+                            Về chúng tôi
+                        </button>
+                    </div>
+                    <div>
+                        <button onClick={onToggleCart}>
+                            {showCart ? "Đóng giỏ" : `Giỏ hàng (${cartCount})`}
+                        </button>
+                    </div>
                 </div>
-                <div>
-                    <button onClick={onToggleCart}>
-                        {showCart ? "Đóng giỏ" : `Giỏ hàng (${cartCount})`}
-                    </button>
-                </div>
-
             </header>
         </>
     );
