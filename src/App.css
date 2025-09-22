@@ -91,26 +91,21 @@ body {
 }
 
 .button {
-
   background-color: #fcb32c;
-
   color: #fcb32c;
-
   border: 1px solid #fcb32c;
   padding: 8px 12px;
   border-radius: 6px;
-  cursor: pointer;
+  width: 320px;
   font-weight: bold;
+
 }
 
 button:hover {
   background-color: #fcb32c;
-
   color: white;
 
 }
-
-
 
 .product-list {
   display: flex;
@@ -125,10 +120,11 @@ button:hover {
 .product-card {
   border: 1px solid #e4eef6;
   padding: 12px;
-  width: 200px;
-  text-align: center;
+  width: 340px;
+  height: 500px;
   border-radius: 8px;
-  background: rgb(247, 242, 170);
+  background: rgb(247, 246, 232);
+
 }
 
 .cart {
@@ -152,9 +148,24 @@ button:hover {
 }
 
 main {
-  display: flex;
   gap: 4px;
-  padding: 10px;
+  padding: 40px 20px;
+  background-image: url(/public/Images/bgagmb.jpg);
+
+}
+
+.main-title {
+  text-align: center;
+  color: #9a3324;
+  font-family: 'Lalezar';
+  text-transform: uppercase;
+  border-bottom: 1px solid #444;
+}
+
+.main-product {
+  border-bottom: 1px solid #444;
+  padding: 10px 5px;
+  display: flex;
 }
 
 .cart-aside {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import Product from "./Product";
+import { Link } from "react-router-dom";
 
 function ProductList({ onAdd }) {
     const [products, setProducts] = useState([]);
@@ -12,12 +13,19 @@ function ProductList({ onAdd }) {
     }, []);
 
     return (
-        <div>
-            <h2>Danh sách sản phẩm</h2>
-            <div className="product-list">
-                {products.map((p) => (
-                    <Product key={p.id} product={p} onAdd={onAdd} />
-                ))}
+        <div className="main-home">
+            <div className="main-title">
+                <h1> Hôm nay ăn gì?</h1>
+            </div>
+            <div className="main-product">
+                <div className="product-list">
+                    {products.map((p) => (
+                        <div key={p.id}>
+                            <Product product={p} onAdd={onAdd} />
+                            <Link to={`/Product-Detail/${p.id}`}>Xem chi tiết</Link>
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

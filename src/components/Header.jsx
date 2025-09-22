@@ -6,7 +6,7 @@ function Header({ cartCount, onToggleCart, showCart }) {
         <>
             <header className="header">
                 <div className="header-left">
-                    <h1>Mini Web Bán Hàng</h1>
+                    <h1>Kat Kem bán đồ</h1>
                 </div>
                 <div className="header-right">
                     <div>

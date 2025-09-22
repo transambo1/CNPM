@@ -3,35 +3,37 @@
             {
                 "id": 1,
                 "name": "Hamburrg",
+                "img": "/Images/Hambur.jpg",
                 "price": 25000000
             },
             {
                 "id": 2,
                 "name": "Tacos",
+                "img": "/Images/1.webp",
                 "price": 20000000
             },
             {
                 "id": 3,
-                "name": "Bami",
-                "img": "/Pic/1.webp",
+                "name": "Gà rán",
+                "img": "/Images/Garan.jpg",
                 "price": 15000000
             },
             {
                 "id": 4,
                 "name": "Bami",
-                "url_anh": "1.webp",
+                "img": "/Images/Hambur.jpg",
                 "price": 15000000
             },
             {
                 "id": 5,
                 "name": "Bami",
-                "url_anh": "1.webp",
+                "img": "/Images/Hambur.jpg",
                 "price": 15000000
             },
             {
                 "id": 6,
                 "name": "Sandwich",
-                "url_anh": "1.webp",
+                "img": "/Images/Hambur.jpg",
                 "price": 18000000
             }
         ]

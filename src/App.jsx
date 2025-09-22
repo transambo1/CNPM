@@ -4,6 +4,8 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ProductList from "./components/ProductList";
 import Cart from "./components/Cart";
+import ProductDetail from "./components/Product-Detail";
+import { Routes, Route } from "react-router-dom";
 import "./App.css";
 
 function App() {
@@ -51,7 +53,11 @@ function App() {
     }
   }
 
+  const [selectedProduct, setSelectedProduct] = useState(null);
+
   return (
+
+
     <div className="app">
       <Header
         cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
@@ -60,7 +66,10 @@ function App() {
       />
 
       <main>
-        <ProductList onAdd={handleAdd} />
+        <Routes>
+          <Route path="/" element={<ProductList onAdd={handleAdd} />} />
+          <Route path="/Product-Detail/:id" element={<ProductDetail />} />
+        </Routes>
 
         {showCart && (
           <aside className="cart-aside">
@@ -71,6 +80,7 @@ function App() {
 
       <Footer />
     </div>
+
   );
 }
 
@@ -80,6 +90,14 @@ export default App;
 
 
 /* function App() {
+ 
+<Router>
+        <Routes>
+          <Route path="/" element={<ProductList />} />
+          <Route path="/product/:id" element={<ProductDetail />} />
+        </Routes>
+      </Router>
+
 
   
   return (

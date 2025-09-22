@@ -6,12 +6,9 @@ function Product({ product, onAdd }) {
 
     return (
         <div className="product-card">
+            <img src={img} alt={name} width="340" />
             <h3>{name}</h3>
-            <img src={img} alt={name} width="150" />
-            <p>Giá: {price.toLocaleString()} VND</p>
-
-
-
+            <p>Giá bán: {price.toLocaleString()} VND</p>
             <button onClick={() => onAdd(product)}>Thêm vào giỏ</button>
         </div>
     );
