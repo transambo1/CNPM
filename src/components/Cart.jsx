@@ -1,5 +1,6 @@
 // src/components/Cart.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
 function Cart({ cart, onRemove, onChangeQuantity, done }) {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -15,6 +16,7 @@ function Cart({ cart, onRemove, onChangeQuantity, done }) {
                         {cart.map((item) => (
                             <li key={item.id} className="cart-item">
                                 <div>
+                                    <img src={item.img} width="100px"></img>
                                     <strong>{item.name}</strong>
                                     <div>Giá: {item.price.toLocaleString()} VND</div>
                                 </div>
@@ -35,7 +37,7 @@ function Cart({ cart, onRemove, onChangeQuantity, done }) {
                             {done ? (<p> Đã thanh toán </p>) : (<p>Thanh toán</p>)}
                         </button>
                         <button>
-                            <p>Why</p>
+                            <Link to="/">⬅ Quay lại</Link>
                         </button>
                     </div>
 

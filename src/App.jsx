@@ -5,6 +5,7 @@ import Footer from "./components/Footer";
 import ProductList from "./components/ProductList";
 import Cart from "./components/Cart";
 import ProductDetail from "./components/Product-Detail";
+
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
 
@@ -66,16 +67,23 @@ function App() {
       />
 
       <main>
-        <Routes>
-          <Route path="/" element={<ProductList onAdd={handleAdd} />} />
-          <Route path="/Product-Detail/:id" element={<ProductDetail />} />
-        </Routes>
-
+        <div className="routes-container">
+          <Routes>
+            <Route path="/" element={<ProductList onAdd={handleAdd} />} />
+            <Route path="/Product-Detail/:id" element={<ProductDetail />} />
+          </Routes>
+        </div>
         {showCart && (
-          <aside className="cart-aside">
-            <Cart cart={cart} onRemove={handleRemove} onChangeQuantity={handleChangeQuantity} />
-          </aside>
-        )}
+          <div className="cart-backdrop" onClick={() => setShowCart(false)}>
+            <aside className="cart-overlay" onClick={(e) => e.stopPropagation()}>
+              <button className="close-btn" onClick={() => setShowCart(false)}>✖</button>
+              <Cart
+                cart={cart}
+                onRemove={handleRemove}
+                onChangeQuantity={handleChangeQuantity}
+              />
+            </aside>
+          </div>)}
       </main>
 
       <Footer />

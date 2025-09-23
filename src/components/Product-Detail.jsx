@@ -16,12 +16,26 @@ function ProductDetail({ onAdd }) {
     if (!product) return <p>Đang tải...</p>;
 
     return (
-        <div className="main-product">
-            <h1>{product.name}</h1>
-            <img src={product.img} alt={product.name} width="300" />
-            <p>Giá: {product.price}₫</p>
-            <button onClick={() => onAdd(product)}>Thêm vào giỏ</button>
-            <Link to="/">⬅ Quay lại danh sách</Link>
+        <div>
+            <div className="main-product">
+                <h3 className="text-lg font-semibold truncate">{product.name}</h3>
+                <img src={product.img} alt={product.name} width="300" />
+                <p>Giá: {product.price}₫</p>
+                <button onClick={() => onAdd(product)}>Thêm vào giỏ</button>
+                <Link to="/">⬅ Quay lại danh sách</Link>
+            </div>
+
+            <div className="mt-3">
+                <div className="flex justify-between text-xs mb-1">
+                    <span>Almost sold out</span>
+                    <span className="font-medium">84% claimed</span>
+                </div>
+                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="bg-primary-500 h-full rounded-full" style={{ width: "84%" }}></div>
+                </div>
+            </div>
+
+
         </div>
     );
 }
