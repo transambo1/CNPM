@@ -241,3 +241,285 @@ main {
     transform: translateX(0);
   }
 }
+/* ===== cart layout (KFC style) ===== */
+.cart-container {
+  max-width: 1200px;
+  margin: 30px auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 28px;
+  padding: 0 20px;
+  align-items: start;
+}
+
+/* card chung */
+.cart-card,
+.summary-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px;
+  box-shadow: 0 8px 22px rgba(18, 24, 35, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+/* Left column: danh sách item */
+.cart-column h2 {
+  margin: 0 0 12px;
+  font-size: 28px;
+  color: #222;
+}
+
+.cart-item {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  padding: 18px;
+  border-radius: 8px;
+  background: #fff;
+  margin-bottom: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.cart-item img {
+  width: 160px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.qty-controls {
+  display: flex;
+}
+
+.cart-item-info h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+}
+
+.cart-item-info p {
+  margin: 4px 0;
+  color: #555;
+}
+
+.cart-item-price {
+  margin-left: auto;
+  font-weight: 700;
+  font-size: 16px;
+  color: #222;
+}
+
+/* nút link kiểu chỉnh sửa / xóa */
+.link-btn {
+  background: transparent;
+  color: #0b63d3;
+  border: none;
+  padding: 0;
+  margin-right: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Summary (bên phải) */
+.summary-column .summary-card {
+  position: sticky;
+  top: 88px;
+  /* adjust theo header */
+}
+
+.summary-card h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  color: #111;
+}
+
+.coupon {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.coupon input {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.coupon button {
+  background: #111;
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* summary lines */
+.summary-lines .line {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid #eee;
+  color: #444;
+}
+
+.summary-lines .total {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* button chính */
+.btn-primary {
+  display: inline-block;
+  width: 100%;
+  margin-top: 14px;
+  background: #d2191a;
+  /* KFC red */
+  color: #fff;
+  border: none;
+  padding: 14px 18px;
+  border-radius: 28px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(210, 25, 26, 0.14);
+}
+
+.btn-primary.full {
+  font-size: 16px;
+}
+
+/* responsive */
+@media (max-width: 980px) {
+  .cart-container {
+    grid-template-columns: 1fr;
+    padding: 0 12px;
+  }
+
+  .summary-column .summary-card {
+    position: static;
+    margin-top: 20px;
+  }
+}
+
+/* Checkout Css */
+.checkout-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.checkout-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.checkout-header h2 {
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.back-btn {
+  border: 1px solid #ccc;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mt-6-ck {
+
+
+
+  background-color: rgb(255, 255, 255);
+}
+
+.checkout-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.checkout-info {
+  flex: 2;
+}
+
+.info-block {
+  background: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.info-block h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.edit {
+  cursor: pointer;
+  color: blue;
+}
+
+.checkout-summary {
+  flex: 1;
+}
+
+.summary-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 16px;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.summary-card h3 {
+  margin-bottom: 12px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.summary-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+}
+
+.summary-card ul li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.line {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+}
+
+.line.total {
+  font-weight: bold;
+  font-size: 16px;
+  border-top: 1px solid #ddd;
+  padding-top: 8px;
+  margin-top: 8px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: #d62300;
+  border: none;
+  color: white;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  background: #b81c00;
+}

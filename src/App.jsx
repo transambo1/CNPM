@@ -5,7 +5,7 @@ import Footer from "./components/Footer";
 import ProductList from "./components/ProductList";
 import Cart from "./components/Cart";
 import ProductDetail from "./components/Product-Detail";
-
+import Checkout from "./components/Checkout";
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
 
@@ -71,6 +71,8 @@ function App() {
           <Routes>
             <Route path="/" element={<ProductList onAdd={handleAdd} />} />
             <Route path="/Product-Detail/:id" element={<ProductDetail />} />
+            <Route path="/Checkout" element={<Checkout cart={cart} />} />
+            <Route path="/Cart" element={<Cart cart={cart} onRemove={handleRemove} onChangeQuantity={handleChangeQuantity} />} />
           </Routes>
         </div>
         {showCart && (
