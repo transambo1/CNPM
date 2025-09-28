@@ -36,12 +36,10 @@ function Header({ cartCount, onToggleCart, showCart }) {
                             Về chúng tôi
                         </button>
                     </div>
-                    <Link to="/Cart">Giỏ hàng ({cartCount})</Link>
-                    <div>
-                        <button onClick={onToggleCart}>
-                            {showCart ? "Đóng giỏ" : `Giỏ hàng (${cartCount})`}
-                        </button>
-                    </div>
+                     <Link to="/Cart" className="cart-button">
+                        Giỏ hàng ({cartCount > 0 ? cartCount : 0})
+                     </Link>
+                 
 
                 </div>
             </header>
