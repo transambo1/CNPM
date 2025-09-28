@@ -1,4 +1,3 @@
-
 import React from "react";
 
 function Product({ product, onAdd }) {
@@ -6,10 +5,15 @@ function Product({ product, onAdd }) {
 
     return (
         <div className="product-card">
-            <img src={img} alt={name} width="340" />
-            <h3>{name}</h3>
-            <p>Giá bán: {price.toLocaleString()} VND</p>
-            <button onClick={() => onAdd(product)}>Thêm vào giỏ</button>
+            <img src={img} alt={name} />
+            {/* Bọc thông tin sản phẩm vào một div */}
+            <div className="product-info">
+                <h3>{name}</h3>
+                <p>{price.toLocaleString()} VND</p>
+            </div>
+            <button className="add-to-cart-btn" onClick={() => onAdd(product)}>
+                Thêm vào giỏ
+            </button>
         </div>
     );
 }

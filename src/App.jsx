@@ -20,7 +20,6 @@ function App() {
     }
   });
 
-  const [showCart, setShowCart] = useState(false);
 
   // sync cart -> localStorage
   useEffect(() => {
@@ -62,8 +61,7 @@ function App() {
     <div className="app">
       <Header
         cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
-        onToggleCart={() => setShowCart((s) => !s)}
-        showCart={showCart}
+      
       />
 
       <main>
@@ -75,17 +73,7 @@ function App() {
             <Route path="/Cart" element={<Cart cart={cart} onRemove={handleRemove} onChangeQuantity={handleChangeQuantity} />} />
           </Routes>
         </div>
-        {showCart && (
-          <div className="cart-backdrop" onClick={() => setShowCart(false)}>
-            <aside className="cart-overlay" onClick={(e) => e.stopPropagation()}>
-              <button className="close-btn" onClick={() => setShowCart(false)}>✖</button>
-              <Cart
-                cart={cart}
-                onRemove={handleRemove}
-                onChangeQuantity={handleChangeQuantity}
-              />
-            </aside>
-          </div>)}
+
       </main>
 
       <Footer />

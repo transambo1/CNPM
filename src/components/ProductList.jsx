@@ -1,9 +1,16 @@
 import React, { useEffect, useState } from "react";
 import Product from "./Product";
 import { Link } from "react-router-dom";
+import Banner from "./Banner"; 
 
 function ProductList({ onAdd }) {
     const [products, setProducts] = useState([]);
+
+       const bannerImages = [
+         '/Images/1.png',
+          '/Images/Garan.jpg',
+           '/Images/Garan.jpg',
+    ];
 
     useEffect(() => {
         fetch("http://localhost:5002/products")
@@ -14,6 +21,7 @@ function ProductList({ onAdd }) {
 
     return (
         <div className="main-home">
+            <Banner images={bannerImages} />
             <div className="main-title">
                 <h1> Hôm nay ăn gì?</h1>
             </div>

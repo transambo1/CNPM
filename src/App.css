@@ -1,10 +1,12 @@
 /* src/App.css */
 body {
+  
   font-family: Arial, Helvetica, sans-serif;
   color: #10243a;
   max-width: 2000px;
-  margin: 10px;
+  margin: 0px;
   padding: 0;
+  
 }
 
 .header {
@@ -242,14 +244,22 @@ main {
   }
 }
 /* ===== cart layout (KFC style) ===== */
+/* CSS ĐỂ GIỮ 2 CỘT VÀ XÓA KHOẢNG TRỐNG 2 BÊN */
+
 .cart-container {
-  max-width: 1200px;
-  margin: 30px auto;
+  /* 1. Thiết lập tràn màn hình */
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  
+  /* Thêm đệm để nội dung không dính sát mép màn hình */
+  padding: 30px 40px !important; 
+  box-sizing: border-box !important;
+
+  /* 2. Giữ nguyên layout 2 cột */
   display: grid;
   grid-template-columns: 2fr 1fr;
   gap: 28px;
-  padding: 0 20px;
-  align-items: start;
 }
 
 /* card chung */
@@ -522,4 +532,209 @@ main {
 
 .btn-primary:hover {
   background: #b81c00;
+}
+#root {
+  flex-grow: 1;
+}
+/* ================================== */
+/* HEADER STYLES (Hover Effect)       */
+/* ================================== */
+
+/* --- Main Header Container --- */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 40px;
+  background-color: #2b2623;
+  color: #fcb32c;
+  border-bottom: 3px solid #fcb32c;
+}
+
+.header-left {
+  height: 40px; 
+}
+.header-left img {
+  height: 100%; 
+  width: auto; 
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --- Kiểu dáng chung cho TẤT CẢ các nút --- */
+.header-right button,
+.cart-button {
+  background-color: transparent;
+  /* Thêm một đường viền mỏng để các nút không bị "trống" */
+ 
+  color: #ffffff;
+  text-decoration: none; /* Áp dụng cho nút Giỏ hàng (thẻ Link) */
+  font-size: 16px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease-in-out; /* Hiệu ứng chuyển động mượt mà */
+}
+
+/* --- Hiệu ứng KHI DI CHUỘT VÀO cho TẤT CẢ các nút --- */
+.header-right button:hover,
+.cart-button:hover {
+  background-color: #d2191a; 
+  color: white;
+  border-color: #d2191a; 
+  transform: scale(1.05);
+}
+/* ================================== */
+/* PRODUCT CARD STYLES                */
+/* ================================== */
+
+.product-card {
+  width: 340px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  overflow: hidden; /* Đảm bảo ảnh bo góc theo thẻ */
+  box-shadow: 0 8px 24px rgba(18, 24, 35, 0.08);
+  border: 1px solid #e9e9e9;
+  
+  display: flex;
+  flex-direction: column;
+  
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+  transform: translateY(-8px); 
+  box-shadow: 0 12px 28px rgba(18, 24, 35, 0.15);
+}
+
+/* --- Ảnh sản phẩm --- */
+.product-card img {
+  width: 100%;
+  height: 280px; /* Cố định chiều cao ảnh để các thẻ đều nhau */
+  object-fit: cover; /* Giúp ảnh không bị méo */
+  display: block;
+}
+
+.product-info {
+  padding: 16px;
+  /* Thuộc tính này sẽ đẩy nút "Thêm vào giỏ" xuống dưới */
+  flex-grow: 1; 
+}
+
+.product-info h3 {
+  margin: 0 0 8px 0;
+  font-size: 20px;
+  color: #222;
+}
+
+.product-info p {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #d2191a; /* Màu đỏ cho giá nổi bật */
+}
+
+/* --- Nút "Thêm vào giỏ" --- */
+.add-to-cart-btn {
+  display: block;
+  width: calc(100% - 32px); 
+  margin: 0 16px 16px 16px; 
+  
+  background-color: #fcb32c;
+  color: #2b2623;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 0;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-to-cart-btn:hover {
+  background-color: #d1921c; 
+}
+
+/* ================================== */
+/* BANNER STYLES                      */
+/* ================================== */
+
+.banner-container {
+  position: relative; 
+  width: 100%;
+  max-width: 1200px; 
+  height: 400px; 
+  margin: 20px auto; 
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(18, 24, 35, 0.1);
+}
+
+.banner-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- Các nút mũi tên --- */
+.banner-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(0, 0, 0, 0.4);
+  color: white;
+
+  font-size: 24px;
+  padding: 10px 15px;
+
+  cursor: pointer;
+  z-index: 10;
+  transition: background-color 0.2s ease;
+}
+
+.banner-arrow:hover {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.left-arrow {
+  left: 15px;
+}
+
+.right-arrow {
+  right: 15px;
+}
+
+/* --- Các dấu chấm chỉ vị trí --- */
+.dots-container {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.dot:hover {
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dot.active {
+  background-color: #ffffff;
 }
