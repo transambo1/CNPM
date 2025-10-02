@@ -1,10 +1,10 @@
 // src/components/Checkout.jsx
-import React from "react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
-function Checkout({ cart }) {
+function Checkout({ cart, currentUser, setCart }) {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const navigate = useNavigate();
 
     const [storeName, setStoreName] = useState("FastFood Store");
     const [storeAddress, setStoreAddress] = useState("123 Đường ABC, Quận 1, TP.HCM");
@@ -15,6 +15,7 @@ function Checkout({ cart }) {
         phone: "",
         email: "",
     });
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm({
@@ -22,14 +23,54 @@ function Checkout({ cart }) {
             [name]: value,
         });
     };
+
+    // 🔥 Hàm xử lý lưu đơn hàng
+    const handleCheckout = async () => {
+        if (!currentUser) {
+            alert("Bạn cần đăng nhập để thanh toán!");
+            navigate("/login");
+            return;
+        }
+
+        const newOrder = {
+            userId: currentUser.id,
+            customer: {
+                name: `${form.lastName} ${form.firstName}`,
+                phone: form.phone,
+                email: form.email,
+                address: customerAddress,
+            },
+            items: cart,
+            total: total,
+            status: "Đang xử lý",
+            date: new Date().toISOString().split("T")[0]
+        };
+
+        try {
+            await fetch("http://localhost:5002/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newOrder)
+            });
+
+            alert("Đặt đơn hàng thành công!");
+            setCart([]);
+            localStorage.removeItem(`cart_${currentUser.username}`);
+            navigate("/order-history");
+        } catch (error) {
+            console.error("Lỗi khi lưu order:", error);
+            alert("Có lỗi xảy ra khi đặt hàng!");
+        }
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
         console.log("Dữ liệu form:", form);
-        alert("Đơn hàng đã được xác nhận!");
+        handleCheckout(); // 👉 gọi lưu order
     };
+
     return (
         <div className="checkout-page">
-
             {/* Nút quay lại */}
             <div className="checkout-header">
                 <Link to="/Cart">
@@ -48,12 +89,8 @@ function Checkout({ cart }) {
 
                     <div className="info-block">
                         <h3>ĐƯỢC GIAO TỪ:</h3>
-                        <input
-                            type="text"
-                            value={storeName}
-                            style={{ fontWeight: "bold" }}
-                        />
-                        <p>123 Kat kat </p>
+                        <input type="text" value={storeName} style={{ fontWeight: "bold" }} readOnly />
+                        <p>{storeAddress}</p>
                     </div>
 
                     <div className="info-block">
@@ -134,10 +171,7 @@ function Checkout({ cart }) {
                                     <input type="radio" name="payment" value="bank" /> Chuyển khoản ngân hàng
                                 </label>
 
-                                <button
-                                    type="submit"
-                                    className="btn-primary "
-                                >
+                                <button type="submit" className="btn-primary">
                                     Thanh toán khi nhận hàng
                                 </button>
                             </div>
@@ -174,8 +208,6 @@ function Checkout({ cart }) {
                             <span>Tổng thanh toán</span>
                             <strong>{total.toLocaleString()}₫</strong>
                         </div>
-
-                        <button className="btn-primary">Xác nhận đặt hàng</button>
                     </div>
                 </aside>
             </div>

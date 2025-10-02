@@ -1,12 +1,12 @@
 /* src/App.css */
 body {
-  
+
   font-family: Arial, Helvetica, sans-serif;
   color: #10243a;
   max-width: 2000px;
   margin: 0px;
   padding: 0;
-  
+
 }
 
 .header {
@@ -243,6 +243,7 @@ main {
     transform: translateX(0);
   }
 }
+
 /* ===== cart layout (KFC style) ===== */
 /* CSS ĐỂ GIỮ 2 CỘT VÀ XÓA KHOẢNG TRỐNG 2 BÊN */
 
@@ -251,9 +252,9 @@ main {
   width: 100% !important;
   max-width: none !important;
   margin: 0 !important;
-  
+
   /* Thêm đệm để nội dung không dính sát mép màn hình */
-  padding: 30px 40px !important; 
+  padding: 30px 40px !important;
   box-sizing: border-box !important;
 
   /* 2. Giữ nguyên layout 2 cột */
@@ -533,9 +534,11 @@ main {
 .btn-primary:hover {
   background: #b81c00;
 }
+
 #root {
   flex-grow: 1;
 }
+
 /* ================================== */
 /* HEADER STYLES (Hover Effect)       */
 /* ================================== */
@@ -552,11 +555,12 @@ main {
 }
 
 .header-left {
-  height: 40px; 
+  height: 40px;
 }
+
 .header-left img {
-  height: 100%; 
-  width: auto; 
+  height: 100%;
+  width: auto;
 }
 
 .header-right {
@@ -570,26 +574,29 @@ main {
 .cart-button {
   background-color: transparent;
   /* Thêm một đường viền mỏng để các nút không bị "trống" */
- 
+
   color: #ffffff;
-  text-decoration: none; /* Áp dụng cho nút Giỏ hàng (thẻ Link) */
+  text-decoration: none;
+  /* Áp dụng cho nút Giỏ hàng (thẻ Link) */
   font-size: 16px;
   font-weight: 500;
   padding: 10px 18px;
   border-radius: 20px;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.2s ease-in-out; /* Hiệu ứng chuyển động mượt mà */
+  transition: all 0.2s ease-in-out;
+  /* Hiệu ứng chuyển động mượt mà */
 }
 
 /* --- Hiệu ứng KHI DI CHUỘT VÀO cho TẤT CẢ các nút --- */
 .header-right button:hover,
 .cart-button:hover {
-  background-color: #d2191a; 
+  background-color: #d2191a;
   color: white;
-  border-color: #d2191a; 
+  border-color: #d2191a;
   transform: scale(1.05);
 }
+
 /* ================================== */
 /* PRODUCT CARD STYLES                */
 /* ================================== */
@@ -598,33 +605,36 @@ main {
   width: 340px;
   background-color: #ffffff;
   border-radius: 12px;
-  overflow: hidden; /* Đảm bảo ảnh bo góc theo thẻ */
+  overflow: hidden;
+  /* Đảm bảo ảnh bo góc theo thẻ */
   box-shadow: 0 8px 24px rgba(18, 24, 35, 0.08);
   border: 1px solid #e9e9e9;
-  
+
   display: flex;
   flex-direction: column;
-  
+
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .product-card:hover {
-  transform: translateY(-8px); 
+  transform: translateY(-8px);
   box-shadow: 0 12px 28px rgba(18, 24, 35, 0.15);
 }
 
 /* --- Ảnh sản phẩm --- */
 .product-card img {
   width: 100%;
-  height: 280px; /* Cố định chiều cao ảnh để các thẻ đều nhau */
-  object-fit: cover; /* Giúp ảnh không bị méo */
+  height: 280px;
+  /* Cố định chiều cao ảnh để các thẻ đều nhau */
+  object-fit: cover;
+  /* Giúp ảnh không bị méo */
   display: block;
 }
 
 .product-info {
   padding: 16px;
   /* Thuộc tính này sẽ đẩy nút "Thêm vào giỏ" xuống dưới */
-  flex-grow: 1; 
+  flex-grow: 1;
 }
 
 .product-info h3 {
@@ -637,15 +647,15 @@ main {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #d2191a; /* Màu đỏ cho giá nổi bật */
+  color: #d2191a;
+  /* Màu đỏ cho giá nổi bật */
 }
 
 /* --- Nút "Thêm vào giỏ" --- */
 .add-to-cart-btn {
   display: block;
-  width: calc(100% - 32px); 
-  margin: 0 16px 16px 16px; 
-  
+  width: calc(100% - 32px);
+  margin: 0 16px 16px 16px;
   background-color: #fcb32c;
   color: #2b2623;
   border: none;
@@ -658,7 +668,7 @@ main {
 }
 
 .add-to-cart-btn:hover {
-  background-color: #d1921c; 
+  background-color: #d1921c;
 }
 
 /* ================================== */
@@ -666,11 +676,11 @@ main {
 /* ================================== */
 
 .banner-container {
-  position: relative; 
+  position: relative;
   width: 100%;
-  max-width: 1200px; 
-  height: 400px; 
-  margin: 20px auto; 
+  max-width: 1550px;
+  height: 530px;
+  margin: 20px auto;
   overflow: hidden;
   border-radius: 12px;
   box-shadow: 0 8px 24px rgba(18, 24, 35, 0.1);

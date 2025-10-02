@@ -1,10 +1,11 @@
 // src/components/Cart.jsx
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 
-function Cart({ cart, onRemove, onChangeQuantity }) {
+function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const navigate = useNavigate();
+    const location = useLocation();
 
     if (cart.length === 0) {
         return (
@@ -14,6 +15,16 @@ function Cart({ cart, onRemove, onChangeQuantity }) {
             </div>
         );
     }
+
+    // Hàm xử lý bấm Thanh toán
+    const handleCheckout = () => {
+        if (!currentUser) {
+            // Lưu lại trang hiện tại (/cart)
+            navigate("/login", { state: { from: location.pathname } });
+        } else {
+            navigate("/checkout");
+        }
+    };
 
     return (
         <div className="cart-page">
@@ -45,6 +56,18 @@ function Cart({ cart, onRemove, onChangeQuantity }) {
                 <aside className="summary-column">
                     <div className="summary-card">
                         <h3>Tổng quan đơn hàng</h3>
+                        <ul>
+                            {cart.map((item) => (
+                                <li key={item.id}>
+                                    <span>
+                                        {item.quantity}x {item.name}
+                                    </span>
+                                    <span>
+                                        {(item.price * item.quantity).toLocaleString()}₫
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
                         <h3>{cart.length} món</h3>
 
                         <div className="coupon">
@@ -63,9 +86,10 @@ function Cart({ cart, onRemove, onChangeQuantity }) {
                             </div>
                         </div>
 
-                        <Link to="/Checkout">
-                            <button className="btn-primary">Thanh toán</button>
-                        </Link>
+                        {/* Nút thanh toán kiểm tra login */}
+                        <button className="btn-primary" onClick={handleCheckout}>
+                            Thanh toán
+                        </button>
 
                         <Link to="/">⬅ Quay lại menu</Link>
                     </div>
@@ -73,8 +97,6 @@ function Cart({ cart, onRemove, onChangeQuantity }) {
             </div>
         </div>
     );
-
-
 }
 
 export default Cart;

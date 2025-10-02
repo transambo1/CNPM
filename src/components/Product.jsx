@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 
 function Product({ product, onAdd }) {
     const { id, name, price, img } = product;
@@ -13,6 +14,9 @@ function Product({ product, onAdd }) {
             </div>
             <button className="add-to-cart-btn" onClick={() => onAdd(product)}>
                 Thêm vào giỏ
+            </button>
+            <button className="add-to-cart-btn">
+                <Link to={`/Product-Detail/${product.id}`}>Xem chi tiết</Link>
             </button>
         </div>
     );

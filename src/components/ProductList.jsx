@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Product from "./Product";
 import { Link } from "react-router-dom";
-import Banner from "./Banner"; 
+import Banner from "./Banner";
 
 function ProductList({ onAdd }) {
     const [products, setProducts] = useState([]);
 
-       const bannerImages = [
-         '/Images/1.png',
-          '/Images/Garan.jpg',
-           '/Images/Garan.jpg',
+    const bannerImages = [
+        '/Images/1.png',
+        '/Images/Garan.jpg',
+        '/Images/Garan.jpg',
     ];
 
     useEffect(() => {
@@ -30,7 +30,7 @@ function ProductList({ onAdd }) {
                     {products.map((p) => (
                         <div key={p.id}>
                             <Product product={p} onAdd={onAdd} />
-                            <Link to={`/Product-Detail/${p.id}`}>Xem chi tiết</Link>
+
                         </div>
                     ))}
                 </div>
