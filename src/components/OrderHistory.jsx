@@ -24,8 +24,18 @@ function OrderHistory() {
                         <li key={order.id}>
                             <p>Đơn hàng #{order.id}</p>
                             <p>Ngày: {new Date(order.date).toLocaleString()}</p>
+                            <p>Sản phẩm:</p>
+                            <ul>
+                                {order.items && order.items.map((item, index) => (
+                                    <li key={index}>
+                                        {item.name} x {item.quantity} = {item.price * item.quantity} VND
+                                    </li>
+                                ))}
+                            </ul>
                             <p>Tổng tiền: {order.total} VND</p>
                             <p>Trạng thái: {order.status}</p>
+
+                            <p>Đến: {order.customer.address}</p>
                         </li>
                     ))}
                 </ul>

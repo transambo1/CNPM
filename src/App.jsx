@@ -9,6 +9,7 @@ import Register from "./components/Register";
 import ProductList from "./components/ProductList";
 import ProductDetail from "./components/ProductDetail";
 import Cart from "./components/Cart";
+import SellerOrders from "./components/SellerOrders";
 import OrderHistory from "./components/OrderHistory";
 import Checkout from "./components/Checkout";
 
@@ -108,7 +109,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/Product-Detail/:id" element={<ProductDetail onAdd={handleAdd} />} />
           <Route path="/order-history" element={<OrderHistory />} />
-
+          <Route path="/seller-orders" element={<SellerOrders />} />
           <Route
             path="/cart"
             element={
