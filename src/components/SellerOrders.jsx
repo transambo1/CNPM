@@ -43,6 +43,7 @@ function SellerOrders() {
                             <th>Sản phẩm</th>
                             <th>Tổng tiền</th>
                             <th>Ngày đặt</th>
+                            <th>Địa chỉ khách hàng</th>
                             <th>Trạng thái</th>
 
                         </tr>
@@ -61,7 +62,7 @@ function SellerOrders() {
                                 </td>
                                 <td>{order.total.toLocaleString()}đ</td>
                                 <td>{new Date(order.date).toLocaleString()}</td>
-
+                                <td>{order.customer.address}</td>
                                 <td>
                                     <select
                                         value={order.status}
