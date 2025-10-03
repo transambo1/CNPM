@@ -748,3 +748,107 @@ main {
 .dot.active {
   background-color: #ffffff;
 }
+.cart-page {
+  padding: 50px 20px;
+  text-align: center;
+}
+
+.cart-page h2 {
+  margin-bottom: 20px; 
+}
+/* ================================== */
+/* HEADER USER ACTIONS STYLES         */
+/* ================================== */
+
+/* --- Đồng bộ kiểu dáng cho các nút điều hướng và nút đăng nhập --- */
+.header-right button,
+.cart-button,
+.login-button,
+.user-menu-trigger {
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 10px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease-in-out;
+  display: flex; /* Căn chỉnh icon và text */
+  align-items: center;
+}
+
+/* --- Hiệu ứng Hover chung --- */
+.header-right button:hover,
+.cart-button:hover,
+.login-button:hover,
+.user-menu-trigger:hover {
+  background-color: #d2191a;
+  color: white;
+  border-color: #d2191a;
+  transform: scale(1.05);
+}
+
+
+/* --- Menu người dùng (khi đã đăng nhập) --- */
+.user-menu {
+  position: relative; /* Quan trọng để định vị dropdown */
+}
+
+.user-menu-trigger svg {
+  margin-right: 6px; /* Khoảng cách giữa icon và tên user */
+}
+
+/* --- Dropdown Menu (Dark Theme) --- */
+.dropdown-menu {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  /* [Sửa] Đổi nền thành màu xám tối */
+  background: #111; 
+  /* [Sửa] Đổi viền cho phù hợp */
+  border: 1px solid #555; 
+  border-radius: 8px;
+  padding: 8px;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+
+  /* Giữ nguyên hiệu ứng ẩn/hiện */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+}
+
+/* --- Hiển thị dropdown KHI HOVER vào .user-menu --- */
+.user-menu:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* --- Các mục trong Dropdown --- */
+.dropdown-item {
+  background: none;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  /* [Sửa] Đổi màu chữ thành màu sáng để dễ đọc trên nền tối */
+  color: #e0e0e0; 
+  border-radius: 6px;
+  font-size: 15px;
+  transition: all 0.2s ease; /* Thêm transition cho mượt */
+}
+
+/* --- Hiệu ứng hover cho các mục --- */
+.dropdown-item:hover {
+  /* [Sửa] Đổi nền hover cho phù hợp với theme tối */
+  background-color: #4f5459; 
+  /* [Sửa] Đổi chữ thành màu trắng sáng khi hover */
+  color: #ffffff; 
+}

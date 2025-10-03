@@ -8,8 +8,9 @@ function ProductList({ onAdd }) {
 
     const bannerImages = [
         '/Images/1.png',
-        '/Images/Garan.jpg',
-        '/Images/Garan.jpg',
+       
+        '/Images/Banner2.png',
+        '/Images/Banner3.png',
     ];
 
     useEffect(() => {

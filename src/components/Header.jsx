@@ -5,15 +5,12 @@ import { FaUserCircle } from "react-icons/fa";
 
 function Header({ cartCount, currentUser, setCurrentUser }) {
     const navigate = useNavigate();
-    const [showMenu, setShowMenu] = useState(false);
 
-    // src/components/Header.jsx (chỉ cần ensure)
     const handleLogout = () => {
         setCurrentUser(null);
-        localStorage.removeItem("currentUser"); // key chuẩn
+        localStorage.removeItem("currentUser");
         navigate("/");
     };
-
 
     return (
         <header className="header">
@@ -34,65 +31,36 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
 
                 <div className="user-actions">
                     {currentUser ? (
-                        <div className="user-menu" style={{ position: "relative" }}>
-                            <div
-                                onClick={() => setShowMenu(!showMenu)}
-                                style={{ display: "flex", alignItems: "center", cursor: "pointer" }}
-                            >
-                                <FaUserCircle size={22} style={{ marginRight: "6px" }} />
-                                <span>{currentUser.username}</span>
-                            </div>
+                        <div className="user-menu">
+                        <div className="user-menu-trigger">
+                            <FaUserCircle size={22} />
+                            <span>{currentUser.username}</span>
+                        </div>
 
-                            {showMenu && (
-                                <div
-                                    className="dropdown"
-                                    style={{
-                                        position: "absolute",
-                                        top: "100%",
-                                        right: 0,
-                                        background: "#fff",
-                                        border: "1px solid #ccc",
-                                        padding: "10px",
-                                        borderRadius: "5px",
-                                        marginTop: "5px",
-                                        minWidth: "150px",
-                                        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                                    }}
-                                >
-                                    <button
-                                        onClick={() => navigate("/order-history")}
-                                        style={{
-                                            background: "none",
-                                            border: "none",
-                                            cursor: "pointer",
-                                            width: "100%",
-                                            textAlign: "left",
-                                            marginBottom: "5px",
-                                            color: "black"
-                                        }}
-                                    >
-                                        Lịch sử đơn hàng
-                                    </button>
-                                    <button
-                                        onClick={handleLogout}
-                                        style={{
-                                            background: "none",
-                                            border: "none",
-                                            cursor: "pointer",
-                                            width: "100%",
-                                            textAlign: "left",
-                                            color: "black",
-                                        }}
-                                    >
-                                        Đăng xuất
-                                    </button>
-                                </div>
-                            )}
+                       
+                            <div className="dropdown-menu">
+                            <button
+                                className="dropdown-item"
+                                onClick={() => navigate("/order-history")}
+                            >
+                                Lịch sử đơn hàng
+                            </button>
+                            <button 
+                                className="dropdown-item" 
+                                onClick={handleLogout}
+                            >
+                                Đăng xuất
+                            </button>
+                            </div>
+                      
                         </div>
                     ) : (
-                        <Link to="/Login">Đăng nhập</Link>
+                        // Thêm className cho nút Đăng nhập
+                        <Link to="/login" className="login-button">
+                        Đăng nhập
+                        </Link>
                     )}
-                </div>
+</div>
             </div>
         </header>
     );
