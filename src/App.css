@@ -1,22 +1,32 @@
 /* src/App.css */
 body {
-
   font-family: Arial, Helvetica, sans-serif;
   color: #10243a;
-  max-width: 2000px;
   margin: 0px;
   padding: 0;
+}
 
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
 }
 
 .header {
+  width: 1630px;
+  position: fixed;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #2b2623;
   color: #fcb32c;
   border-bottom: 1px solid #e6eef6;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+
 }
+
 
 .header-right {
   display: flex;
@@ -166,7 +176,7 @@ main {
 .main-product {
   border-bottom: 1px solid #444;
   padding: 10px 5px;
-  display: flex;
+
 }
 
 
@@ -602,7 +612,7 @@ main {
 /* ================================== */
 
 .product-card {
-  width: 340px;
+  width: 300px;
   background-color: #ffffff;
   border-radius: 12px;
   overflow: hidden;
@@ -682,7 +692,7 @@ main {
   height: 530px;
   margin: 20px auto;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 15px;
   box-shadow: 0 8px 24px rgba(18, 24, 35, 0.1);
 }
 
@@ -748,107 +758,186 @@ main {
 .dot.active {
   background-color: #ffffff;
 }
-.cart-page {
-  padding: 50px 20px;
-  text-align: center;
+
+/* --- Trang thuc don --- */
+
+.content-wrapper {
+  display: flex;
+  margin-top: 20px;
 }
 
-.cart-page h2 {
-  margin-bottom: 20px; 
+.sidebar {
+  padding: 10px 20px;
+  border: 1px solid #444;
 }
-/* ================================== */
-/* HEADER USER ACTIONS STYLES         */
-/* ================================== */
 
-/* --- Đồng bộ kiểu dáng cho các nút điều hướng và nút đăng nhập --- */
-.header-right button,
-.cart-button,
-.login-button,
-.user-menu-trigger {
-  background-color: transparent;
-  border: 1px solid transparent;
-  color: #ffffff;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 10px 18px;
+
+.search-bar input {
+  padding: 8px 12px;
   border-radius: 20px;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease-in-out;
-  display: flex; /* Căn chỉnh icon và text */
-  align-items: center;
+  border: 1px solid #ccc;
+  outline: none;
 }
 
-/* --- Hiệu ứng Hover chung --- */
-.header-right button:hover,
-.cart-button:hover,
-.login-button:hover,
-.user-menu-trigger:hover {
-  background-color: #d2191a;
+.menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  width: 120px;
+  font-family: "Arial", sans-serif;
+}
+
+.menu button {
+  border-bottom: 1px solid #e3e3e3;
+  padding: 10px 0;
+  text-decoration: none;
+  color: #7a2d1e;
+  /* nâu đỏ */
+  font-weight: bold;
+  font-size: 20px;
+  display: block;
+  transition: color 0.3s, border-color 0.3s;
+  color: #c64b2c;
+}
+
+.menu button.active {
+  color: #f9a825;
+  /* vàng nổi bật */
+  border-bottom: 1px solid #f9a825;
+  padding-bottom: 8px;
+}
+
+.product-show {
+  margin-left: 10px;
+}
+
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.product-card {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  text-align: center;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.pagination {
+  text-align: center;
+  padding-top: 20px;
+}
+
+/* Thuc don */
+
+.menu-dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.menu-dropdown button {
+
   color: white;
-  border-color: #d2191a;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.menu-dropdown button:hover {
+  background-color: #b71c1c;
   transform: scale(1.05);
 }
 
-
-/* --- Menu người dùng (khi đã đăng nhập) --- */
-.user-menu {
-  position: relative; /* Quan trọng để định vị dropdown */
-}
-
-.user-menu-trigger svg {
-  margin-right: 6px; /* Khoảng cách giữa icon và tên user */
-}
-
-/* --- Dropdown Menu (Dark Theme) --- */
-.dropdown-menu {
+.dropdown-content {
   position: absolute;
-  top: 110%;
-  right: 0;
-  /* [Sửa] Đổi nền thành màu xám tối */
-  background: #111; 
-  /* [Sửa] Đổi viền cho phù hợp */
-  border: 1px solid #555; 
-  border-radius: 8px;
-  padding: 8px;
-  min-width: 180px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  width: 600px;
+  /* chỉnh cho phù hợp */
   z-index: 100;
-
-  /* Giữ nguyên hiệu ứng ẩn/hiện */
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+  border-radius: 10px;
 }
 
-/* --- Hiển thị dropdown KHI HOVER vào .user-menu --- */
-.user-menu:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+.dropdown-content a {
+  width: 30%;
+  text-align: center;
+  margin: 10px;
+  text-decoration: none;
+  color: #5a2d0c;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border-radius: 10px;
+  padding: 10px;
 }
 
-/* --- Các mục trong Dropdown --- */
-.dropdown-item {
-  background: none;
-  border: none;
-  cursor: pointer;
+.dropdown-content a:hover {
+  background-color: #fff3e0;
+  color: #e64a19;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+/* ================================== */
+/* CHECKOUT FORM STYLES               */
+/* ================================== */
+
+/* --- Định dạng chung cho một khối form field (gồm label và input) --- */
+.info-block form > div {
+  margin-bottom: 18px;
+}
+
+/* --- Style cho các nhãn (label) --- */
+.info-block form label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+/* --- Style cho các ô nhập liệu (input) --- */
+.info-block form input[type="text"],
+.info-block form input[type="tel"],
+.info-block form input[type="email"] {
   width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  /* [Sửa] Đổi màu chữ thành màu sáng để dễ đọc trên nền tối */
-  color: #e0e0e0; 
+  padding: 12px 15px;
+  border: 1px solid #ccc;
   border-radius: 6px;
-  font-size: 15px;
-  transition: all 0.2s ease; /* Thêm transition cho mượt */
+  font-size: 16px;
+  box-sizing: border-box; /* Quan trọng để padding không làm vỡ layout */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* --- Hiệu ứng hover cho các mục --- */
-.dropdown-item:hover {
-  /* [Sửa] Đổi nền hover cho phù hợp với theme tối */
-  background-color: #4f5459; 
-  /* [Sửa] Đổi chữ thành màu trắng sáng khi hover */
-  color: #ffffff; 
+/* --- Hiệu ứng khi người dùng bấm vào ô input --- */
+.info-block form input[type="text"]:focus,
+.info-block form input[type="tel"]:focus,
+.info-block form input[type="email"]:focus {
+  outline: none;
+  border-color: #007bff; /* Đổi màu viền để báo hiệu */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+/* Style cho phần thông tin cửa hàng */
+.info-block .store-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #222;
+  margin: 0;
+}
+
+.info-block .store-address {
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 4px;
 }

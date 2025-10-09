@@ -89,8 +89,8 @@ function Checkout({ cart, currentUser, setCart }) {
 
                     <div className="info-block">
                         <h3>ĐƯỢC GIAO TỪ:</h3>
-                        <input type="text" value={storeName} style={{ fontWeight: "bold" }} readOnly />
-                        <p>{storeAddress}</p>
+                        <p className="store-name">{storeName}</p>
+                        <p className="store-address">{storeAddress}</p>
                     </div>
 
                     <div className="info-block">
