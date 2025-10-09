@@ -99,7 +99,7 @@ function Checkout({ cart, currentUser, setCart }) {
                             type="text"
                             value={customerAddress}
                             onChange={(e) => setCustomerAddress(e.target.value)}
-                            style={{ width: "100%", height: "30px" }}
+                            
                         />
                         <iframe
                             title="map"
