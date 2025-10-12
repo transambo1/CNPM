@@ -1,9 +1,9 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import Product from "./Product";
+import './ProductDetail.css'; // <-- 1. Import file CSS
 
 function ProductDetail({ onAdd }) {
-    const { id } = useParams(); // lấy id từ URL
+    const { id } = useParams();
     const [product, setProduct] = useState(null);
 
     useEffect(() => {
@@ -13,29 +13,37 @@ function ProductDetail({ onAdd }) {
             .catch((err) => console.error("Lỗi khi fetch API:", err));
     }, [id]);
 
-    if (!product) return <p>Đang tải...</p>;
+    if (!product) {
+        return <p className="loading-message">Đang tải...</p>;
+    }
 
     return (
-        <div>
-            <div className="main-product">
-                <h3 className="text-lg font-semibold truncate">{product.name}</h3>
-                <img src={product.img} alt={product.name} width="300" />
-                <p>Giá: {product.price}₫</p>
-                <button onClick={() => onAdd(product)}>Thêm vào giỏ</button>
-                <Link to="/">⬅ Quay lại danh sách</Link>
-            </div>
-
-            <div className="mt-3">
-                <div className="flex justify-between text-xs mb-1">
-                    <span>Almost sold out</span>
-                    <span className="font-medium">84% claimed</span>
+        <div className="product-detail-page">
+            <div className="product-detail-container">
+                <div className="product-detail-image">
+                    <img src={product.img} alt={product.name} />
                 </div>
-                <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div className="bg-primary-500 h-full rounded-full" style={{ width: "84%" }}></div>
+                <div className="product-detail-info">
+                    <h3>{product.name}</h3>
+                    <p className="product-detail-price">{product.price.toLocaleString()}₫</p>
+                    
+                    <button className="add-to-cart-btn-detail" onClick={() => onAdd(product)}>
+                        Thêm vào giỏ
+                    </button>
+
+                    <div className="product-deal-progress">
+                        <div className="progress-header">
+                            <span>Almost sold out</span>
+                            <span className="claimed">84% claimed</span>
+                        </div>
+                        <div className="progress-bar-container">
+                            <div className="progress-bar-fill" style={{ width: "84%" }}></div>
+                        </div>
+                    </div>
+
+                    <Link to="/" className="back-link">⬅ Quay lại danh sách</Link>
                 </div>
             </div>
-
-
         </div>
     );
 }

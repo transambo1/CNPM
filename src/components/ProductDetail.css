@@ -1,0 +1,133 @@
+/* ================================== */
+/* PRODUCT DETAIL PAGE STYLES         */
+/* ================================== */
+
+.product-detail-page {
+  max-width: 1100px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.loading-message {
+  text-align: center;
+  font-size: 1.5em;
+  color: #888;
+  padding: 80px 0;
+}
+
+/* --- Layout 2 cột chính --- */
+.product-detail-container {
+  display: flex;
+  gap: 40px; /* Khoảng cách giữa ảnh và thông tin */
+}
+
+/* --- Cột ảnh bên trái --- */
+.product-detail-image {
+  flex: 1; /* Chiếm 1 nửa không gian */
+}
+
+.product-detail-image img {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #eee;
+}
+
+/* --- Cột thông tin bên phải --- */
+.product-detail-info {
+  flex: 1; /* Chiếm 1 nửa không gian */
+  display: flex;
+  flex-direction: column;
+}
+
+.product-detail-info h3 {
+  font-size: 2.5em;
+  font-weight: 700;
+  color: #222;
+  margin: 0 0 10px 0;
+  line-height: 1.2;
+}
+
+.product-detail-price {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--accent-color, #d2191a);
+  margin-bottom: 25px;
+}
+
+/* --- Nút "Thêm vào giỏ" --- */
+.add-to-cart-btn-detail {
+  padding: 15px 30px;
+  background-color: var(--accent-color, #d2191a);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-bottom: 20px;
+}
+
+.add-to-cart-btn-detail:hover {
+  background-color: #b81c00;
+}
+
+/* --- Link "Quay lại" --- */
+.back-link {
+  color: #555;
+  text-decoration: none;
+  font-weight: bold;
+  margin-top: auto; /* Đẩy link xuống cuối cùng */
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+
+/* --- Thanh tiến trình "Almost sold out" --- */
+.product-deal-progress {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.progress-header .claimed {
+  font-weight: bold;
+  color: #333;
+}
+
+.progress-bar-container {
+  height: 10px;
+  background-color: #e9ecef;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  background-color: var(--primary-color, #fcb32c);
+  height: 100%;
+  border-radius: 5px;
+}
+
+/* --- Responsive cho màn hình di động --- */
+@media (max-width: 768px) {
+  .product-detail-container {
+    flex-direction: column; /* Xếp dọc trên di động */
+  }
+
+  .product-detail-info h3 {
+    font-size: 2em;
+  }
+}
