@@ -1,6 +1,7 @@
 // src/components/Cart.jsx
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import './Cart.css';
 
 function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -9,7 +10,7 @@ function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
 
     if (cart.length === 0) {
         return (
-            <div className="cart-page">
+            <div className="cart-page empty-cart">
                 <h2>Giỏ hàng của bạn trống</h2>
                 <Link to="/">⬅ Quay lại menu</Link>
             </div>
@@ -91,7 +92,7 @@ function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
                             Thanh toán
                         </button>
 
-                        <Link to="/">⬅ Quay lại menu</Link>
+                        <Link to="/" className="back-to-menu-link">⬅ Quay lại menu</Link>
                     </div>
                 </aside>
             </div>

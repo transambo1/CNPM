@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import './Register.css';
 
 function Register() {
     const [username, setUsername] = useState("");
@@ -33,7 +34,7 @@ function Register() {
     };
 
     return (
-        <div>
+        <div className="register-container-simple">
             <h2>Đăng ký</h2>
             <input
                 placeholder="Username"

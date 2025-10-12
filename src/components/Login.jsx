@@ -1,10 +1,12 @@
 // src/components/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
+import './Login.css';
 
 function Login({ setCurrentUser }) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+      const [error, setError] = useState(""); 
     const navigate = useNavigate();
     const location = useLocation(); // để lấy state.from
 
@@ -22,21 +24,22 @@ function Login({ setCurrentUser }) {
         return merged;
     };
 
-    const handleLogin = async () => {
+    const handleLogin = async (e) => {
+         e.preventDefault(); // Ngăn form reload
+        setError(""); // Reset lỗi
         if (!username || !password) {
             alert("Vui lòng nhập đầy đủ thông tin");
             return;
         }
 
-        const res = await fetch(
-            `http://localhost:5002/users?username=${username}&password=${password}`
-        );
-        const data = await res.json();
+        try {
+            const res = await fetch(`http://localhost:5002/users?username=${username}&password=${password}`);
+            const data = await res.json();
 
-        if (data.length === 0) {
-            alert("Sai username hoặc password");
-            return;
-        }
+            if (data.length === 0) {
+                setError("Sai tên đăng nhập hoặc mật khẩu.");
+                return;
+            }
 
         const user = data[0];
 
@@ -59,38 +62,51 @@ function Login({ setCurrentUser }) {
         setCurrentUser(user);
         localStorage.setItem("currentUser", JSON.stringify(user));
 
-        alert("Đăng nhập thành công!");
-
-        // Lấy đường dẫn trước đó (nếu có), ví dụ "/cart" hoặc "/checkout"
         const redirectTo = location.state?.from || "/";
-        navigate(redirectTo);
+            navigate(redirectTo);
+        } catch (err) {
+            setError("Đã có lỗi xảy ra. Vui lòng thử lại.");
+            console.error(err);
+        }
     };
 
-    return (
-        <div>
-            <h2>Đăng nhập</h2>
-            <input
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-            />
-            <br />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <br />
-            <button onClick={handleLogin}>Đăng nhập</button>
-            <p>
-                Chưa có tài khoản?{" "}
-                <Link to="/register" style={{ color: "blue" }}>
-                    Đăng kí
-                </Link>
-            </p>
+      return (
+        <div className="login-page">
+            <div className="login-container">
+                <h2>Đăng Nhập</h2>
+                <form onSubmit={handleLogin}>
+                    <div className="form-group">
+                        <label htmlFor="username">Tên đăng nhập</label>
+                        <input
+                            id="username"
+                            type="text"
+                            placeholder="Nhập tên đăng nhập"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Mật khẩu</label>
+                        <input
+                            id="password"
+                            type="password"
+                            placeholder="Nhập mật khẩu"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                    </div>
+
+                    {error && <p className="error-message">{error}</p>}
+
+                    <button type="submit" className="login-btn">Đăng nhập</button>
+                </form>
+                <p className="register-link">
+                    Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+                </p>
+            </div>
         </div>
     );
+
 }
 
 export default Login;

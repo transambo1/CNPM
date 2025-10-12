@@ -1,7 +1,7 @@
 // src/components/Payment.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-
+import './Payment.css';
 function Payment({ cart = [] }) {
     const total = cart.reduce((s, i) => s + i.price * i.quantity, 0);
 

@@ -1,0 +1,107 @@
+/* ================================== */
+/* LOGIN PAGE STYLES                  */
+/* ================================== */
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 50px 20px;
+  min-height: 80vh;
+}
+
+.login-container {
+  max-width: 450px;
+  width: 100%;
+  padding: 40px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9e9e9;
+  box-sizing: border-box;
+}
+
+.login-container h2 {
+  text-align: center;
+  font-size: 2em;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+/* --- Form Group (Label + Input) --- */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color, #fcb32c);
+  box-shadow: 0 0 0 3px rgba(252, 179, 44, 0.2);
+}
+
+/* --- Nút Đăng nhập --- */
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--accent-color, #d2191a);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-top: 10px;
+}
+
+.login-btn:hover {
+  background-color: #b81c00;
+  transform: translateY(-2px);
+}
+
+/* --- Link Đăng ký --- */
+.register-link {
+  display: block;
+  text-align: center;
+  margin-top: 25px;
+  color: #777;
+}
+
+.register-link a {
+  color: var(--accent-color, #d2191a);
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+/* --- Thông báo lỗi --- */
+.error-message {
+  color: #d2191a;
+  font-size: 0.9em;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #fddede;
+  border: 1px solid #f29494;
+  border-radius: 6px;
+  text-align: center;
+}

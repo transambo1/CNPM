@@ -1,0 +1,79 @@
+/* = a================================ */
+/* REGISTER PAGE STYLES (Simple HTML) */
+/* ================================== */
+
+/* --- Tạo một box căn giữa màn hình --- */
+.register-container-simple {
+  max-width: 400px;
+  margin: 50px auto; /* Tự động căn giữa */
+  padding: 40px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9e9e9;
+  text-align: center; /* Căn giữa toàn bộ nội dung bên trong */
+}
+
+/* --- Tiêu đề "Đăng ký" --- */
+.register-container-simple h2 {
+  font-size: 2em;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+/* --- Các ô input --- */
+.register-container-simple input {
+  width: 100%;
+  padding: 12px 15px;
+  font-size: 1em;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  margin-bottom: 15px; /* Thay thế cho thẻ <br /> */
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.register-container-simple input:focus {
+  outline: none;
+  border-color: var(--primary-color, #fcb32c);
+  box-shadow: 0 0 0 3px rgba(252, 179, 44, 0.2);
+}
+
+/* --- Nút "Đăng ký" --- */
+.register-container-simple button {
+  width: 100%;
+  padding: 14px;
+  background-color: var(--accent-color, #d2191a);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-top: 10px;
+}
+
+.register-container-simple button:hover {
+  background-color: #b81c00; /* Màu đỏ đậm hơn */
+  transform: translateY(-2px);
+  border-color: transparent; /* Ghi đè style chung */
+}
+
+/* --- Dòng chữ "Đã có tài khoản?" --- */
+.register-container-simple p {
+  margin-top: 25px;
+  color: #777;
+}
+
+/* --- Chữ "Đăng nhập" --- */
+.register-container-simple p span {
+  color: var(--accent-color, #d2191a);
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.register-container-simple p span:hover {
+  text-decoration: underline;
+}

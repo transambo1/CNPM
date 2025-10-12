@@ -1,0 +1,111 @@
+/* Checkout Css */
+.checkout-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.checkout-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.checkout-header h2 {
+  order: 1;
+}
+.checkout-header a {
+  order: 2;
+}
+
+.back-btn {
+  border: 1px solid #ccc;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.checkout-container {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.checkout-info {
+  flex: 2;
+}
+
+.info-block {
+  background: #f9f9f9;
+  padding: 15px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+}
+
+.info-block h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.checkout-summary {
+  flex: 1;
+}
+
+/* ... (Phần summary-card và line được dùng chung, có thể để ở App.css hoặc copy qua) ... */
+/* Nếu muốn đóng gói hoàn toàn, bạn nên copy cả các class dùng chung qua đây */
+
+/* --- CHECKOUT FORM STYLES --- */
+.info-block form > div {
+  margin-bottom: 18px;
+}
+
+.info-block form label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.info-block form input[type="text"],
+.info-block form input[type="tel"],
+.info-block form input[type="email"] {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-block form input[type="text"]:focus,
+.info-block form input[type="tel"]:focus,
+.info-block form input[type="email"]:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+}
+
+.info-block .store-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #222;
+  margin: 0;
+}
+
+.info-block .store-address {
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.info-block iframe {
+  border: none;
+  border-radius: 8px;
+  margin-top: 20px;
+}

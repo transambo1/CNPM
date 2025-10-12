@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Product from "./Product";
 import Banner from "./Banner";
+import './ProductList.css';
 
 function ProductList({ onAdd, defaultCategory = "All" }) {
     const [products, setProducts] = useState([]);

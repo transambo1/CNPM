@@ -1,7 +1,7 @@
 
 // src/components/Banner.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-
+import './Banner.css';
 function Banner({ images, interval = 2000 }) { // Mặc định chuyển sau 3 giây
   const [currentIndex, setCurrentIndex] = useState(0);
 

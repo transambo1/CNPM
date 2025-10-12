@@ -1,6 +1,7 @@
 // src/components/Checkout.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import './Checkout.css';
 
 function Checkout({ cart, currentUser, setCart }) {
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);

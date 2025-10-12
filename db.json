@@ -166,6 +166,50 @@
       "total": 75000000,
       "status": "Đã xử lý",
       "date": "2025-10-03"
+    },
+    {
+      "id": "e25f",
+      "userId": "1",
+      "customer": {
+        "name": "s 049",
+        "phone": "49949",
+        "email": "tuanron2002@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "3",
+          "name": "Gà rán",
+          "img": "/Images/Garan.jpg",
+          "price": 15000000,
+          "quantity": 1
+        }
+      ],
+      "total": 15000000,
+      "status": "Đang xử lý",
+      "date": "2025-10-12"
+    },
+    {
+      "id": "706e",
+      "userId": "1",
+      "customer": {
+        "name": "s0 s",
+        "phone": "07",
+        "email": "tuanron2002@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "1",
+          "name": "Hamburrg",
+          "img": "/Images/Hambur.jpg",
+          "price": 25000000,
+          "quantity": 1
+        }
+      ],
+      "total": 25000000,
+      "status": "Đang xử lý",
+      "date": "2025-10-12"
     }
   ]
 }
