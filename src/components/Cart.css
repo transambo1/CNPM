@@ -16,8 +16,14 @@
   background: #fff;
   border-radius: 10px;
   padding: 18px;
+
   box-shadow: 0 8px 22px rgba(18, 24, 35, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+li {
+  justify-content: space-between;
+  display: flex;
 }
 
 .cart-column h2 {
@@ -133,6 +139,7 @@
     grid-template-columns: 1fr;
     padding: 0 12px;
   }
+
   .summary-column .summary-card {
     position: static;
     margin-top: 20px;

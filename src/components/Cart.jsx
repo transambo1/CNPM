@@ -61,7 +61,7 @@ function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
                             {cart.map((item) => (
                                 <li key={item.id}>
                                     <span>
-                                        {item.quantity}x {item.name}
+                                        {item.quantity} x {item.name}
                                     </span>
                                     <span>
                                         {(item.price * item.quantity).toLocaleString()}₫

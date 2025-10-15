@@ -59,115 +59,6 @@
   ],
   "orders": [
     {
-      "id": "7bce",
-      "userId": "1",
-      "customer": {
-        "name": "à fa",
-        "phone": "124",
-        "email": "ad@gmail.com",
-        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
-      },
-      "items": [
-        {
-          "id": "3",
-          "name": "Gà rán",
-          "img": "/Images/Garan.jpg",
-          "price": 15000000,
-          "quantity": 1
-        }
-      ],
-      "total": 15000000,
-      "status": "Đã xử lý",
-      "date": "2025-10-02"
-    },
-    {
-      "id": "abd1",
-      "userId": "1",
-      "customer": {
-        "name": "ts gaa",
-        "phone": "41421",
-        "email": "gf@gmail.com",
-        "address": "200 an dương vương quânj 5"
-      },
-      "items": [
-        {
-          "id": "3",
-          "name": "Gà rán",
-          "img": "/Images/Garan.jpg",
-          "price": 15000000,
-          "quantity": 1
-        }
-      ],
-      "total": 15000000,
-      "status": "Đã xử lý",
-      "date": "2025-10-02"
-    },
-    {
-      "id": "1f37",
-      "userId": "1",
-      "customer": {
-        "name": "Kat Zan",
-        "phone": "0912",
-        "email": "fh@gmail.com",
-        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
-      },
-      "items": [
-        {
-          "id": "2",
-          "name": "Tacos",
-          "img": "/Images/1.webp",
-          "price": 20000000,
-          "quantity": 1
-        }
-      ],
-      "total": 20000000,
-      "status": "Đang giao",
-      "date": "2025-10-03"
-    },
-    {
-      "id": "52c6",
-      "userId": "1",
-      "customer": {
-        "name": "fafafa ửyw",
-        "phone": "5252",
-        "email": "gh@gmail.com",
-        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
-      },
-      "items": [
-        {
-          "id": "1",
-          "name": "Hamburrg",
-          "img": "/Images/Hambur.jpg",
-          "price": 25000000,
-          "quantity": 1
-        },
-        {
-          "id": "2",
-          "name": "Tacos",
-          "img": "/Images/1.webp",
-          "price": 20000000,
-          "quantity": 1
-        },
-        {
-          "id": "3",
-          "name": "Gà rán",
-          "img": "/Images/Garan.jpg",
-          "price": 15000000,
-          "quantity": 1
-        },
-        {
-          "id": "4",
-          "name": "Bami",
-          "img": "/Images/Hambur.jpg",
-          "price": 15000000,
-          "quantity": 1
-        }
-      ],
-      "total": 75000000,
-      "status": "Đã xử lý",
-      "date": "2025-10-03"
-    },
-    {
       "id": "e25f",
       "userId": "1",
       "customer": {
@@ -210,6 +101,28 @@
       "total": 25000000,
       "status": "Đang xử lý",
       "date": "2025-10-12"
+    },
+    {
+      "id": "0555",
+      "userId": "1",
+      "customer": {
+        "name": "da da",
+        "phone": "1",
+        "email": "yaj@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "1",
+          "name": "Hamburrg",
+          "img": "/Images/Hambur.jpg",
+          "price": 25000000,
+          "quantity": 5
+        }
+      ],
+      "total": 125000000,
+      "status": "Đang xử lý",
+      "date": "2025-10-15"
     }
   ]
 }

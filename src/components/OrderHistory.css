@@ -3,7 +3,7 @@
 /* ================================== */
 
 .order-history-page {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 40px auto;
   padding: 0 20px;
 }
@@ -27,6 +27,7 @@
 .orders-list {
   list-style: none;
   padding: 0;
+
 }
 
 .order-card {

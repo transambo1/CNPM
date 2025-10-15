@@ -100,7 +100,7 @@ function Checkout({ cart, currentUser, setCart }) {
                             type="text"
                             value={customerAddress}
                             onChange={(e) => setCustomerAddress(e.target.value)}
-                            
+
                         />
                         <iframe
                             title="map"
@@ -188,7 +188,7 @@ function Checkout({ cart, currentUser, setCart }) {
                             {cart.map((item) => (
                                 <li key={item.id}>
                                     <span>
-                                        {item.quantity}x {item.name}
+                                        {item.quantity} x {item.name}
                                     </span>
                                     <span>
                                         {(item.price * item.quantity).toLocaleString()}₫
