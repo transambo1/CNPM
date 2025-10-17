@@ -13,12 +13,12 @@ function Product({ product, onAdd }) {
                 <h3>{name}</h3>
                 <p>{price.toLocaleString()} VND</p>
             </div>
-           <div className="product-actions">
+            <div className="product-actions">
                 <button className="add-to-cart-btn" onClick={() => onAdd(product)}>
                     Thêm vào giỏ
                 </button>
                 {/* Thêm nút "Xem chi tiết" */}
-                <Link to={`/Product-Detail/${id}`} className="view-details-btn">
+                <Link to={`/product-detail/${id}`} className="view-details-btn">
                     Xem chi tiết
                 </Link>
             </div>

@@ -6,7 +6,7 @@ import './Login.css';
 function Login({ setCurrentUser }) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-      const [error, setError] = useState(""); 
+    const [error, setError] = useState("");
     const navigate = useNavigate();
     const location = useLocation(); // để lấy state.from
 
@@ -25,7 +25,7 @@ function Login({ setCurrentUser }) {
     };
 
     const handleLogin = async (e) => {
-         e.preventDefault(); // Ngăn form reload
+        e.preventDefault(); // Ngăn form reload
         setError(""); // Reset lỗi
         if (!username || !password) {
             alert("Vui lòng nhập đầy đủ thông tin");
@@ -41,28 +41,28 @@ function Login({ setCurrentUser }) {
                 return;
             }
 
-        const user = data[0];
+            const user = data[0];
 
-        // --- Merge cart logic ---
-        const guestCartRaw = localStorage.getItem("my_cart");
-        const guestCart = guestCartRaw ? JSON.parse(guestCartRaw) : [];
+            // --- Merge cart logic ---
+            const guestCartRaw = localStorage.getItem("my_cart");
+            const guestCart = guestCartRaw ? JSON.parse(guestCartRaw) : [];
 
-        const userKey = `cart_${user.username}`;
-        const userCartRaw = localStorage.getItem(userKey);
-        const userCart = userCartRaw ? JSON.parse(userCartRaw) : [];
+            const userKey = `cart_${user.username}`;
+            const userCartRaw = localStorage.getItem(userKey);
+            const userCart = userCartRaw ? JSON.parse(userCartRaw) : [];
 
-        const mergedCart = mergeCarts(userCart, guestCart);
+            const mergedCart = mergeCarts(userCart, guestCart);
 
-        // Lưu lại giỏ mới cho user
-        localStorage.setItem(userKey, JSON.stringify(mergedCart));
-        // Xóa giỏ guest
-        localStorage.removeItem("my_cart");
+            // Lưu lại giỏ mới cho user
+            localStorage.setItem(userKey, JSON.stringify(mergedCart));
+            // Xóa giỏ guest
+            localStorage.removeItem("my_cart");
 
-        // --- Lưu user hiện tại ---
-        setCurrentUser(user);
-        localStorage.setItem("currentUser", JSON.stringify(user));
+            // --- Lưu user hiện tại ---
+            setCurrentUser(user);
+            localStorage.setItem("currentUser", JSON.stringify(user));
 
-        const redirectTo = location.state?.from || "/";
+            const redirectTo = location.state?.from || "/";
             navigate(redirectTo);
         } catch (err) {
             setError("Đã có lỗi xảy ra. Vui lòng thử lại.");
@@ -70,7 +70,7 @@ function Login({ setCurrentUser }) {
         }
     };
 
-      return (
+    return (
         <div className="login-page">
             <div className="login-container">
                 <h2>Đăng Nhập</h2>

@@ -1,4 +1,3 @@
-// src/App.jsx
 import React, { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 
@@ -17,7 +16,7 @@ import "./App.css";
 
 function App() {
   // ==========================
-  // 👤 Quản lý người dùng (key: "currentUser")
+  // 👤 Quản lý người dùng
   // ==========================
   const [currentUser, setCurrentUser] = useState(() => {
     try {
@@ -29,11 +28,27 @@ function App() {
   });
 
   // ==========================
-  // 🛒 Quản lý giỏ hàng
+  // 🛒 Quản lý giỏ hàng (đọc từ localStorage NGAY TỪ ĐẦU)
   // ==========================
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      if (currentUser) {
+        const key = `cart_${encodeURIComponent(currentUser.username)}`;
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : [];
+      } else {
+        const raw = localStorage.getItem("my_cart");
+        return raw ? JSON.parse(raw) : [];
+      }
+    } catch (err) {
+      console.error("Load cart error:", err);
+      return [];
+    }
+  });
 
-  // Khi user login → load giỏ hàng theo user
+  // ==========================
+  // ⏱️ Khi đăng nhập hoặc đăng xuất, đồng bộ giỏ hàng tương ứng
+  // ==========================
   useEffect(() => {
     if (currentUser) {
       try {
@@ -46,35 +61,40 @@ function App() {
         setCart([]);
       }
     } else {
-      setCart([]); // logout thì clear cart
+      const guestCart = localStorage.getItem("my_cart");
+      setCart(guestCart ? JSON.parse(guestCart) : []);
       localStorage.removeItem("currentUser");
     }
   }, [currentUser]);
 
-  // Lưu giỏ hàng mỗi khi thay đổi (nếu có user)
+  // ==========================
+  // 💾 Lưu giỏ hàng mỗi khi thay đổi
+  // ==========================
   useEffect(() => {
-    if (currentUser) {
-      const key = `cart_${encodeURIComponent(currentUser.username)}`;
-      try {
+    try {
+      if (currentUser) {
+        const key = `cart_${encodeURIComponent(currentUser.username)}`;
         localStorage.setItem(key, JSON.stringify(cart));
-      } catch (err) {
-        console.error("Save cart error:", err);
+      } else {
+        localStorage.setItem("my_cart", JSON.stringify(cart));
       }
-    } else {
-      // nếu không có user, bạn có thể lưu tạm local cart (optional)
-      localStorage.setItem("my_cart", JSON.stringify(cart));
+    } catch (err) {
+      console.error("Save cart error:", err);
     }
   }, [cart, currentUser]);
 
+  // ==========================
+  // 🧩 Các hàm xử lý giỏ hàng
+  // ==========================
   const handleAdd = (product) => {
     setCart((prev) => {
-      const idx = prev.findIndex((p) => p.id === product.id);
-      if (idx === -1) {
-        return [...prev, { ...product, quantity: 1 }];
+      const existing = prev.find((p) => p.id === product.id);
+      if (existing) {
+        return prev.map((p) =>
+          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
+        );
       }
-      return prev.map((p) =>
-        p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
-      );
+      return [...prev, { ...product, quantity: 1 }];
     });
   };
 
@@ -97,7 +117,7 @@ function App() {
   return (
     <div className="app">
       <Header
-        cartCount={cart.reduce((s, i) => s + i.quantity, 0)}
+        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
         currentUser={currentUser}
         setCurrentUser={setCurrentUser}
       />
@@ -107,7 +127,7 @@ function App() {
           <Route path="/" element={<ProductList onAdd={handleAdd} />} />
           <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/Product-Detail/:id" element={<ProductDetail onAdd={handleAdd} />} />
+          <Route path="/product-detail/:id" element={<ProductDetail onAdd={handleAdd} />} />
           <Route path="/order-history" element={<OrderHistory />} />
           <Route path="/seller-orders" element={<SellerOrders />} />
           <Route
@@ -117,11 +137,15 @@ function App() {
                 cart={cart}
                 onRemove={handleRemove}
                 onChangeQuantity={handleChangeQuantity}
-                currentUser={currentUser}      // <<< truyền currentUser vào Cart
+                currentUser={currentUser}
               />
             }
           />
-          <Route path="/checkout" element={<Checkout cart={cart} currentUser={currentUser} setCart={setCart} />} /></Routes>
+          <Route
+            path="/checkout"
+            element={<Checkout cart={cart} currentUser={currentUser} setCart={setCart} />}
+          />
+        </Routes>
       </main>
 
       <Footer />

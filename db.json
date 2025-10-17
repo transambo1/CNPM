@@ -1,40 +1,113 @@
 {
   "products": [
     {
-      "id": "1",
-      "name": "Hamburrg",
+      "id": 1,
+      "name": "Burger Bò Phô Mai",
       "img": "/Images/Hambur.jpg",
-      "price": 25000000
+      "price": 59000,
+      "category": "Burger",
+      "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
+      "rating": 4.8,
+      "reviews": 125,
+      "isAvailable": true,
+      "ingredients": [
+        "Bánh mì",
+        "Thịt bò",
+        "Phô mai",
+        "Rau xà lách",
+        "Sốt BBQ"
+      ],
+      "discount": 10
     },
     {
-      "id": "2",
-      "name": "Tacos",
-      "img": "/Images/1.webp",
-      "price": 20000000
-    },
-    {
-      "id": "3",
-      "name": "Gà rán",
-      "img": "/Images/Garan.jpg",
-      "price": 15000000
-    },
-    {
-      "id": "4",
-      "name": "Bami",
+      "id": 2,
+      "name": "Gà Rán Giòn Cay",
       "img": "/Images/Hambur.jpg",
-      "price": 15000000
+      "price": 49000,
+      "category": "Gà Rán",
+      "description": "Miếng gà rán nóng hổi, lớp vỏ giòn rụm và vị cay nhẹ đặc trưng.",
+      "rating": 4.6,
+      "reviews": 98,
+      "isAvailable": true,
+      "ingredients": [
+        "Gà tươi",
+        "Bột chiên",
+        "Gia vị cay",
+        "Dầu ăn"
+      ],
+      "discount": 0
     },
     {
-      "id": "5",
-      "name": "Bami",
+      "id": 3,
+      "name": "Tacos Thịt Bò Mexico",
       "img": "/Images/Hambur.jpg",
-      "price": 15000000
+      "price": 65000,
+      "category": "Tacos",
+      "description": "Bánh tacos kẹp thịt bò xay đậm vị Mexico, kết hợp rau và sốt đặc trưng.",
+      "rating": 4.9,
+      "reviews": 143,
+      "isAvailable": true,
+      "ingredients": [
+        "Bánh tacos",
+        "Thịt bò",
+        "Cà chua",
+        "Xà lách",
+        "Sốt cay Mexico"
+      ],
+      "discount": 5
     },
     {
-      "id": "6",
-      "name": "Sandwich",
+      "id": 4,
+      "name": "Sandwich Trứng & Thịt Xông Khói",
       "img": "/Images/Hambur.jpg",
-      "price": 18000000
+      "price": 55000,
+      "category": "Sandwich",
+      "description": "Sandwich kẹp trứng ốp la và thịt xông khói, lựa chọn tuyệt vời cho bữa sáng.",
+      "rating": 4.5,
+      "reviews": 87,
+      "isAvailable": true,
+      "ingredients": [
+        "Bánh mì sandwich",
+        "Trứng",
+        "Thịt xông khói",
+        "Bơ",
+        "Xà lách"
+      ],
+      "discount": 0
+    },
+    {
+      "id": 5,
+      "name": "Khoai Tây Chiên Giòn",
+      "img": "/Images/Hambur.jpg",
+      "price": 29000,
+      "category": "Phụ",
+      "description": "Khoai tây chiên vàng ruộm, giòn ngoài mềm trong, dùng kèm tương ớt hoặc sốt phô mai.",
+      "rating": 4.7,
+      "reviews": 210,
+      "isAvailable": true,
+      "ingredients": [
+        "Khoai tây",
+        "Dầu chiên",
+        "Muối"
+      ],
+      "discount": 0
+    },
+    {
+      "id": 6,
+      "name": "Combo Burger Bò + Khoai + Pepsi",
+      "img": "/Images/Hambur.jpg",
+      "price": 99000,
+      "category": "Combo",
+      "description": "Combo tiết kiệm gồm burger bò phô mai, khoai tây chiên và ly Pepsi 330ml.",
+      "rating": 4.9,
+      "reviews": 305,
+      "isAvailable": true,
+      "ingredients": [
+        "Burger bò phô mai",
+        "Khoai tây chiên",
+        "Pepsi"
+      ],
+      "discount": 15
     }
   ],
   "users": [
@@ -54,6 +127,14 @@
       "id": "249b",
       "username": "âf",
       "password": "gag",
+      "role": "customer"
+    },
+    {
+      "id": "ca5d",
+      "username": "aa",
+      "password": "aa",
+      "phonenumber": "0906759496",
+      "address": "af@gmail.com",
       "role": "customer"
     }
   ],
@@ -121,6 +202,52 @@
         }
       ],
       "total": 125000000,
+      "status": "Đang xử lý",
+      "date": "2025-10-15"
+    },
+    {
+      "id": "9091",
+      "userId": "1",
+      "customer": {
+        "name": "ww ww",
+        "phone": "2",
+        "email": "tuanron2002@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "4",
+          "name": "Bami",
+          "img": "/Images/Hambur.jpg",
+          "price": 15000000,
+          "category": "FastFood",
+          "quantity": 3
+        }
+      ],
+      "total": 45000000,
+      "status": "Đang xử lý",
+      "date": "2025-10-15"
+    },
+    {
+      "id": "9988",
+      "userId": "1",
+      "customer": {
+        "name": "d d",
+        "phone": "77",
+        "email": "rq@gmail.com",
+        "address": "240 TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "2",
+          "name": "Tacos",
+          "img": "/Images/1.webp",
+          "price": 20000000,
+          "category": "FastFood",
+          "quantity": 1
+        }
+      ],
+      "total": 20000000,
       "status": "Đang xử lý",
       "date": "2025-10-15"
     }
