@@ -5,13 +5,30 @@ import "./ProductDetail.css";
 function ProductDetail({ onAdd }) {
     const { id } = useParams();
     const [product, setProduct] = useState(null);
+    const [relatedProducts, setRelatedProducts] = useState([]);
 
+    // --- Lấy chi tiết sản phẩm ---
     useEffect(() => {
         fetch(`http://localhost:5002/products/${id}`)
             .then((res) => res.json())
             .then((data) => setProduct(data))
-            .catch((err) => console.error("Lỗi khi fetch API:", err));
+            .catch((err) => console.error("Lỗi khi fetch chi tiết sản phẩm:", err));
     }, [id]);
+
+    // --- Lấy danh sách sản phẩm gợi ý ---
+    useEffect(() => {
+        if (product) {
+            fetch("http://localhost:5002/products")
+                .then((res) => res.json())
+                .then((data) => {
+                    const filtered = data
+                        .filter((p) => p.category === product.category && p.id !== product.id)
+                        .slice(0, 4); // chỉ lấy 4 sản phẩm gợi ý
+                    setRelatedProducts(filtered);
+                })
+                .catch((err) => console.error("Lỗi khi fetch sản phẩm gợi ý:", err));
+        }
+    }, [product]);
 
     if (!product) {
         return <p className="loading-message">Đang tải...</p>;
@@ -35,7 +52,9 @@ function ProductDetail({ onAdd }) {
 
                     <div className="rating-section">
                         <span className="stars">⭐ {product.rating || 4.5}</span>
-                        <span className="reviews">({product.reviews || 100} đánh giá)</span>
+                        <span className="reviews">
+                            ({product.reviews || 100} đánh giá)
+                        </span>
                     </div>
 
                     <div className="price-section">
@@ -50,7 +69,9 @@ function ProductDetail({ onAdd }) {
                                 <span className="discount-badge">-{product.discount}%</span>
                             </>
                         ) : (
-                            <p className="price-discounted">{product.price.toLocaleString()}₫</p>
+                            <p className="price-discounted">
+                                {product.price.toLocaleString()}₫
+                            </p>
                         )}
                     </div>
 
@@ -90,6 +111,31 @@ function ProductDetail({ onAdd }) {
                     <Link to="/" className="back-link">
                         ⬅ Quay lại danh sách sản phẩm
                     </Link>
+                </div>
+            </div>
+
+            {/* ==================== GỢI Ý SẢN PHẨM ==================== */}
+            <div className="related-products">
+                <h3>Gợi ý cho bạn</h3>
+
+                <div className="related-grid">
+                    {relatedProducts.length > 0 ? (
+                        relatedProducts.map((item) => (
+                            <div key={item.id} className="related-item">
+                                <img src={item.img} alt={item.name} />
+                                <h4>{item.name}</h4>
+                                <p>{item.price.toLocaleString()}₫</p>
+                                <button
+                                    className="add-btn"
+                                    onClick={() => onAdd(item)}
+                                >
+                                    🛒 Thêm
+                                </button>
+                            </div>
+                        ))
+                    ) : (
+                        <p>Không có sản phẩm tương tự.</p>
+                    )}
                 </div>
             </div>
         </div>

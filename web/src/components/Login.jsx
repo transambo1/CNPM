@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import './Login.css';
 
 function Login({ setCurrentUser }) {
-    const [username, setUsername] = useState("");
+    const [phonenumber, setPhonenumber] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const navigate = useNavigate();
@@ -27,17 +27,18 @@ function Login({ setCurrentUser }) {
     const handleLogin = async (e) => {
         e.preventDefault(); // Ngăn form reload
         setError(""); // Reset lỗi
-        if (!username || !password) {
+        if (!phonenumber || !password) {
             alert("Vui lòng nhập đầy đủ thông tin");
             return;
         }
 
         try {
-            const res = await fetch(`http://localhost:5002/users?username=${username}&password=${password}`);
+            // ✅ Kiểm tra user theo số điện thoại và mật khẩu
+            const res = await fetch(`http://localhost:5002/users?phonenumber=${encodeURIComponent(phonenumber)}&password=${encodeURIComponent(password)}`);
             const data = await res.json();
 
             if (data.length === 0) {
-                setError("Sai tên đăng nhập hoặc mật khẩu.");
+                setError("Sai số điện thoại hoặc mật khẩu.");
                 return;
             }
 
@@ -47,7 +48,7 @@ function Login({ setCurrentUser }) {
             const guestCartRaw = localStorage.getItem("my_cart");
             const guestCart = guestCartRaw ? JSON.parse(guestCartRaw) : [];
 
-            const userKey = `cart_${user.username}`;
+            const userKey = `cart_${user.phonenumber}`;
             const userCartRaw = localStorage.getItem(userKey);
             const userCart = userCartRaw ? JSON.parse(userCartRaw) : [];
 
@@ -76,13 +77,13 @@ function Login({ setCurrentUser }) {
                 <h2>Đăng Nhập</h2>
                 <form onSubmit={handleLogin}>
                     <div className="form-group">
-                        <label htmlFor="username">Tên đăng nhập</label>
+                        <label htmlFor="phonenumber">Số điện thoại</label>
                         <input
-                            id="username"
+                            id="phonenumber"
                             type="text"
-                            placeholder="Nhập tên đăng nhập"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="Nhập số điện thoại"
+                            value={phonenumber}
+                            onChange={(e) => setPhonenumber(e.target.value)}
                         />
                     </div>
                     <div className="form-group">
@@ -106,7 +107,6 @@ function Login({ setCurrentUser }) {
             </div>
         </div>
     );
-
 }
 
 export default Login;

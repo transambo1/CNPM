@@ -1,31 +1,48 @@
-// src/components/Checkout.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import './Checkout.css';
+import "./Checkout.css";
 
 function Checkout({ cart, currentUser, setCart }) {
-    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const navigate = useNavigate();
+    const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-    const [storeName, setStoreName] = useState("FastFood Store");
-    const [storeAddress, setStoreAddress] = useState("123 Đường ABC, Quận 1, TP.HCM");
-    const [customerAddress, setCustomerAddress] = useState("45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam");
+    const [storeName] = useState("FastFood Store");
+    const [storeAddress] = useState("123 Đường ABC, Quận 1, TP.HCM");
+
     const [form, setForm] = useState({
         lastName: "",
         firstName: "",
         phone: "",
         email: "",
+        address: ""
     });
+
+    // ✅ Tự động điền thông tin người dùng khi đăng nhập
+    useEffect(() => {
+        if (currentUser) {
+            // Nếu address không có thì thử lấy từ localStorage (nếu có)
+            const savedUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+            const userAddress =
+                currentUser.address ||
+                savedUser.address ||
+                "45 Nguyễn Trãi, Quận 5, TP.HCM";
+
+            setForm((prev) => ({
+                ...prev,
+                lastName: currentUser.lastname || "",
+                firstName: currentUser.firstname || "",
+                phone: currentUser.phonenumber || "",
+                email: currentUser.email || "",
+                address: userAddress
+            }));
+        }
+    }, [currentUser]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm({
-            ...form,
-            [name]: value,
-        });
+        setForm({ ...form, [name]: value });
     };
 
-    // 🔥 Hàm xử lý lưu đơn hàng
     const handleCheckout = async () => {
         if (!currentUser) {
             alert("Bạn cần đăng nhập để thanh toán!");
@@ -36,10 +53,10 @@ function Checkout({ cart, currentUser, setCart }) {
         const newOrder = {
             userId: currentUser.id,
             customer: {
-                name: `${form.lastName} ${form.firstName}`,
+                name: `${form.lastName} ${form.firstName}`.trim(),
                 phone: form.phone,
                 email: form.email,
-                address: customerAddress,
+                address: form.address
             },
             items: cart,
             total: total,
@@ -54,34 +71,32 @@ function Checkout({ cart, currentUser, setCart }) {
                 body: JSON.stringify(newOrder)
             });
 
-            alert("Đặt đơn hàng thành công!");
+            alert("✅ Đặt đơn hàng thành công!");
             setCart([]);
             localStorage.removeItem(`cart_${currentUser.username}`);
             navigate("/order-history");
         } catch (error) {
             console.error("Lỗi khi lưu order:", error);
-            alert("Có lỗi xảy ra khi đặt hàng!");
+            alert("❌ Có lỗi xảy ra khi đặt hàng!");
         }
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Dữ liệu form:", form);
-        handleCheckout(); // 👉 gọi lưu order
+        handleCheckout();
     };
 
     return (
         <div className="checkout-page">
-            {/* Nút quay lại */}
             <div className="checkout-header">
-                <Link to="/Cart">
-                    <button className="back-btn">⬅ Quay lại của tôi</button>
+                <Link to="/cart">
+                    <button className="back-btn">⬅ Quay lại giỏ hàng</button>
                 </Link>
                 <h2>🔒 THÔNG TIN ĐẶT HÀNG</h2>
             </div>
 
             <div className="checkout-container">
-                {/* Cột trái: Thông tin giao hàng */}
+                {/* --- Cột trái --- */}
                 <div className="checkout-info">
                     <div className="info-block">
                         <h3>THỜI GIAN GIAO HÀNG:</h3>
@@ -98,13 +113,17 @@ function Checkout({ cart, currentUser, setCart }) {
                         <h3>GIAO ĐẾN:</h3>
                         <input
                             type="text"
-                            value={customerAddress}
-                            onChange={(e) => setCustomerAddress(e.target.value)}
-
+                            name="address"
+                            value={form.address}
+                            onChange={handleChange}
+                            placeholder="Nhập địa chỉ giao hàng..."
+                            className="address-input"
                         />
                         <iframe
                             title="map"
-                            src={`https://maps.google.com/maps?q=${encodeURIComponent(customerAddress)}&z=15&output=embed`}
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(
+                                form.address
+                            )}&z=15&output=embed`}
                             width="100%"
                             height="300"
                             style={{ border: 0, margin: "20px 0px" }}
@@ -112,75 +131,76 @@ function Checkout({ cart, currentUser, setCart }) {
                     </div>
 
                     <div className="info-block">
-                        <h2 className="text-xl font-bold mb-4">THÊM THÔNG TIN CHI TIẾT:</h2>
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <h2>THÔNG TIN KHÁCH HÀNG:</h2>
+                        <form onSubmit={handleSubmit}>
                             <div>
-                                <label className="block font-semibold">Họ của bạn*</label>
+                                <label>Họ của bạn*</label>
                                 <input
                                     type="text"
                                     name="lastName"
                                     value={form.lastName}
                                     onChange={handleChange}
-                                    className="w-full border p-2 rounded mt-1"
-                                    placeholder="Xin nhập họ của bạn"
-                                    required
+                                    placeholder="(Không bắt buộc)"
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold">Tên của bạn*</label>
+                                <label>Tên của bạn*</label>
                                 <input
                                     type="text"
                                     name="firstName"
                                     value={form.firstName}
                                     onChange={handleChange}
-                                    className="w-full border p-2 rounded mt-1"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold">Số điện thoại*</label>
+                                <label>Số điện thoại*</label>
                                 <input
                                     type="tel"
                                     name="phone"
                                     value={form.phone}
                                     onChange={handleChange}
-                                    className="w-full border p-2 rounded mt-1"
                                     required
                                 />
                             </div>
 
                             <div>
-                                <label className="block font-semibold">Địa chỉ email*</label>
+                                <label>Email*</label>
                                 <input
                                     type="email"
                                     name="email"
                                     value={form.email}
                                     onChange={handleChange}
-                                    className="w-full border p-2 rounded mt-1"
                                     required
                                 />
                             </div>
-                            <div>
-                                <h2 style={{ color: "black" }}>PHƯƠNG THỨC THANH TOÁN:</h2>
 
+                            <div className="payment-section">
+                                <h2>PHƯƠNG THỨC THANH TOÁN:</h2>
                                 <label>
-                                    <input type="radio" name="payment" value="cod" defaultChecked /> Thanh toán khi nhận hàng (COD)
+                                    <input
+                                        type="radio"
+                                        name="payment"
+                                        value="cod"
+                                        defaultChecked
+                                    />{" "}
+                                    Thanh toán khi nhận hàng (COD)
                                 </label>
                                 <label>
-                                    <input type="radio" name="payment" value="bank" /> Chuyển khoản ngân hàng
+                                    <input type="radio" name="payment" value="bank" />{" "}
+                                    Chuyển khoản ngân hàng
                                 </label>
-
                                 <button type="submit" className="btn-primary">
-                                    Thanh toán khi nhận hàng
+                                    Xác nhận đặt hàng
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
 
-                {/* Cột phải: Tóm tắt đơn hàng */}
+                {/* --- Cột phải --- */}
                 <aside className="checkout-summary">
                     <div className="summary-card">
                         <h3>TÓM TẮT ĐƠN HÀNG:</h3>
@@ -190,13 +210,10 @@ function Checkout({ cart, currentUser, setCart }) {
                                     <span>
                                         {item.quantity} x {item.name}
                                     </span>
-                                    <span>
-                                        {(item.price * item.quantity).toLocaleString()}₫
-                                    </span>
+                                    <span>{(item.price * item.quantity).toLocaleString()}₫</span>
                                 </li>
                             ))}
                         </ul>
-
                         <div className="line">
                             <span>Tổng đơn hàng</span>
                             <strong>{total.toLocaleString()}₫</strong>

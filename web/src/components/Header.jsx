@@ -79,7 +79,7 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
                         <div className="user-menu">
                             <div className="user-menu-trigger">
                                 <FaUserCircle size={22} />
-                                <span>{currentUser.username}</span>
+                                <span>{currentUser.firstname} {currentUser.lastname}</span>
                             </div>
                             <div className="dropdown-menu">
                                 <button

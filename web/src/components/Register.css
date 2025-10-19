@@ -5,13 +5,15 @@
 /* --- Tạo một box căn giữa màn hình --- */
 .register-container-simple {
   max-width: 400px;
-  margin: 50px auto; /* Tự động căn giữa */
+  margin: 50px auto;
+  /* Tự động căn giữa */
   padding: 40px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   border: 1px solid #e9e9e9;
-  text-align: center; /* Căn giữa toàn bộ nội dung bên trong */
+  text-align: center;
+  /* Căn giữa toàn bộ nội dung bên trong */
 }
 
 /* --- Tiêu đề "Đăng ký" --- */
@@ -29,7 +31,8 @@
   border: 1px solid #ccc;
   border-radius: 8px;
   box-sizing: border-box;
-  margin-bottom: 15px; /* Thay thế cho thẻ <br /> */
+  margin-bottom: 15px;
+  /* Thay thế cho thẻ <br /> */
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
@@ -55,9 +58,11 @@
 }
 
 .register-container-simple button:hover {
-  background-color: #b81c00; /* Màu đỏ đậm hơn */
+  background-color: #b81c00;
+  /* Màu đỏ đậm hơn */
   transform: translateY(-2px);
-  border-color: transparent; /* Ghi đè style chung */
+  border-color: transparent;
+  /* Ghi đè style chung */
 }
 
 /* --- Dòng chữ "Đã có tài khoản?" --- */
