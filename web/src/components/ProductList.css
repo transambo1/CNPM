@@ -1,63 +1,105 @@
-/* ================================== */
-/* PRODUCT LIST PAGE STYLES           */
-/* ================================== */
-
-/* --- Tiêu đề "Hôm nay ăn gì?" --- */
+/* ============================= */
+/* TIÊU ĐỀ TRANG                 */
+/* ============================= */
 .main-title h1 {
-  font-size: 2.5em;
-  color: #333;
-  margin: 40px 0;
+  font-size: 2.2em;
+  font-weight: 700;
+  color: #222;
   text-align: center;
+  margin: 40px 0 30px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-/* --- Layout 2 cột: Sidebar và Product Show --- */
+/* ============================= */
+/* LAYOUT 2 CỘT                  */
+/* ============================= */
 .content-wrapper {
   display: flex;
   gap: 30px;
   max-width: 1400px;
   margin: 0 auto 40px auto;
   padding: 0 20px;
-  align-items: flex-start;
-  /* Căn các cột theo chiều dọc */
 }
 
-
-/* ================================== */
-/* SIDEBAR STYLES                     */
-/* ================================== */
-
+/* ============================= */
+/* SIDEBAR                       */
+/* ============================= */
 .sidebar {
-  /* Chiều rộng cố định cho sidebar */
-  flex-shrink: 0;
-  width: 250px;
-  /* Ngăn sidebar bị co lại */
-  background-color: #ffffff;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e9e9e9;
+  width: 270px;
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  border: 1px solid #f1f1f1;
+  transition: transform 0.2s ease;
+}
 
+.sidebar:hover {
+  transform: translateY(-3px);
 }
 
 .sidebar h3 {
-  font-size: 1.2em;
-  margin-top: 25px;
-  margin-bottom: 15px;
-  padding-bottom: 10px;
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 25px 0 12px;
+  color: #333;
   border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
 }
 
-/* --- Thanh tìm kiếm --- */
-.search-bar input {
+/* --- Tìm kiếm --- */
+.search-bar {
   width: 100%;
-  padding: 10px 15px;
-  font-size: 1em;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  box-sizing: border-box;
 }
 
-/* --- Menu danh mục --- */
+.search-bar input {
+  width: fit-content;
+  padding: 10px 14px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  font-size: 0.95em;
+  transition: all 0.2s;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #d2191a;
+  box-shadow: 0 0 4px rgba(210, 25, 26, 0.3);
+}
+
+/* 🌈 Nút Reset bộ lọc */
+.reset-filters {
+  width: 100%;
+  background: linear-gradient(135deg, #ff6b6b, #f06595);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 8px rgba(255, 105, 135, 0.3);
+  transition: all 0.25s ease;
+}
+
+.reset-filters:hover {
+  background: linear-gradient(135deg, #fa5252, #e64980);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(250, 82, 82, 0.35);
+}
+
+.reset-filters:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(250, 82, 82, 0.25);
+}
+
+/* Thêm khoảng cách cho sidebar */
+.sidebar .reset-filters {
+  margin-bottom: 20px;
+}
+
+/* --- Danh mục --- */
 .menu {
   display: flex;
   flex-direction: column;
@@ -66,43 +108,95 @@
 
 .menu button {
   width: 100%;
-  padding: 12px 15px;
-  background-color: transparent;
+  padding: 10px 12px;
   border: none;
   border-radius: 8px;
+  background: transparent;
+  font-size: 0.95em;
+  color: #444;
   text-align: left;
-  font-size: 1em;
-  color: #555;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
-  font-weight: 500;
+  transition: all 0.2s;
 }
 
 .menu button:hover {
-  background-color: #f5f5f5;
+  background: #f5f5f5;
   color: #111;
 }
 
 .menu button.active {
-  background-color: var(--accent-color, #d2191a);
-  color: white;
-  font-weight: bold;
+  background: linear-gradient(135deg, #ff6b6b, #f06595);
+  color: #fff;
+  font-weight: 600;
 }
 
+/* --- Lọc giá --- */
+.price-filter {
+  background: #fff8f8;
+  border: 1px solid #f1d1d1;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
 
-/* ================================== */
-/* PRODUCT SHOW & PAGINATION STYLES   */
-/* ================================== */
+.price-filter label {
+  display: block;
+  margin-top: 5px;
+  font-size: 14px;
+  color: #555;
+}
 
+.price-filter input[type="number"] {
+  width: 90%;
+  padding: 6px;
+  margin-bottom: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9em;
+}
+
+.range-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.range-slider input[type="range"] {
+  width: 100%;
+  accent-color: #d2191a;
+}
+
+.price-filter p {
+  font-size: 0.9em;
+  margin-top: 8px;
+  color: #333;
+}
+
+/* --- Sắp xếp --- */
+.sort-filter select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95em;
+  background: #fff;
+  transition: border-color 0.2s;
+}
+
+.sort-filter select:focus {
+  outline: none;
+  border-color: #d2191a;
+}
+
+/* ============================= */
+/* PRODUCT GRID & PAGINATION     */
+/* ============================= */
 .product-show {
   flex-grow: 1;
-  /* Cho phép phần này chiếm hết không gian còn lại */
 }
 
-/* --- Lưới sản phẩm --- */
 .product-grid {
   display: grid;
-  /* Kỹ thuật responsive: tự động điều chỉnh số cột */
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 24px;
 }
@@ -118,7 +212,6 @@
 .pagination {
   display: flex;
   justify-content: center;
-  align-items: center;
   gap: 8px;
   margin-top: 40px;
 }
@@ -130,18 +223,17 @@
   color: #333;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .pagination button:hover {
   background-color: #f0f0f0;
-  border-color: #ccc;
 }
 
 .pagination button.active {
-  background-color: var(--accent-color, #d2191a);
+  background-color: #d2191a;
   color: white;
-  border-color: var(--accent-color, #d2191a);
+  border-color: #d2191a;
   font-weight: bold;
 }
 

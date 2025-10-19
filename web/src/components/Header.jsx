@@ -1,19 +1,19 @@
 // src/components/Header.jsx
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
-import './Header.css'; // Quan trọng: Đảm bảo đã import file CSS
+import "./Header.css";
 
-// Bỏ các useState không cần thiết
 function Header({ cartCount, currentUser, setCurrentUser }) {
     const navigate = useNavigate();
+    const [searchValue, setSearchValue] = useState("");
 
     const categories = [
-        { key: "All", label: "Tất cả", img: "/Images/all-items.png" },
-        { key: "Gà Rán", label: "Gà rán", img: "/Images/ga-ran.png" },
-        { key: "Burger", label: "Burger", img: "/Images/burger-icon.png" },
-        { key: "Sandwich", label: "Sandwich", img: "/Images/fast-food.png" },
-        { key: "Tacos", label: "Tacos", img: "/Images/drinks.png" }
+        { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
+        { key: "Gà Rán", label: "Gà rán", img: "/Images/Hambur.jpg" },
+        { key: "Burger", label: "Burger", img: "/Images/Hambur.jpg" },
+        { key: "Sandwich", label: "Sandwich", img: "/Images/Hambur.jpg" },
+        { key: "Tacos", label: "Tacos", img: "/Images/Hambur.jpg" }
     ];
 
     const handleLogout = () => {
@@ -22,12 +22,33 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
         navigate("/");
     };
 
+    const handleSearch = (e) => {
+        e.preventDefault();
+        // Chuyển đến ProductList với query search
+        if (searchValue.trim() !== "") {
+            navigate(`/menu/All?search=${encodeURIComponent(searchValue)}`);
+            setSearchValue("");
+        }
+    };
+
     return (
         <header className="header">
             <div className="header-left">
                 <Link to="/">
                     <img src="/Images/Logo.png" alt="MEOWCHICK Logo" />
                 </Link>
+            </div>
+
+            <div className="header-center">
+                <form className="search-form" onSubmit={handleSearch}>
+                    <input
+                        type="text"
+                        placeholder="🔍 Tìm món ăn..."
+                        value={searchValue}
+                        onChange={(e) => setSearchValue(e.target.value)}
+                    />
+                    <button type="submit">Tìm</button>
+                </form>
             </div>
 
             <div className="header-right">
@@ -61,7 +82,10 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
                                 <span>{currentUser.username}</span>
                             </div>
                             <div className="dropdown-menu">
-                                <button className="dropdown-item" onClick={() => navigate("/order-history")}>
+                                <button
+                                    className="dropdown-item"
+                                    onClick={() => navigate("/order-history")}
+                                >
                                     Lịch sử đơn hàng
                                 </button>
                                 <button className="dropdown-item" onClick={handleLogout}>
