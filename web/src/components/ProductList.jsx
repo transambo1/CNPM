@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import Product from "./Product";
 import Banner from "./Banner";
-import './ProductList.css';
-
+import "./ProductList.css";
 
 function ProductList({ onAdd, defaultCategory = "All" }) {
+    const { categoryKey } = useParams(); // 👉 Lấy category từ URL (vd: /menu/Burger)
     const [products, setProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
-    const [selectedCategory, setSelectedCategory] = useState(defaultCategory);
+    const [selectedCategory, setSelectedCategory] = useState(categoryKey || defaultCategory);
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 4;
 
     const bannerImages = ["/Images/1.png", "/Images/Banner2.png", "/Images/Banner3.png"];
 
+    // 🧠 Lấy dữ liệu sản phẩm
     useEffect(() => {
         fetch("http://localhost:5002/products")
             .then((res) => res.json())
@@ -20,19 +22,30 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
             .catch((err) => console.error("Lỗi khi fetch API:", err));
     }, []);
 
-    // Reset category khi defaultCategory thay đổi
+    // 🔄 Khi thay đổi category trên URL (vd: /menu/Burger)
     useEffect(() => {
-        setSelectedCategory(defaultCategory);
-    }, [defaultCategory]);
+        if (categoryKey) {
+            setSelectedCategory(categoryKey);
+            setSearchTerm("");
+            setCurrentPage(1);
+        }
+    }, [categoryKey]);
 
-    // Categories
+    // Reset category khi defaultCategory thay đổi (ví dụ khi về trang chủ)
+    useEffect(() => {
+        if (!categoryKey) {
+            setSelectedCategory(defaultCategory);
+        }
+    }, [defaultCategory, categoryKey]);
+
+    // 📂 Lấy danh sách các category có trong dữ liệu
     const categories = ["All", ...new Set(products.map((p) => p.category))];
 
-    // 🔎 Lọc sản phẩm
+    // 🔍 Lọc sản phẩm theo category hoặc theo từ khóa tìm kiếm
     const filteredProducts = products.filter((p) => {
         const matchSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase());
         if (searchTerm.trim() !== "") {
-            // Nếu có search term → bỏ qua category, chỉ tìm theo tên
+            // Nếu có từ khóa tìm kiếm → bỏ qua lọc category
             return matchSearch;
         } else {
             // Nếu không có search term → lọc theo category
@@ -40,7 +53,7 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
         }
     });
 
-    // 📌 Phân trang
+    // 📖 Phân trang
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
@@ -76,19 +89,19 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                                     className={selectedCategory === c ? "active" : ""}
                                     onClick={() => {
                                         setSelectedCategory(c);
-                                        setSearchTerm(""); // reset search khi chọn category
+                                        setSearchTerm("");
                                         setCurrentPage(1);
                                     }}
                                 >
-                                    <span> {c === "All" ? "Tất cả" : c} </span>
+                                    <span>{c === "All" ? "Tất cả" : c}</span>
                                 </button>
                             </div>
                         ))}
                     </div>
                 </aside>
 
+                {/* Danh sách sản phẩm */}
                 <div className="product-show">
-                    {/* Product grid */}
                     <div className="product-grid">
                         {currentProducts.length > 0 ? (
                             currentProducts.map((p) => (
@@ -97,9 +110,9 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                         ) : (
                             <p>Không tìm thấy sản phẩm nào</p>
                         )}
-
                     </div>
-                    {/* ✅ Chỉ hiển thị phân trang khi nhiều hơn 1 trang */}
+
+                    {/* Phân trang */}
                     {totalPages > 1 && (
                         <div className="pagination">
                             <button
@@ -129,7 +142,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                     )}
                 </div>
             </div>
-
         </div>
     );
 }

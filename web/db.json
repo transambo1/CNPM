@@ -204,52 +204,6 @@
       "total": 125000000,
       "status": "Đang xử lý",
       "date": "2025-10-15"
-    },
-    {
-      "id": "9091",
-      "userId": "1",
-      "customer": {
-        "name": "ww ww",
-        "phone": "2",
-        "email": "tuanron2002@gmail.com",
-        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
-      },
-      "items": [
-        {
-          "id": "4",
-          "name": "Bami",
-          "img": "/Images/Hambur.jpg",
-          "price": 15000000,
-          "category": "FastFood",
-          "quantity": 3
-        }
-      ],
-      "total": 45000000,
-      "status": "Đang xử lý",
-      "date": "2025-10-15"
-    },
-    {
-      "id": "9988",
-      "userId": "1",
-      "customer": {
-        "name": "d d",
-        "phone": "77",
-        "email": "rq@gmail.com",
-        "address": "240 TP.HCM, Việt Nam"
-      },
-      "items": [
-        {
-          "id": "2",
-          "name": "Tacos",
-          "img": "/Images/1.webp",
-          "price": 20000000,
-          "category": "FastFood",
-          "quantity": 1
-        }
-      ],
-      "total": 20000000,
-      "status": "Đang xử lý",
-      "date": "2025-10-15"
     }
   ]
 }

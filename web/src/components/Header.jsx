@@ -10,10 +10,10 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
 
     const categories = [
         { key: "All", label: "Tất cả", img: "/Images/all-items.png" },
-        { key: "Chicken", label: "Gà rán", img: "/Images/ga-ran.png" },
+        { key: "Gà Rán", label: "Gà rán", img: "/Images/ga-ran.png" },
         { key: "Burger", label: "Burger", img: "/Images/burger-icon.png" },
-        { key: "FastFood", label: "Đồ ăn nhanh", img: "/Images/fast-food.png" },
-        { key: "Drink", label: "Nước uống", img: "/Images/drinks.png" }
+        { key: "Sandwich", label: "Sandwich", img: "/Images/fast-food.png" },
+        { key: "Tacos", label: "Tacos", img: "/Images/drinks.png" }
     ];
 
     const handleLogout = () => {
@@ -32,7 +32,7 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
 
             <div className="header-right">
                 <div><button onClick={() => navigate("/")}>Trang chủ</button></div>
-                
+
                 <div className="menu-dropdown">
                     <button>Thực đơn</button>
                     <div className="dropdown-content">
