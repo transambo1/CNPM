@@ -74,15 +74,10 @@
   background-color: #e09d22;
 }
 
-.view-details-btn {
-  background-color: transparent;
-  border: none;
-  color: #777;
-  padding: 8px 0;
-  font-weight: normal;
-}
-
-.view-details-btn:hover {
-  color: #000;
-  background-color: transparent;
+.product-link {
+  text-decoration: none; /* Bỏ gạch chân mặc định của link */
+  color: inherit;        /* Giữ lại màu chữ đã định nghĩa (đỏ và đen) */
+  display: flex;         /* Quan trọng để layout flex hoạt động đúng */
+  flex-direction: column;
+  flex-grow: 1;          /* Đảm bảo khối này giãn ra, đẩy nút xuống dưới */
 }

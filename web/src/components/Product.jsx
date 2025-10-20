@@ -1,26 +1,28 @@
+// src/components/Product.jsx
 import React from "react";
 import { Link } from "react-router-dom";
-import './ProductCard.css';
+import './ProductCard.css'; // Đảm bảo đã import CSS
 
 function Product({ product, onAdd }) {
     const { id, name, price, img } = product;
 
     return (
         <div className="product-card">
-            <img src={img} alt={name} />
-            {/* Bọc thông tin sản phẩm vào một div */}
-            <div className="product-info">
-                <h3>{name}</h3>
-                <p>{price.toLocaleString()} VND</p>
-            </div>
+            {/* 1. Bọc ảnh và khối thông tin trong một thẻ Link */}
+            <Link to={`/product-detail/${id}`} className="product-link">
+                <img src={img} alt={name} />
+                <div className="product-info">
+                    <h3>{name}</h3>
+                    <p>{price.toLocaleString()} VND</p>
+                </div>
+            </Link>
+
+            {/* Khối hành động chỉ còn lại nút "Thêm vào giỏ" */}
             <div className="product-actions">
                 <button className="add-to-cart-btn" onClick={() => onAdd(product)}>
                     Thêm vào giỏ
                 </button>
-                {/* Thêm nút "Xem chi tiết" */}
-                <Link to={`/product-detail/${id}`} className="view-details-btn">
-                    Xem chi tiết
-                </Link>
+                {/* 2. Đã xóa nút "Xem chi tiết" ở đây */}
             </div>
         </div>
     );

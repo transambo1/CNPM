@@ -258,3 +258,8 @@
     width: 300px;
   }
 }
+.search-form button img {
+  height: 16px; /* Điều chỉnh kích thước chiều cao */
+  width: 16px;  /* Điều chỉnh kích thước chiều rộng */
+  display: block; /* Loại bỏ khoảng trắng thừa dưới ảnh */
+}

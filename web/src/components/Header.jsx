@@ -43,11 +43,11 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
                 <form className="search-form" onSubmit={handleSearch}>
                     <input
                         type="text"
-                        placeholder="🔍 Tìm món ăn..."
+                        placeholder=" Tìm món ăn..."
                         value={searchValue}
                         onChange={(e) => setSearchValue(e.target.value)}
                     />
-                    <button type="submit">Tìm</button>
+                    <button type="submit">  <img src="/Images/search.png" alt="SEARCH" /></button>
                 </form>
             </div>
 
