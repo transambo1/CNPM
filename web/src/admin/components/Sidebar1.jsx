@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 import { FaHome, FaBox, FaUsers, FaChartBar, FaClipboardList } from "react-icons/fa";
-
+import "./Sidebar1.css";
 export default function Sidebar() {
     return (
         <div className="sidebar1">

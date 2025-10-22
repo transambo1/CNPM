@@ -54,18 +54,19 @@
 }
 
 .order-header h3 {
-  margin: 0;
+  margin: 15px;
   font-size: 1.1em;
   color: var(--secondary-color, #2b2623);
 }
 
 .order-header span {
-  font-size: 0.9em;
+  font-size: 1em;
   color: #777;
 }
 
 .order-body {
   padding: 20px;
+  width: 300px;
 }
 
 .order-items-list {
@@ -78,6 +79,7 @@
   display: flex;
   justify-content: space-between;
   padding: 8px 0;
+
   border-bottom: 1px dashed #f0f0f0;
 }
 
@@ -86,6 +88,7 @@
 }
 
 .order-footer {
+  width: 350px;
   display: flex;
   justify-content: space-between;
   align-items: center;
