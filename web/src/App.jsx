@@ -1,16 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, BrowserRouter } from "react-router-dom";
 
-import Header from "./components/Header";
-import Footer from "./components/Footer";
-import Login from "./components/Login";
-import Register from "./components/Register";
 import ProductList from "./components/ProductList";
 import ProductDetail from "./components/ProductDetail";
 import Cart from "./components/Cart";
+import Checkout from "./components/Checkout";
 import SellerOrders from "./components/SellerOrders";
 import OrderHistory from "./components/OrderHistory";
-import Checkout from "./components/Checkout";
+import Login from "./components/Login";
+import Register from "./components/Register";
+
+//Admin
+import UserLayout from "./layouts/UserLayout";
+import AdminLayout from "./layouts/AdminLayout";
+import Dashboard from "./admin/pages/Dashboard";
+import Orders from "./admin/pages/Orders";
+import Users from "./admin/pages/Users";
+import OrderDetail from "./admin/components/OrdersDetail";
+import Products from "./admin/pages/Products";
 
 import "./App.css";
 
@@ -33,7 +40,7 @@ function App() {
   const [cart, setCart] = useState(() => {
     try {
       if (currentUser) {
-        const key = `cart_${encodeURIComponent(currentUser.username)}`;
+        const key = `cart_${encodeURIComponent(currentUser.phonenumber)}`;
         const raw = localStorage.getItem(key);
         return raw ? JSON.parse(raw) : [];
       } else {
@@ -52,7 +59,7 @@ function App() {
   useEffect(() => {
     if (currentUser) {
       try {
-        const key = `cart_${encodeURIComponent(currentUser.username)}`;
+        const key = `cart_${encodeURIComponent(currentUser.phonenumber)}`;
         const raw = localStorage.getItem(key);
         setCart(raw ? JSON.parse(raw) : []);
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
@@ -73,7 +80,7 @@ function App() {
   useEffect(() => {
     try {
       if (currentUser) {
-        const key = `cart_${encodeURIComponent(currentUser.username)}`;
+        const key = `cart_${encodeURIComponent(currentUser.phonenumber)}`;
         localStorage.setItem(key, JSON.stringify(cart));
       } else {
         localStorage.setItem("my_cart", JSON.stringify(cart));
@@ -115,43 +122,45 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <Header
-        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
-        currentUser={currentUser}
-        setCurrentUser={setCurrentUser}
-      />
+    <BrowserRouter>
+      <Routes>
+        {/* ===== USER LAYOUT ===== */}
+        <Route
+          path="/"
+          element={
+            <UserLayout
+              cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+              currentUser={currentUser}
+              setCurrentUser={setCurrentUser}
+            />
+          }
+        >
+          <Route index element={<ProductList onAdd={handleAdd} />} />
+          <Route path="login" element={<Login setCurrentUser={setCurrentUser} />} />
+          <Route path="register" element={<Register />} />
+          <Route path="menu/:categoryKey" element={<ProductList onAdd={handleAdd} />} />
+          <Route path="product-detail/:id" element={<ProductDetail onAdd={handleAdd} />} />
+          <Route path="cart"
+            element={<Cart cart={cart}
+              onRemove={handleRemove}
+              onChangeQuantity={handleChangeQuantity}
+              currentUser={currentUser}
+            />} />
+          <Route path="checkout" element={<Checkout cart={cart} setCart={setCart} currentUser={currentUser} />} />
+          <Route path="order-history" element={<OrderHistory />} />
+          <Route path="seller-orders" element={<SellerOrders />} />
+        </Route>
 
-      <main className="routes-container">
-        <Routes>
-          <Route path="/" element={<ProductList onAdd={handleAdd} />} />
-          <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/menu/:categoryKey" element={<ProductList onAdd={handleAdd} />} />
-
-          <Route path="/product-detail/:id" element={<ProductDetail onAdd={handleAdd} />} />
-          <Route path="/order-history" element={<OrderHistory />} />
-          <Route path="/seller-orders" element={<SellerOrders />} />
-          <Route
-            path="/cart"
-            element={
-              <Cart
-                cart={cart}
-                onRemove={handleRemove}
-                onChangeQuantity={handleChangeQuantity}
-                currentUser={currentUser}
-              />
-            }
-          />
-          <Route
-            path="/checkout"
-            element={<Checkout cart={cart} currentUser={currentUser} setCart={setCart} />}
-          />
-        </Routes>
-      </main>
-
-      <Footer />
-    </div>
+        {/* ===== ADMIN LAYOUT ===== */}
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
+          <Route path="orders" element={<Orders />} />
+          <Route path="orders/:id" element={<OrderDetail />} />
+          <Route path="products" element={<Products />} />
+          <Route path="users" element={<Users />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

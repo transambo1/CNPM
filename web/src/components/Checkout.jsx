@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Checkout.css";
-
+import { Navigate } from "react-router-dom";
 function Checkout({ cart, currentUser, setCart }) {
     const navigate = useNavigate();
     const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -60,7 +60,7 @@ function Checkout({ cart, currentUser, setCart }) {
             },
             items: cart,
             total: total,
-            status: "Đang xử lý",
+            status: "Đã xử lý",
             date: new Date().toISOString().split("T")[0]
         };
 

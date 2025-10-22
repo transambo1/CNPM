@@ -1,0 +1,107 @@
+/* ===== Tổng thể layout ===== */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f6f8fb;
+    color: #333;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+    width: 300px;
+    background: linear-gradient(180deg, #1e2a47, #2c3e75);
+    color: #fff;
+    padding: 25px 20px;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e0e0e0;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar h2 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 30px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+/* ===== Sidebar Nav ===== */
+.sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.sidebar nav a {
+    text-decoration: none;
+    color: #cfd8ef;
+    padding: 12px 15px;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+.sidebar nav a:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    transform: translateX(3px);
+}
+
+.sidebar nav a.active {
+    background: #fff;
+    color: #2c3e75;
+    font-weight: 600;
+    box-shadow: 0 3px 6px rgba(255, 255, 255, 0.2);
+}
+
+/* ===== Nội dung chính ===== */
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f9fafc;
+}
+
+/* ===== Header ===== */
+.admin-header {
+    background: #fff;
+    padding: 18px 30px;
+    font-size: 20px;
+    font-weight: 600;
+    color: #2c3e75;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+    border-bottom: 1px solid #eaeaea;
+    letter-spacing: 0.3px;
+}
+
+/* ===== Main content ===== */
+main {
+    flex: 1;
+    padding: 25px 35px;
+    overflow-y: auto;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 992px) {
+    .admin-layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        flex-direction: row;
+        width: 100%;
+        justify-content: space-around;
+        box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .sidebar nav {
+        flex-direction: row;
+    }
+
+    .content {
+        padding-top: 20px;
+    }
+}
