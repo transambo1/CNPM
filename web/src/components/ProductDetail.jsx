@@ -115,24 +115,37 @@ function ProductDetail({ onAdd }) {
             </div>
 
             {/* ==================== GỢI Ý SẢN PHẨM ==================== */}
-            <div className="related-products">
-                <h3>Gợi ý cho bạn</h3>
+          <div className="related-products">
+            <h3>Gợi ý cho bạn</h3>
 
-                <div className="related-grid">
-                    {relatedProducts.length > 0 ? (
-                        relatedProducts.map((item) => (
-                            <div key={item.id} className="related-item">
+            <div className="related-grid">
+                {relatedProducts.length > 0 ? (
+                    relatedProducts.map((item) => (
+                        // ▼▼▼ Bọc toàn bộ div.related-item trong thẻ Link ▼▼▼
+                        <Link 
+                            key={item.id} 
+                            to={`/product-detail/${item.id}`} // Đường dẫn đến trang chi tiết của item gợi ý
+                            className="related-item-link" // Thêm class để bỏ style link mặc định
+                        >
+                            <div className="related-item">
                                 <img src={item.img} alt={item.name} />
                                 <h4>{item.name}</h4>
                                 <p>{item.price.toLocaleString()}₫</p>
+                                {/* Nút "Thêm" */}
                                 <button
                                     className="add-btn"
-                                    onClick={() => onAdd(item)}
+                                    // Ngăn sự kiện click lan ra thẻ Link bên ngoài
+                                    onClick={(e) => { 
+                                        e.preventDefault(); // Ngăn chuyển trang khi bấm nút này
+                                        onAdd(item);
+                                    }}
                                 >
                                     🛒 Thêm
                                 </button>
                             </div>
-                        ))
+                        </Link>
+                        // ▲▲▲ Kết thúc thẻ Link ▲▲▲
+                    ))
                     ) : (
                         <p>Không có sản phẩm tương tự.</p>
                     )}

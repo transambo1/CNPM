@@ -389,6 +389,28 @@
       "total": 173000,
       "status": "Đã xử lý",
       "date": "2025-10-21"
+    },
+    {
+      "id": "9481",
+      "userId": "0a85",
+      "customer": {
+        "name": "a a",
+        "phone": "090",
+        "email": "tuanron2004@gmail.com",
+        "address": "12 nguyễn trãi"
+      },
+      "items": [
+        {
+          "id": "2",
+          "name": "Tacos",
+          "img": "/Images/1.webp",
+          "price": 20000000,
+          "quantity": 2
+        }
+      ],
+      "total": 40000000,
+      "status": "Đã xử lý",
+      "date": "2025-10-22"
     }
   ]
 }

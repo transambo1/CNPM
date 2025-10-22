@@ -322,3 +322,7 @@
     text-align: left;
   }
 }
+.related-item-link {
+  text-decoration: none;
+  color: inherit; /* Giữ màu chữ bình thường */
+}
