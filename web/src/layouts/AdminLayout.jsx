@@ -7,7 +7,7 @@ export default function AdminLayout() {
 
     return (
         <div className="admin-layout">
-            <aside className="sidebar">
+            <aside className="admin-sidebar">
                 <h2>Admin Panel</h2>
                 <nav>
                     <Link
@@ -37,7 +37,7 @@ export default function AdminLayout() {
                 </nav>
             </aside>
 
-            <div className="content">
+            <div className="admin-content">
 
                 <main>
                     <Outlet />

@@ -33,6 +33,10 @@
   font-weight: 700;
   color: #333;
   line-height: 1.2;
+  text-align: center;
+white-space: normal !important; /* Thêm !important */
+  word-wrap: break-word;
+  width: 100%;
 }
 
 .product-card .product-info p {
@@ -42,6 +46,7 @@
   font-weight: 700;
   color: #d2191a !important;
   line-height: 1.2;
+  text-align: center;
 }
 
 .product-actions {
@@ -79,5 +84,6 @@
   color: inherit;        /* Giữ lại màu chữ đã định nghĩa (đỏ và đen) */
   display: flex;         /* Quan trọng để layout flex hoạt động đúng */
   flex-direction: column;
-  flex-grow: 1;          /* Đảm bảo khối này giãn ra, đẩy nút xuống dưới */
+  flex-grow: 1;       
+  align-items: center;   /* Đảm bảo khối này giãn ra, đẩy nút xuống dưới */
 }

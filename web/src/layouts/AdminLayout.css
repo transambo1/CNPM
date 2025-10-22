@@ -1,3 +1,7 @@
+/* ================================== */
+/* ADMIN LAYOUT STYLES (Prefixed)     */
+/* ================================== */
+
 /* ===== Tổng thể layout ===== */
 .admin-layout {
     display: flex;
@@ -8,7 +12,8 @@
 }
 
 /* ===== Sidebar ===== */
-.sidebar {
+/* Đổi tên class từ .sidebar thành .admin-sidebar */
+.admin-sidebar {
     width: 300px;
     background: linear-gradient(180deg, #1e2a47, #2c3e75);
     color: #fff;
@@ -19,7 +24,7 @@
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
 }
 
-.sidebar h2 {
+.admin-sidebar h2 {
     font-size: 22px;
     font-weight: 600;
     margin-bottom: 30px;
@@ -29,13 +34,13 @@
 }
 
 /* ===== Sidebar Nav ===== */
-.sidebar nav {
+.admin-sidebar nav {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.sidebar nav a {
+.admin-sidebar nav a {
     text-decoration: none;
     color: #cfd8ef;
     padding: 12px 15px;
@@ -44,13 +49,14 @@
     transition: all 0.25s ease;
 }
 
-.sidebar nav a:hover {
+.admin-sidebar nav a:hover {
     background: rgba(255, 255, 255, 0.15);
     color: #fff;
     transform: translateX(3px);
 }
 
-.sidebar nav a.active {
+/* Sử dụng NavLink sẽ tự thêm class 'active' */
+.admin-sidebar nav a.active {
     background: #fff;
     color: #2c3e75;
     font-weight: 600;
@@ -58,27 +64,17 @@
 }
 
 /* ===== Nội dung chính ===== */
-.content {
+/* Đổi tên class từ .content thành .admin-content */
+.admin-content {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: #f9fafc;
 }
 
-/* ===== Header ===== */
-.admin-header {
-    background: #fff;
-    padding: 18px 30px;
-    font-size: 20px;
-    font-weight: 600;
-    color: #2c3e75;
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-    border-bottom: 1px solid #eaeaea;
-    letter-spacing: 0.3px;
-}
-
-/* ===== Main content ===== */
-main {
+/* ===== Main content area (bên trong .admin-content) ===== */
+/* Nhắm mục tiêu thẻ <main> bên trong .admin-content */
+.admin-content main {
     flex: 1;
     padding: 25px 35px;
     overflow-y: auto;
@@ -90,18 +86,18 @@ main {
         flex-direction: column;
     }
 
-    .sidebar {
+    .admin-sidebar {
         flex-direction: row;
         width: 100%;
         justify-content: space-around;
         box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
     }
 
-    .sidebar nav {
+    .admin-sidebar nav {
         flex-direction: row;
     }
 
-    .content {
-        padding-top: 20px;
+    .admin-content {
+        /* Không cần padding-top vì header admin có thể không dùng */
     }
 }
