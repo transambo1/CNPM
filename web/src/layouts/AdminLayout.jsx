@@ -8,7 +8,7 @@ export default function AdminLayout() {
     return (
         <div className="admin-layout">
             <aside className="admin-sidebar">
-                <h2>Admin Panel</h2>
+                <h2>MeowChick Pro</h2>
                 <nav>
                     <Link
                         to="/admin"

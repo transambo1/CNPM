@@ -85,7 +85,11 @@
   padding: 15px;
   display: flex;
   flex-wrap: wrap;
-  width: 600px;
+  justify-content: center;
+  /* thêm để căn giữa các item */
+  gap: 15px;
+  /* khoảng cách giữa các item */
+  width: 400px;
   z-index: 100;
   border-radius: 10px;
   opacity: 0;
@@ -103,14 +107,15 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  width: 30%;
-  margin: 10px;
+  width: 100px;
+  /* cố định rộng cho item */
   text-decoration: none;
   color: #5a2d0c;
   font-weight: 600;
   transition: all 0.3s ease;
   border-radius: 10px;
   padding: 10px;
+  background: #fff;
 }
 
 .dropdown-content a img {
@@ -118,6 +123,7 @@
   height: 60px;
   object-fit: contain;
 }
+
 
 .dropdown-content a:hover {
   background-color: #fff3e0;
@@ -258,8 +264,12 @@
     width: 300px;
   }
 }
+
 .search-form button img {
-  height: 16px; /* Điều chỉnh kích thước chiều cao */
-  width: 16px;  /* Điều chỉnh kích thước chiều rộng */
-  display: block; /* Loại bỏ khoảng trắng thừa dưới ảnh */
+  height: 16px;
+  /* Điều chỉnh kích thước chiều cao */
+  width: 16px;
+  /* Điều chỉnh kích thước chiều rộng */
+  display: block;
+  /* Loại bỏ khoảng trắng thừa dưới ảnh */
 }

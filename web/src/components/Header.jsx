@@ -10,10 +10,10 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
 
     const categories = [
         { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
-        { key: "Gà Rán", label: "Gà rán", img: "/Images/Hambur.jpg" },
+        { key: "Gà Rán", label: "Gà rán", img: "/Images/Garan.jpg" },
         { key: "Burger", label: "Burger", img: "/Images/Hambur.jpg" },
         { key: "Sandwich", label: "Sandwich", img: "/Images/Hambur.jpg" },
-        { key: "Tacos", label: "Tacos", img: "/Images/Hambur.jpg" }
+        { key: "Tacos", label: "Tacos", img: "/Images/Hambur.jpg" },
     ];
 
     const handleLogout = () => {
@@ -24,7 +24,6 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
 
     const handleSearch = (e) => {
         e.preventDefault();
-        // Chuyển đến ProductList với query search
         if (searchValue.trim() !== "") {
             navigate(`/menu/All?search=${encodeURIComponent(searchValue)}`);
             setSearchValue("");
@@ -43,19 +42,22 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
                 <form className="search-form" onSubmit={handleSearch}>
                     <input
                         type="text"
-                        placeholder=" Tìm món ăn..."
+                        placeholder="Tìm món ăn..."
                         value={searchValue}
                         onChange={(e) => setSearchValue(e.target.value)}
                     />
-                    <button type="submit">  <img src="/Images/search.png" alt="SEARCH" /></button>
+                    <button type="submit">
+                        <img src="/Images/search.png" alt="SEARCH" />
+                    </button>
                 </form>
             </div>
 
             <div className="header-right">
-                <div><button onClick={() => navigate("/")}>Trang chủ</button></div>
+                <button onClick={() => navigate("/")}>Trang chủ</button>
 
+                {/* Dropdown Thực đơn */}
                 <div className="menu-dropdown">
-                    <button>Thực đơn</button>
+                    <button onClick={() => navigate("/menu/All")}>Thực đơn</button>
                     <div className="dropdown-content">
                         {categories.map((c) => (
                             <Link key={c.key} to={`/menu/${c.key}`}>
@@ -66,9 +68,9 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
                     </div>
                 </div>
 
-                <div><button onClick={() => navigate("/")}>Ưu đãi</button></div>
-                <div><button onClick={() => navigate("/")}>Nhà hàng</button></div>
-                <div><button onClick={() => navigate("/")}>Về chúng tôi</button></div>
+                <button onClick={() => navigate("/")}>Ưu đãi</button>
+                <button onClick={() => navigate("/")}>Nhà hàng</button>
+                <button onClick={() => navigate("/")}>Về chúng tôi</button>
 
                 <Link to="/Cart" className="cart-button">
                     Giỏ hàng ({cartCount > 0 ? cartCount : 0})
