@@ -62,7 +62,7 @@ export default function Dashboard() {
     }, []);
 
     if (loading) {
-        return <div className="loading">Đang tải dữ liệu...</div>;
+        return <div className="loading">Đang .</div>;
     }
 
     return (
