@@ -96,7 +96,7 @@
       "id": "6",
       "name": "Combo Burger Bò + Khoai + Pepsi",
       "img": "/Images/Hambur.jpg",
-      "price": 99000,
+      "price": 199000,
       "category": "Combo",
       "description": "Combo tiết kiệm gồm burger bò phô mai, khoai tây chiên và ly Pepsi 330ml.",
       "rating": 4.9,
@@ -313,80 +313,6 @@
         }
       ],
       "total": 59000,
-      "status": "Đã xử lý",
-      "date": "2025-10-21"
-    },
-    {
-      "id": "d7be",
-      "userId": "0a85",
-      "customer": {
-        "name": "a a",
-        "phone": "090",
-        "email": "ad@gmail.com",
-        "address": "12 nguyễn trãi"
-      },
-      "items": [
-        {
-          "id": "1",
-          "name": "Burger Bò Phô Mai",
-          "img": "/Images/Hambur.jpg",
-          "price": 59000,
-          "category": "Burger",
-          "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
-          "rating": 4.8,
-          "reviews": 125,
-          "isAvailable": true,
-          "ingredients": [
-            "Bánh mì",
-            "Thịt bò",
-            "Phô mai",
-            "Rau xà lách",
-            "Sốt BBQ"
-          ],
-          "discount": 10,
-          "quantity": 1
-        },
-        {
-          "id": "3",
-          "name": "Tacos Thịt Bò Mexico",
-          "img": "/Images/Hambur.jpg",
-          "price": 65000,
-          "category": "Tacos",
-          "description": "Bánh tacos kẹp thịt bò xay đậm vị Mexico, kết hợp rau và sốt đặc trưng.",
-          "rating": 4.9,
-          "reviews": 143,
-          "isAvailable": true,
-          "ingredients": [
-            "Bánh tacos",
-            "Thịt bò",
-            "Cà chua",
-            "Xà lách",
-            "Sốt cay Mexico"
-          ],
-          "discount": 5,
-          "quantity": 1
-        },
-        {
-          "id": "2",
-          "name": "Gà Rán Giòn Cay",
-          "img": "/Images/Hambur.jpg",
-          "price": 49000,
-          "category": "Gà Rán",
-          "description": "Miếng gà rán nóng hổi, lớp vỏ giòn rụm và vị cay nhẹ đặc trưng.",
-          "rating": 4.6,
-          "reviews": 98,
-          "isAvailable": true,
-          "ingredients": [
-            "Gà tươi",
-            "Bột chiên",
-            "Gia vị cay",
-            "Dầu ăn"
-          ],
-          "discount": 0,
-          "quantity": 1
-        }
-      ],
-      "total": 173000,
       "status": "Đã xử lý",
       "date": "2025-10-21"
     }
