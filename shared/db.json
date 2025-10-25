@@ -440,21 +440,22 @@
         },
         {
           "id": "2",
-          "name": "Gà Rán Giòn Cay",
-          "img": "/Images/Hambur.jpg",
-          "price": 49000,
-          "category": "Gà Rán",
-          "description": "Miếng gà rán nóng hổi, lớp vỏ giòn rụm và vị cay nhẹ đặc trưng.",
-          "rating": 4.6,
-          "reviews": 98,
-          "isAvailable": true,
+          "name": "Tacos Thịt Bò Mexico",
+          "img": "/Images/download.jpg",
+          "price": 65000,
+          "category": "Tacos",
+          "restaurantId": "r2",
+          "restaurant": "Taco House Bình Thạnh",
+          "description": "Tacos bò Mexico cay nồng, kết hợp rau và sốt đặc trưng.",
+          "rating": 4.9,
+          "reviews": 143,
+          "discount": 5,
           "ingredients": [
-            "Gà tươi",
-            "Bột chiên",
-            "Gia vị cay",
-            "Dầu ăn"
+            "Bánh tacos",
+            "Thịt bò",
+            "Xà lách",
+            "Sốt Mexico"
           ],
-          "discount": 0,
           "quantity": 1
         }
       ],
@@ -465,6 +466,48 @@
     {
       "id": "9481",
       "userId": "0a85",
+      "restaurantId": "r4",
+      "restaurantName": "BBQ Hàn Quốc Seoul Grill",
+      "customer": {
+        "name": "âfaf a",
+        "phone": "090",
+        "email": "lamthanh51124@gmail.com",
+        "address": "12 nguyễn trãi"
+      },
+      "items": [
+        {
+          "id": "4",
+          "name": "Thịt Nướng Bulgogi",
+          "img": "/Images/Bulgogi.jpg",
+          "price": 120000,
+          "category": "BBQ Hàn",
+          "restaurantId": "r4",
+          "restaurant": "Seoul Grill",
+          "description": "Thịt bò ướp sốt Bulgogi nướng thơm lừng, ăn kèm kimchi và cơm trắng.",
+          "rating": 4.7,
+          "reviews": 210,
+          "discount": 8,
+          "ingredients": [
+            "Thịt bò",
+            "Tỏi",
+            "Nước tương",
+            "Đường",
+            "Kimchi"
+          ],
+          "restaurantName": "BBQ Hàn Quốc Seoul Grill",
+          "quantity": 1
+        }
+      ],
+      "total": 120000,
+      "status": "Đã giao",
+      "date": "10/22/2025, 11:51:06 PM",
+      "droneId": 221
+    },
+    {
+      "id": "7977",
+      "userId": "0a85",
+      "restaurantId": "r1",
+      "restaurantName": "Meowchick Quận 1",
       "customer": {
         "name": "a a",
         "phone": "090",
