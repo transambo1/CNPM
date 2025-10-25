@@ -10,10 +10,13 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
 
     const categories = [
         { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
-        { key: "Gà Rán", label: "Gà rán", img: "/Images/Garan.jpg" },
+        { key: "Sushi", label: "Sushi", img: "/Images/Sushi.jpg" },
         { key: "Burger", label: "Burger", img: "/Images/Hambur.jpg" },
-        { key: "Sandwich", label: "Sandwich", img: "/Images/Hambur.jpg" },
-        { key: "Tacos", label: "Tacos", img: "/Images/Hambur.jpg" },
+        { key: "BBQ Hàn", label: "BBQ Hàn", img: "/Images/thit.jpeg" },
+        { key: "Tacos", label: "Tacos", img: "/Images/tacos.jpg" },
+        { key: "Đồ Uống ", label: "Đồ uống", img: "/Images/latte.jpg" },
+        { key: "Pasta", label: "Pasta", img: "/Images/mi.jpg" },
+        { key: "Lẩu", label: "Lẩu", img: "/Images/tomyum.jpg" },
     ];
 
     const handleLogout = () => {
@@ -69,7 +72,8 @@ function Header({ cartCount, currentUser, setCurrentUser }) {
                 </div>
 
                 <button onClick={() => navigate("/")}>Ưu đãi</button>
-                <button onClick={() => navigate("/")}>Nhà hàng</button>
+                <button onClick={() => navigate("/restaurant")}>Nhà hàng</button>
+
                 <button onClick={() => navigate("/")}>Về chúng tôi</button>
 
                 <Link to="/Cart" className="cart-button">

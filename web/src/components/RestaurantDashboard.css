@@ -1,0 +1,130 @@
+/* ===================================== */
+/* RESTAURANT DASHBOARD STYLES (rdash-) */
+/* ===================================== */
+
+.rdash-container {
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    font-family: "Poppins", sans-serif;
+    color: #333;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.rdash-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: #2c3e75;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rdash-loading,
+.rdash-empty {
+    text-align: center;
+    color: #888;
+    font-size: 16px;
+    padding: 20px;
+}
+
+/* ===== Table styles ===== */
+.rdash-table-wrapper {
+    overflow-x: auto;
+}
+
+.rdash-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.rdash-table thead {
+    background: linear-gradient(90deg, #1f4f66, #357b9d);
+    color: #fff;
+}
+
+.rdash-table th,
+.rdash-table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #e6eaf0;
+}
+
+.rdash-table tbody tr:hover {
+    background: #f7faff;
+    transition: background 0.2s ease;
+}
+
+/* ===== Status styles ===== */
+.rdash-status {
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.rdash-status.pending {
+    background: #fff7e6;
+    color: #d48806;
+    border: 1px solid #ffe58f;
+}
+
+.rdash-status.done {
+    background: #e6fffb;
+    color: #08979c;
+    border: 1px solid #87e8de;
+}
+
+/* ===== Buttons ===== */
+.rdash-btn-confirm {
+    background: #357b9d;
+    color: #fff;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rdash-btn-confirm:hover {
+    background: #245e7a;
+    transform: translateY(-2px);
+}
+
+.rdash-done {
+    color: #52c41a;
+    font-weight: 500;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+    .rdash-container {
+        padding: 20px;
+    }
+
+    .rdash-title {
+        font-size: 20px;
+    }
+
+    .rdash-table th,
+    .rdash-table td {
+        padding: 10px;
+        font-size: 14px;
+    }
+}

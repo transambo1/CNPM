@@ -1,0 +1,89 @@
+.rso-container {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    margin: 20px auto;
+    min-width: 1200px;
+    font-family: "Segoe UI", sans-serif;
+}
+
+.rso-title {
+    text-align: center;
+    color: #2d3436;
+    margin-bottom: 20px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.rso-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fafafa;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.rso-table th {
+    background: linear-gradient(90deg, #1f4f66, #357b9d);
+    color: white;
+    padding: 12px 10px;
+    text-align: left;
+}
+
+.rso-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.rso-row {
+    transition: background 0.25s ease;
+    cursor: pointer;
+}
+
+.rso-row:hover {
+    background: #f1f7ff;
+}
+
+.rso-btn-confirm {
+    background: #00b894;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: 0.25s;
+}
+
+.rso-btn-confirm:hover {
+    background: #019874;
+}
+
+.rso-status {
+    font-weight: 600;
+}
+
+.rso-wait {
+    color: #f39c12;
+}
+
+.rso-shipping {
+    color: #0984e3;
+}
+
+.rso-done {
+    color: #27ae60;
+}
+
+.rso-processed {
+    color: #636e72;
+}
+
+.rso-empty,
+.rso-loading {
+    text-align: center;
+    color: #636e72;
+    font-size: 16px;
+    margin-top: 20px;
+}

@@ -9,6 +9,9 @@ import SellerOrders from "./components/SellerOrders";
 import OrderHistory from "./components/OrderHistory";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import RestaurantList from "./components/RestaurantList";
+import RestaurantDetail from "./components/RestaurantDetail";
+import WaitingForConfirmation from "./components/WaitingForConfirmation";
 
 //Admin
 import UserLayout from "./layouts/UserLayout";
@@ -19,9 +22,23 @@ import Users from "./admin/pages/Users";
 import OrderDetail from "./admin/components/OrdersDetail";
 import Products from "./admin/pages/Products";
 
+//Restaurant
+import RestaurantLayout from "./layouts/RestaurantLayout";
+import RestaurantDashboard from "./components/RestaurantDashboard";
+import RestaurantOrders from "./components/RestaurantOrders";
+import RestaurantOrderDetail from "./components/RestaurantOrderDetail";
+import RestaurantProducts from "./components/RestaurantProducts";
+
+
+
 import "./App.css";
+import dbData from "../../shared/db.json";
+
 
 function App() {
+
+  const restaurantsData = dbData.restaurants;
+  const productsData = dbData.products;
   // ==========================
   // 👤 Quản lý người dùng
   // ==========================
@@ -101,7 +118,11 @@ function App() {
           p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, {
+        ...product, quantity: 1,
+        restaurantName: product.restaurantName, // thêm dòng này
+        restaurantId: product.restaurantId
+      }];
     });
   };
 
@@ -149,6 +170,12 @@ function App() {
           <Route path="checkout" element={<Checkout cart={cart} setCart={setCart} currentUser={currentUser} />} />
           <Route path="order-history" element={<OrderHistory />} />
           <Route path="seller-orders" element={<SellerOrders />} />
+          <Route path="waiting/:orderId" element={<WaitingForConfirmation />} />
+          <Route path="restaurant" element={<RestaurantList restaurants={restaurantsData} />} />
+          <Route path="restaurant/:id"
+            element={<RestaurantDetail products={productsData}
+              restaurants={restaurantsData}
+              onAdd={handleAdd} />} />
         </Route>
 
         {/* ===== ADMIN LAYOUT ===== */}
@@ -159,6 +186,15 @@ function App() {
           <Route path="products" element={<Products />} />
           <Route path="users" element={<Users />} />
         </Route>
+
+
+        <Route path="/restaurantadmin/*" element={<RestaurantLayout />}>
+          <Route index element={<RestaurantDashboard />} />
+          <Route path="orders" element={<RestaurantOrders />} />
+          <Route path="orders/:id" element={<RestaurantOrderDetail />} />
+          <Route path="products" element={<RestaurantProducts />} />
+        </Route>
+
       </Routes>
     </BrowserRouter>
   );

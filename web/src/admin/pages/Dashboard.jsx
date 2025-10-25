@@ -136,6 +136,7 @@ export default function Dashboard() {
                         <th>SDT</th>
                         <th>Thành tiền</th>
                         <th>Ngày</th>
+                        <th>Nhà hàng</th>
                         <th>Tình trạng</th>
                     </tr>
                 </thead>
@@ -150,11 +151,14 @@ export default function Dashboard() {
 
                                 <td>{(order.total ?? 0).toLocaleString()}đ</td>
                                 <td>{order.date}</td>
+                                <td>{order.items?.[0]?.restaurant || "Không xác định"}</td>
+
+
                                 <td
                                     className={
                                         order.status === "Đã giao"
                                             ? "done"
-                                            : order.status === "Đã xử lý"
+                                            : order.status === "Đang giao bằng drone"
                                                 ? "processing"
                                                 : "pending"
                                     }

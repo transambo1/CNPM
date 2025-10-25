@@ -150,7 +150,7 @@ export default function Products() {
                             <img src={selectedProduct.img} alt="product" />
                         </div>
 
-                        <div className="product-info">
+                        <div className="product-info1">
                             <h3 className="product-name">{selectedProduct.name}</h3>
 
                             <p><b>Danh mục:</b> {selectedProduct.category}</p>

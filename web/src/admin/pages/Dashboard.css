@@ -115,7 +115,9 @@ td.processing {
 }
 
 td.pending {
-    color: #6b7280;
+    color: #de0c0c;
+    background: #f9fafb;
+    font-weight: 600;
 }
 
 /* === LOADING === */

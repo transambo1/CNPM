@@ -47,8 +47,12 @@ function OrderHistory() {
                                     <strong>Tổng tiền: {order.total.toLocaleString()}₫</strong>
                                 </div>
                                 <div className="order-status">
-                                    Trạng thái: <span>{order.status}</span>
+                                    Trạng thái:{" "}
+                                    <span className={`status-tag ${order.status.replace(/\s+/g, '-').toLowerCase()}`}>
+                                        {order.status}
+                                    </span>
                                 </div>
+
                             </div>
                         </li>
                     ))}

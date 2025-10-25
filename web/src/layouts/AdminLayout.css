@@ -97,7 +97,5 @@
         flex-direction: row;
     }
 
-    .admin-content {
-        /* Không cần padding-top vì header admin có thể không dùng */
-    }
+
 }

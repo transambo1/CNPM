@@ -1,0 +1,132 @@
+/* Tổng thể trang */
+.restaurant-list {
+    text-align: center;
+    padding: 40px 20px;
+    background: #fafafa;
+    min-height: 100vh;
+}
+
+/* Tiêu đề */
+.restaurant-list h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+    color: #333;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+/* Lưới hiển thị nhà hàng */
+.restaurant-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    justify-items: center;
+    max-width: 1300px;
+    margin: 0 auto;
+}
+
+/* Thẻ nhà hàng */
+.restaurant-card {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    cursor: pointer;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    width: 100%;
+    max-width: 280px;
+}
+
+.restaurant-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12);
+}
+
+/* Ảnh nhà hàng */
+.restaurant-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 1px solid #eee;
+}
+
+/* Tên và mô tả */
+.restaurant-card h3 {
+    font-size: 1.2rem;
+    margin: 12px 10px 4px;
+    color: #333;
+    font-weight: 600;
+}
+
+.restaurant-card p {
+    margin: 4px 10px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Mô tả ngắn */
+.restaurant-card .desc {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 12px;
+}
+
+/* Hiệu ứng hover hình ảnh */
+.restaurant-card img {
+    transition: transform 0.4s ease;
+}
+
+.restaurant-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .restaurant-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 900px) {
+    .restaurant-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .restaurant-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .restaurant-card {
+        max-width: 90%;
+    }
+}
+
+.pagination {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+}
+
+.pagination button {
+    background: #ff6600;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.pagination button:hover {
+    background: #e65c00;
+}
+
+.pagination button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}

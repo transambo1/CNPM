@@ -1,0 +1,224 @@
+/* RestaurantDetail.css */
+
+/* --- Cấu trúc chung của trang --- */
+.restaurant-detail-page {
+    max-width: 1200px;
+    /* Giới hạn chiều rộng nội dung */
+    margin: 0 auto;
+    /* Căn giữa trang */
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
+.loading {
+    text-align: center;
+    padding: 50px 0;
+    font-size: 1.2em;
+    color: #555;
+}
+
+/* --- Phần Header của Nhà hàng --- */
+.restaurant-header {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
+}
+
+.restaurant-header img {
+    width: 350px;
+    height: 250px;
+    object-fit: cover;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.restaurant-info {
+    flex-grow: 1;
+}
+
+.restaurant-info h1 {
+    font-size: 2.5em;
+    color: #e44d26;
+    /* Màu cam nổi bật */
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.restaurant-address {
+    font-size: 1.1em;
+    color: #666;
+    margin-bottom: 15px;
+    padding-left: 20px;
+    position: relative;
+}
+
+/* Icon địa chỉ nhỏ */
+.restaurant-address::before {
+    content: "📍";
+    /* Ký tự emoji làm icon */
+    position: absolute;
+    left: 0;
+    color: #e44d26;
+}
+
+.restaurant-description {
+    font-size: 1em;
+    line-height: 1.6;
+    color: #444;
+    border-left: 3px solid #f0f0f0;
+    padding-left: 15px;
+}
+
+/* --- Phần Menu/Sản phẩm --- */
+.menu-title {
+    font-size: 2em;
+    color: #333;
+    border-bottom: 2px solid #e44d26;
+    padding-bottom: 10px;
+    margin-top: 40px;
+    margin-bottom: 30px;
+}
+
+.product-grid {
+    display: grid;
+    /* 4 cột, tự điều chỉnh khi màn hình nhỏ */
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.no-products {
+    grid-column: 1 / -1;
+    /* Chiếm hết chiều rộng */
+    text-align: center;
+    padding: 50px;
+    font-size: 1.1em;
+    color: #777;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+}
+
+/* --- Thẻ Sản phẩm (Product Card) --- */
+.product-card1 {
+    background-color: #fff6f6;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    /* Hiệu ứng nhấc lên */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.product-link1 {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    width: 100%;
+    height: 250px;
+
+}
+
+.product-card1 img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-bottom: 1px solid #eee;
+    transition: opacity 0.3s ease;
+}
+
+.product-card:hover img {
+    opacity: 0.9;
+}
+
+.product-card1 h3 {
+    font-size: 1.2em;
+    margin: 15px 15px 5px;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: center;
+    text-overflow: ellipsis;
+    /* ... khi tên quá dài */
+}
+
+.product-price1 {
+    font-size: 1.3em;
+    color: #e44d26;
+    /* Giá tiền nổi bật */
+    font-weight: bold;
+    margin: 0 15px 15px;
+}
+
+.discount-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #4CAF50;
+    /* Màu xanh lá cho giảm giá */
+    color: white;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 0.9em;
+    z-index: 10;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Media Queries cho màn hình nhỏ hơn --- */
+@media (max-width: 900px) {
+    .restaurant-header {
+        flex-direction: column;
+        /* Chuyển sang xếp dọc trên màn hình nhỏ */
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .restaurant-header img {
+        width: 100%;
+        max-width: 400px;
+        height: auto;
+    }
+
+    .restaurant-info {
+        margin-top: 20px;
+    }
+
+    .restaurant-address {
+        padding-left: 0;
+    }
+
+    .restaurant-address::before {
+        content: none;
+        /* Bỏ icon trên mobile */
+    }
+}
+
+@media (max-width: 600px) {
+    .restaurant-detail-page {
+        padding: 10px;
+    }
+
+    .product-grid {
+        /* Chuyển sang 2 cột trên điện thoại */
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .product-card h3 {
+        font-size: 1.1em;
+    }
+
+    .menu-title {
+        font-size: 1.7em;
+    }
+}
