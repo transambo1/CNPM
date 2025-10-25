@@ -1,7 +1,7 @@
 /* ========== TOÀN TRANG ========== */
 .order-detail-page {
     max-width: 1200px;
-    height: 540px;
+    height: fit-content;
     margin: 50px auto;
     background: linear-gradient(180deg, #ffffff, #f9f9f9);
     padding: 40px 50px;

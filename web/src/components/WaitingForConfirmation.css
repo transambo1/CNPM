@@ -1,0 +1,159 @@
+.waiting-page {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 30px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #fefefe;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.waiting-page h2 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #333;
+}
+
+/* Thông tin khách hàng & đơn hàng */
+.order-info {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+}
+
+.order-info div {
+    margin-bottom: 8px;
+    font-size: 16px;
+    color: #444;
+}
+
+/* Danh sách món */
+.order-items {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+}
+
+.order-items h3 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.order-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.order-item img {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 10px;
+    margin-right: 15px;
+}
+
+.item-info p {
+    margin: 3px 0;
+    font-size: 15px;
+    color: #555;
+}
+
+.item-name {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Tổng tiền */
+.order-total {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: right;
+    margin-bottom: 20px;
+}
+
+/* Trạng thái đơn hàng */
+.order-status {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+.status {
+    padding: 15px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 16px;
+    display: inline-block;
+}
+
+.pending {
+    background-color: #f0ad4e;
+    color: #fff;
+}
+
+.flying {
+    background-color: #5bc0de;
+    color: #fff;
+}
+
+.delivered {
+    background-color: #5cb85c;
+    color: #fff;
+}
+
+/* Bản đồ + nút */
+.drone-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.drone-map {
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+.drone-map h3 {
+    margin-bottom: 12px;
+    color: #333;
+}
+
+.drone-map iframe {
+    width: 100%;
+    height: 300px;
+    border: 0;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Nút đã nhận hàng */
+.btn-received {
+    padding: 14px 25px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    background-color: #e44d26;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-received:hover {
+    background-color: #d1401f;
+    transform: translateY(-2px);
+}
+
+/* Loading */
+.loading {
+    text-align: center;
+    font-size: 18px;
+    padding: 50px;
+    color: #777;
+}

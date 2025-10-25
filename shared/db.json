@@ -1,4 +1,62 @@
 {
+  "restaurants": [
+    {
+      "id": "r1",
+      "name": "Meowchick Quận 1",
+      "address": "123 Nguyễn Trãi, Quận 1, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Chi nhánh trung tâm nổi tiếng với món gà rán giòn và burger bò phô mai."
+    },
+    {
+      "id": "r2",
+      "name": "Taco House Bình Thạnh",
+      "address": "45 Phan Xích Long, Bình Thạnh, TP.HCM",
+      "image": "/Images/download.jpg",
+      "description": "Chuyên món Mexico chính hiệu, đặc biệt là tacos và burrito."
+    },
+    {
+      "id": "r3",
+      "name": "Sushi Zen Nhật Bản",
+      "address": "12 Lê Thánh Tôn, Quận 1, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Không gian Nhật truyền thống với sushi, sashimi và ramen tươi ngon mỗi ngày."
+    },
+    {
+      "id": "r4",
+      "name": "BBQ Hàn Quốc Seoul Grill",
+      "address": "88 Nguyễn Đình Chiểu, Quận 3, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Trải nghiệm nướng thịt Hàn Quốc chuẩn vị, đa dạng món panchan hấp dẫn."
+    },
+    {
+      "id": "r5",
+      "name": "Nhà Hàng Chay Sen Vàng",
+      "address": "35 Nguyễn Thị Minh Khai, Quận 1, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Không gian yên tĩnh, phục vụ các món chay thanh đạm, tốt cho sức khỏe."
+    },
+    {
+      "id": "r6",
+      "name": "Cà Phê & Bánh Ngọt Sweetie",
+      "address": "27 Trần Hưng Đạo, Quận 5, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Không gian dễ thương với cà phê, trà sữa và bánh ngọt nhà làm."
+    },
+    {
+      "id": "r7",
+      "name": "Mì Ý Pasta Roma",
+      "address": "09 Lý Tự Trọng, Quận 1, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Ẩm thực Ý tinh tế với pasta, pizza và salad tươi chuẩn vị châu Âu."
+    },
+    {
+      "id": "r8",
+      "name": "Lẩu Thái Tomyum King",
+      "address": "59 Cách Mạng Tháng 8, Quận 10, TP.HCM",
+      "image": "/Images/Hambur.jpg",
+      "description": "Lẩu Thái cay nồng, hải sản tươi sống và nước dùng đậm đà chua cay."
+    }
+  ],
   "products": [
     {
       "id": "1",
@@ -6,91 +64,96 @@
       "img": "/Images/Hambur.jpg",
       "price": 59000,
       "category": "Burger",
-      "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
+      "restaurantId": "r1",
+      "restaurant": "Meowchick Quận 1",
+      "description": "Bánh burger bò nướng thơm, phô mai tan chảy và rau tươi giòn.",
       "rating": 4.8,
       "reviews": 125,
-      "isAvailable": true,
+      "discount": 10,
       "ingredients": [
         "Bánh mì",
         "Thịt bò",
         "Phô mai",
-        "Rau xà lách",
+        "Xà lách",
         "Sốt BBQ"
-      ],
-      "discount": 10
+      ]
     },
     {
       "id": "2",
-      "name": "Gà Rán Giòn Cay",
-      "img": "/Images/Hambur.jpg",
-      "price": 49000,
-      "category": "Gà Rán",
-      "description": "Miếng gà rán nóng hổi, lớp vỏ giòn rụm và vị cay nhẹ đặc trưng.",
-      "rating": 4.6,
-      "reviews": 98,
-      "isAvailable": true,
-      "ingredients": [
-        "Gà tươi",
-        "Bột chiên",
-        "Gia vị cay",
-        "Dầu ăn"
-      ],
-      "discount": 0
-    },
-    {
-      "id": "3",
       "name": "Tacos Thịt Bò Mexico",
-      "img": "/Images/Hambur.jpg",
+      "img": "/Images/tacos.jpg",
       "price": 65000,
       "category": "Tacos",
-      "description": "Bánh tacos kẹp thịt bò xay đậm vị Mexico, kết hợp rau và sốt đặc trưng.",
+      "restaurantId": "r2",
+      "restaurant": "Taco House Bình Thạnh",
+      "description": "Tacos bò Mexico cay nồng, kết hợp rau và sốt đặc trưng.",
       "rating": 4.9,
       "reviews": 143,
-      "isAvailable": true,
+      "discount": 5,
       "ingredients": [
         "Bánh tacos",
         "Thịt bò",
-        "Cà chua",
         "Xà lách",
-        "Sốt cay Mexico"
-      ],
-      "discount": 5
+        "Sốt Mexico"
+      ]
+    },
+    {
+      "id": "3",
+      "name": "Sushi Cá Hồi",
+      "img": "/Images/Sushi.jpg",
+      "price": 89000,
+      "category": "Sushi",
+      "restaurantId": "r3",
+      "restaurant": "Sushi Zen Nhật Bản",
+      "description": "Cá hồi tươi, cơm Nhật dẻo và wasabi cay nồng.",
+      "rating": 4.9,
+      "reviews": 300,
+      "discount": 0,
+      "ingredients": [
+        "Cơm sushi",
+        "Cá hồi tươi",
+        "Rong biển",
+        "Wasabi"
+      ]
     },
     {
       "id": "4",
-      "name": "Sandwich Trứng & Thịt Xông Khói",
-      "img": "/Images/Hambur.jpg",
-      "price": 55000,
-      "category": "Sandwich",
-      "description": "Sandwich kẹp trứng ốp la và thịt xông khói, lựa chọn tuyệt vời cho bữa sáng.",
-      "rating": 4.5,
-      "reviews": 87,
-      "isAvailable": true,
+      "name": "Thịt Nướng Bulgogi",
+      "img": "/Images/thit.jpeg",
+      "price": 120000,
+      "category": "BBQ Hàn",
+      "restaurantId": "r4",
+      "restaurant": "Seoul Grill",
+      "description": "Thịt bò ướp sốt Bulgogi nướng thơm lừng, ăn kèm kimchi và cơm trắng.",
+      "rating": 4.7,
+      "reviews": 210,
+      "discount": 8,
       "ingredients": [
-        "Bánh mì sandwich",
-        "Trứng",
-        "Thịt xông khói",
-        "Bơ",
-        "Xà lách"
-      ],
-      "discount": 0
+        "Thịt bò",
+        "Tỏi",
+        "Nước tương",
+        "Đường",
+        "Kimchi"
+      ]
     },
     {
       "id": "5",
-      "name": "Khoai Tây Chiên Giòn",
-      "img": "/Images/Hambur.jpg",
-      "price": 29000,
-      "category": "Phụ",
-      "description": "Khoai tây chiên vàng ruộm, giòn ngoài mềm trong, dùng kèm tương ớt hoặc sốt phô mai.",
-      "rating": 4.7,
-      "reviews": 210,
-      "isAvailable": true,
+      "name": "Bún Huế Chay",
+      "img": "/Images/chay.jpg",
+      "price": 45000,
+      "category": "Món Chay",
+      "restaurantId": "r5",
+      "restaurant": "Sen Vàng",
+      "description": "Nước dùng rau củ đậm đà, nấm và chả chay hấp dẫn.",
+      "rating": 4.6,
+      "reviews": 120,
+      "discount": 0,
       "ingredients": [
-        "Khoai tây",
-        "Dầu chiên",
-        "Muối"
-      ],
-      "discount": 0
+        "Nấm",
+        "Chả chay",
+        "Bún",
+        "Rau thơm"
+      ]
     },
     {
       "id": "6",
@@ -111,41 +174,43 @@
     },
     {
       "id": "7",
-      "name": "Burger Bò Phô Mai",
-      "img": "/Images/Hambur.jpg",
-      "price": 59000,
-      "category": "Burger",
-      "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
-      "rating": 4.8,
-      "reviews": 125,
-      "isAvailable": true,
+      "name": "Mì Ý Carbonara",
+      "img": "/Images/mi.jpg",
+      "price": 99000,
+      "category": "Pasta",
+      "restaurantId": "r7",
+      "restaurant": "Pasta Roma",
+      "description": "Mì Ý sốt kem phô mai, thịt xông khói và tiêu đen.",
+      "rating": 4.9,
+      "reviews": 260,
+      "discount": 10,
       "ingredients": [
-        "Bánh mì",
-        "Thịt bò",
+        "Mì Ý",
+        "Kem",
         "Phô mai",
-        "Rau xà lách",
-        "Sốt BBQ"
-      ],
-      "discount": 10
+        "Thịt xông khói"
+      ]
     },
     {
       "id": "8",
-      "name": "Burger Bò Phô Mai",
-      "img": "/Images/Hambur.jpg",
-      "price": 80000,
-      "category": "Burger",
-      "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
+      "name": "Lẩu Tomyum Hải Sản",
+      "img": "/Images/tomyum.jpg",
+      "price": 179000,
+      "category": "Lẩu",
+      "restaurantId": "r8",
+      "restaurant": "Tomyum King",
+      "description": "Lẩu Thái cay chua, hải sản tươi và rau nấm tươi ngon.",
       "rating": 4.8,
-      "reviews": 125,
-      "isAvailable": true,
+      "reviews": 190,
+      "discount": 5,
       "ingredients": [
-        "Bánh mì",
-        "Thịt bò",
-        "Phô mai",
-        "Rau xà lách",
-        "Sốt BBQ"
-      ],
-      "discount": 10
+        "Tôm",
+        "Mực",
+        "Nấm",
+        "Sả",
+        "Lá chanh",
+        "Ớt"
+      ]
     }
   ],
   "users": [
@@ -176,80 +241,41 @@
       "username": "transambo1"
     }
   ],
+  "drones": [
+    {
+      "id": "1",
+      "name": "Drone Alpha",
+      "status": "Rảnh",
+      "battery": 98,
+      "currentOrderId": null,
+      "restaurantId": null,
+      "destination": null
+    },
+    {
+      "id": "2",
+      "name": "Drone Beta",
+      "status": "Rảnh",
+      "battery": 90,
+      "currentOrderId": null,
+      "restaurantId": null,
+      "destination": null
+    },
+    {
+      "id": "3",
+      "name": "Drone Gamma",
+      "status": "Rảnh",
+      "battery": 85,
+      "currentOrderId": null,
+      "restaurantId": null,
+      "destination": null
+    }
+  ],
   "orders": [
     {
-      "id": "0fac",
+      "id": "2c34",
       "userId": "0a85",
-      "customer": {
-        "name": "a a",
-        "phone": "090",
-        "email": "ad@gmail.com",
-        "address": "12 nguyễn trãi"
-      },
-      "items": [
-        {
-          "id": 1,
-          "name": "Burger Bò Phô Mai",
-          "img": "/Images/Hambur.jpg",
-          "price": 59000,
-          "category": "Burger",
-          "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
-          "rating": 4.8,
-          "reviews": 125,
-          "isAvailable": true,
-          "ingredients": [
-            "Bánh mì",
-            "Thịt bò",
-            "Phô mai",
-            "Rau xà lách",
-            "Sốt BBQ"
-          ],
-          "discount": 10,
-          "quantity": 1
-        }
-      ],
-      "total": 59000,
-      "status": "Đã xử lý",
-      "date": "2025-10-19"
-    },
-    {
-      "id": "bd81",
-      "userId": "0a85",
-      "customer": {
-        "name": "a a",
-        "phone": "090",
-        "email": "ad@gmail.com",
-        "address": "12 nguyễn trãi"
-      },
-      "items": [
-        {
-          "id": "1",
-          "name": "Burger Bò Phô Mai",
-          "img": "/Images/Hambur.jpg",
-          "price": 59000,
-          "category": "Burger",
-          "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
-          "rating": 4.8,
-          "reviews": 125,
-          "isAvailable": true,
-          "ingredients": [
-            "Bánh mì",
-            "Thịt bò",
-            "Phô mai",
-            "Rau xà lách",
-            "Sốt BBQ"
-          ],
-          "discount": 10,
-          "quantity": 1
-        }
-      ],
-      "total": 59000,
-      "status": "Đã xử lý",
-      "date": "2025-10-20"
-    },
-    {
-      "id": "170a",
-      "userId": "0a85",
+      "restaurantId": "r2",
+      "restaurantName": "Không xác định",
       "customer": {
         "name": "a a",
         "phone": "090",
@@ -259,31 +285,75 @@
       "items": [
         {
           "id": "2",
-          "name": "Gà Rán Giòn Cay",
-          "img": "/Images/Hambur.jpg",
-          "price": 49000,
-          "category": "Gà Rán",
-          "description": "Miếng gà rán nóng hổi, lớp vỏ giòn rụm và vị cay nhẹ đặc trưng.",
-          "rating": 4.6,
-          "reviews": 98,
-          "isAvailable": true,
+          "name": "Tacos Thịt Bò Mexico",
+          "img": "/Images/download.jpg",
+          "price": 65000,
+          "category": "Tacos",
+          "restaurantId": "r2",
+          "restaurant": "Taco House Bình Thạnh",
+          "description": "Tacos bò Mexico cay nồng, kết hợp rau và sốt đặc trưng.",
+          "rating": 4.9,
+          "reviews": 143,
+          "discount": 5,
           "ingredients": [
-            "Gà tươi",
-            "Bột chiên",
-            "Gia vị cay",
-            "Dầu ăn"
+            "Bánh tacos",
+            "Thịt bò",
+            "Xà lách",
+            "Sốt Mexico"
           ],
-          "discount": 0,
           "quantity": 1
         }
       ],
-      "total": 49000,
-      "status": "Đang xử lý",
-      "date": "2025-10-20"
+      "total": 65000,
+      "status": "Đã giao",
+      "date": "2025-10-22",
+      "droneId": 315
     },
     {
-      "id": "7daf",
+      "id": "7148",
       "userId": "0a85",
+      "restaurantId": "r4",
+      "restaurantName": "BBQ Hàn Quốc Seoul Grill",
+      "customer": {
+        "name": "âfaf a",
+        "phone": "090",
+        "email": "lamthanh51124@gmail.com",
+        "address": "12 nguyễn trãi"
+      },
+      "items": [
+        {
+          "id": "4",
+          "name": "Thịt Nướng Bulgogi",
+          "img": "/Images/Bulgogi.jpg",
+          "price": 120000,
+          "category": "BBQ Hàn",
+          "restaurantId": "r4",
+          "restaurant": "Seoul Grill",
+          "description": "Thịt bò ướp sốt Bulgogi nướng thơm lừng, ăn kèm kimchi và cơm trắng.",
+          "rating": 4.7,
+          "reviews": 210,
+          "discount": 8,
+          "ingredients": [
+            "Thịt bò",
+            "Tỏi",
+            "Nước tương",
+            "Đường",
+            "Kimchi"
+          ],
+          "restaurantName": "BBQ Hàn Quốc Seoul Grill",
+          "quantity": 1
+        }
+      ],
+      "total": 120000,
+      "status": "Đã giao",
+      "date": "10/22/2025, 11:51:06 PM",
+      "droneId": 221
+    },
+    {
+      "id": "7977",
+      "userId": "0a85",
+      "restaurantId": "r1",
+      "restaurantName": "Meowchick Quận 1",
       "customer": {
         "name": "a a",
         "phone": "090",
@@ -297,18 +367,20 @@
           "img": "/Images/Hambur.jpg",
           "price": 59000,
           "category": "Burger",
-          "description": "Bánh burger kẹp thịt bò nướng thơm lừng, thêm lát phô mai tan chảy và rau tươi giòn.",
+          "restaurantId": "r1",
+          "restaurant": "Meowchick Quận 1",
+          "description": "Bánh burger bò nướng thơm, phô mai tan chảy và rau tươi giòn.",
           "rating": 4.8,
           "reviews": 125,
-          "isAvailable": true,
+          "discount": 10,
           "ingredients": [
             "Bánh mì",
             "Thịt bò",
             "Phô mai",
-            "Rau xà lách",
+            "Xà lách",
             "Sốt BBQ"
           ],
-          "discount": 10,
+          "restaurantName": "Meowchick Quận 1",
           "quantity": 1
         }
       ],
@@ -368,21 +440,22 @@
         },
         {
           "id": "2",
-          "name": "Gà Rán Giòn Cay",
-          "img": "/Images/Hambur.jpg",
-          "price": 49000,
-          "category": "Gà Rán",
-          "description": "Miếng gà rán nóng hổi, lớp vỏ giòn rụm và vị cay nhẹ đặc trưng.",
-          "rating": 4.6,
-          "reviews": 98,
-          "isAvailable": true,
+          "name": "Tacos Thịt Bò Mexico",
+          "img": "/Images/download.jpg",
+          "price": 65000,
+          "category": "Tacos",
+          "restaurantId": "r2",
+          "restaurant": "Taco House Bình Thạnh",
+          "description": "Tacos bò Mexico cay nồng, kết hợp rau và sốt đặc trưng.",
+          "rating": 4.9,
+          "reviews": 143,
+          "discount": 5,
           "ingredients": [
-            "Gà tươi",
-            "Bột chiên",
-            "Gia vị cay",
-            "Dầu ăn"
+            "Bánh tacos",
+            "Thịt bò",
+            "Xà lách",
+            "Sốt Mexico"
           ],
-          "discount": 0,
           "quantity": 1
         }
       ],
@@ -393,6 +466,48 @@
     {
       "id": "9481",
       "userId": "0a85",
+      "restaurantId": "r4",
+      "restaurantName": "BBQ Hàn Quốc Seoul Grill",
+      "customer": {
+        "name": "âfaf a",
+        "phone": "090",
+        "email": "lamthanh51124@gmail.com",
+        "address": "12 nguyễn trãi"
+      },
+      "items": [
+        {
+          "id": "4",
+          "name": "Thịt Nướng Bulgogi",
+          "img": "/Images/Bulgogi.jpg",
+          "price": 120000,
+          "category": "BBQ Hàn",
+          "restaurantId": "r4",
+          "restaurant": "Seoul Grill",
+          "description": "Thịt bò ướp sốt Bulgogi nướng thơm lừng, ăn kèm kimchi và cơm trắng.",
+          "rating": 4.7,
+          "reviews": 210,
+          "discount": 8,
+          "ingredients": [
+            "Thịt bò",
+            "Tỏi",
+            "Nước tương",
+            "Đường",
+            "Kimchi"
+          ],
+          "restaurantName": "BBQ Hàn Quốc Seoul Grill",
+          "quantity": 1
+        }
+      ],
+      "total": 120000,
+      "status": "Đã giao",
+      "date": "10/22/2025, 11:51:06 PM",
+      "droneId": 221
+    },
+    {
+      "id": "7977",
+      "userId": "0a85",
+      "restaurantId": "r1",
+      "restaurantName": "Meowchick Quận 1",
       "customer": {
         "name": "a a",
         "phone": "090",
