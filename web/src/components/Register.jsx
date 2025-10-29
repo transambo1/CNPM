@@ -1,107 +1,113 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth, db } from "../firebase";
+import { doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext"; // ✅ import context
 import "./Register.css";
 
 function Register() {
-    const [firstname, setFirstname] = useState("");
-    const [lastname, setLastname] = useState("");
-    const [password, setPassword] = useState("");
-    const [phonenumber, setPhonenumber] = useState("");
-    const [address, setAddress] = useState("");
+  const [firstname, setFirstname] = useState("");
+  const [lastname, setLastname] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phonenumber, setPhonenumber] = useState("");
+  const [address, setAddress] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { setCurrentUser } = useAuth(); // ✅ lấy setCurrentUser để tự login
 
-    const navigate = useNavigate();
-    const [showRegister, setShowRegister] = useState(true);
+  const handleRegister = async () => {
+    setError("");
 
-    const handleRegister = async () => {
-        if (!firstname || !lastname || !password || !phonenumber || !address) {
-            alert("Vui lòng nhập đầy đủ thông tin!");
-            return;
-        }
+    // 1️⃣ Trim input
+    const fName = firstname.trim();
+    const lName = lastname.trim();
+    const mail = email.trim();
+    const pwd = password.trim();
+    const phone = phonenumber.trim();
+    const addr = address.trim();
 
-        try {
-            // Kiểm tra số điện thoại đã tồn tại chưa (đảm bảo so sánh chuỗi)
-            const resCheck = await fetch(`http://localhost:5002/users?phonenumber=${encodeURIComponent(phonenumber)}`);
-            const dataCheck = await resCheck.json();
+    if (!fName || !lName || !mail || !pwd || !phone || !addr) {
+      setError("Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
 
-            if (dataCheck.some(u => String(u.phonenumber) === String(phonenumber))) {
-                alert("Số điện thoại này đã được đăng ký!");
-                return;
-            }
+    try {
+      // 2️⃣ Kiểm tra trùng số điện thoại
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("phonenumber", "==", phone));
+      const querySnapshot = await getDocs(q);
 
-            // Gửi request tạo user mới
-            const res = await fetch("http://localhost:5002/users", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    firstname,
-                    lastname,
-                    password,
-                    phonenumber,
-                    address,
-                    role: "customer",
-                }),
-            });
+      if (!querySnapshot.empty) {
+        setError("Số điện thoại này đã được đăng ký!");
+        return;
+      }
 
-            if (res.ok) {
-                alert("Đăng ký thành công!");
-                navigate("/login");
-            } else {
-                alert("Đã xảy ra lỗi khi đăng ký!");
-            }
-        } catch (err) {
-            console.error("Lỗi đăng ký:", err);
-            alert("Lỗi kết nối server!");
-        }
-    };
+      // 3️⃣ Tạo user trong Firebase Authentication
+      const userCredential = await createUserWithEmailAndPassword(auth, mail, pwd);
+      const user = userCredential.user;
 
+      // 4️⃣ Lưu thông tin bổ sung vào Firestore
+      const userData = {
+        uid: user.uid,
+        email: user.email,
+        firstname: fName,
+        lastname: lName,
+        phonenumber: phone,
+        address: addr,
+        role: "customer",
+        createdAt: new Date(),
+      };
 
-    return (
-        <div className="register-container-simple">
-            <h2>Đăng ký tài khoản</h2>
+      await setDoc(doc(db, "users", user.uid), userData);
 
-            <input
-                type="text"
-                placeholder="Họ"
-                value={firstname}
-                onChange={(e) => setFirstname(e.target.value)}
-            />
-            <input
-                type="text"
-                placeholder="Tên"
-                value={lastname}
-                onChange={(e) => setLastname(e.target.value)}
-            />
-            <input
-                type="text"
-                placeholder="Số điện thoại"
-                value={phonenumber}
-                onChange={(e) => setPhonenumber(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Mật khẩu"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <input
-                type="text"
-                placeholder="Địa chỉ"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-            />
+  
 
-            <button onClick={handleRegister}>Đăng ký</button>
+      alert("Đăng ký thành công!");
+      navigate("/login"); // redirect về trang home, header sẽ hiển thị user
+    } catch (err) {
+      console.error("Firebase Register Error:", err);
+      switch (err.code) {
+        case "auth/email-already-in-use":
+          setError("Địa chỉ email này đã được đăng ký.");
+          break;
+        case "auth/weak-password":
+          setError("Mật khẩu phải có ít nhất 6 ký tự.");
+          break;
+        case "auth/invalid-email":
+          setError("Địa chỉ email không hợp lệ.");
+          break;
+        default:
+          setError("Đã có lỗi xảy ra trong quá trình đăng ký.");
+          break;
+      }
+    }
+  };
 
-            <p>
-                Đã có tài khoản?{" "}
-                <span>
-                    <Link to="/login" style={{ textDecoration: "none", color: "#d2191a" }}>
-                        Đăng nhập
-                    </Link>
-                </span>
-            </p>
-        </div>
-    );
+  return (
+    <div className="register-container-simple">
+      <h2>Đăng ký tài khoản</h2>
+
+      <input type="text" placeholder="Họ" value={firstname} onChange={e => setFirstname(e.target.value)} />
+      <input type="text" placeholder="Tên" value={lastname} onChange={e => setLastname(e.target.value)} />
+      <input type="email" placeholder="Email (*)" value={email} onChange={e => setEmail(e.target.value)} />
+      <input type="text" placeholder="Số điện thoại" value={phonenumber} onChange={e => setPhonenumber(e.target.value)} />
+      <input type="password" placeholder="Mật khẩu (*)" value={password} onChange={e => setPassword(e.target.value)} />
+      <input type="text" placeholder="Địa chỉ" value={address} onChange={e => setAddress(e.target.value)} />
+
+      {error && <p className="error-message">{error}</p>}
+
+      <button onClick={handleRegister}>Đăng ký</button>
+
+      <p>
+        Đã có tài khoản?{" "}
+        <Link to="/login" style={{ textDecoration: "none", color: "#d2191a" }}>
+          Đăng nhập
+        </Link>
+      </p>
+    </div>
+  );
 }
 
 export default Register;

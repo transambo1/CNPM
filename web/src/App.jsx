@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Routes, Route, BrowserRouter } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "./firebase";
+import { useAuth } from "./context/AuthContext"; // 🔹 Lấy currentUser từ context
+import "leaflet/dist/leaflet.css";
+import "./App.css";
 
+// ===== USER COMPONENTS =====
 import ProductList from "./components/ProductList";
 import ProductDetail from "./components/ProductDetail";
 import Cart from "./components/Cart";
@@ -13,7 +19,7 @@ import RestaurantList from "./components/RestaurantList";
 import RestaurantDetail from "./components/RestaurantDetail";
 import WaitingForConfirmation from "./components/WaitingForConfirmation";
 
-//Admin
+// ===== ADMIN =====
 import UserLayout from "./layouts/UserLayout";
 import AdminLayout from "./layouts/AdminLayout";
 import Dashboard from "./admin/pages/Dashboard";
@@ -22,37 +28,47 @@ import Users from "./admin/pages/Users";
 import OrderDetail from "./admin/components/OrdersDetail";
 import Products from "./admin/pages/Products";
 
-//Restaurant
+// ===== RESTAURANT ADMIN =====
 import RestaurantLayout from "./layouts/RestaurantLayout";
 import RestaurantDashboard from "./components/RestaurantDashboard";
 import RestaurantOrders from "./components/RestaurantOrders";
 import RestaurantOrderDetail from "./components/RestaurantOrderDetail";
 import RestaurantProducts from "./components/RestaurantProducts";
-
-
-
-import "./App.css";
-import dbData from "../../shared/db.json";
-
+import DroneList from "./components/DroneList";
 
 function App() {
-
-  const restaurantsData = dbData.restaurants;
-  const productsData = dbData.products;
-  // ==========================
-  // 👤 Quản lý người dùng
-  // ==========================
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const raw = localStorage.getItem("currentUser");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  });
+  const { currentUser } = useAuth(); // 🔹 Lấy currentUser từ context
 
   // ==========================
-  // 🛒 Quản lý giỏ hàng (đọc từ localStorage NGAY TỪ ĐẦU)
+  // 🔥 Dữ liệu Firebase
+  // ==========================
+  const [restaurantsData, setRestaurantsData] = useState([]);
+  const [productsData, setProductsData] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const restaurantsSnap = await getDocs(collection(db, "restaurants"));
+        const restaurantList = restaurantsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setRestaurantsData(restaurantList);
+
+        const productsSnap = await getDocs(collection(db, "products"));
+        const productList = productsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setProductsData(productList);
+
+        console.log("✅ Firebase data loaded:", {
+          restaurants: restaurantList.length,
+          products: productList.length,
+        });
+      } catch (err) {
+        console.error("🔥 Lỗi khi lấy dữ liệu Firebase:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // ==========================
+  // 🛒 Giỏ hàng
   // ==========================
   const [cart, setCart] = useState(() => {
     try {
@@ -64,36 +80,11 @@ function App() {
         const raw = localStorage.getItem("my_cart");
         return raw ? JSON.parse(raw) : [];
       }
-    } catch (err) {
-      console.error("Load cart error:", err);
+    } catch {
       return [];
     }
   });
 
-  // ==========================
-  // ⏱️ Khi đăng nhập hoặc đăng xuất, đồng bộ giỏ hàng tương ứng
-  // ==========================
-  useEffect(() => {
-    if (currentUser) {
-      try {
-        const key = `cart_${encodeURIComponent(currentUser.phonenumber)}`;
-        const raw = localStorage.getItem(key);
-        setCart(raw ? JSON.parse(raw) : []);
-        localStorage.setItem("currentUser", JSON.stringify(currentUser));
-      } catch (err) {
-        console.error("Load cart error:", err);
-        setCart([]);
-      }
-    } else {
-      const guestCart = localStorage.getItem("my_cart");
-      setCart(guestCart ? JSON.parse(guestCart) : []);
-      localStorage.removeItem("currentUser");
-    }
-  }, [currentUser]);
-
-  // ==========================
-  // 💾 Lưu giỏ hàng mỗi khi thay đổi
-  // ==========================
   useEffect(() => {
     try {
       if (currentUser) {
@@ -102,83 +93,52 @@ function App() {
       } else {
         localStorage.setItem("my_cart", JSON.stringify(cart));
       }
-    } catch (err) {
-      console.error("Save cart error:", err);
-    }
-  }, [cart, currentUser]);
+    } catch {}
+  }, [currentUser]);
 
-  // ==========================
-  // 🧩 Các hàm xử lý giỏ hàng
-  // ==========================
   const handleAdd = (product) => {
     setCart((prev) => {
       const existing = prev.find((p) => p.id === product.id);
-      if (existing) {
-        return prev.map((p) =>
-          p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p
-        );
-      }
-      return [...prev, {
-        ...product, quantity: 1,
-        restaurantName: product.restaurantName, // thêm dòng này
-        restaurantId: product.restaurantId
-      }];
+      if (existing) return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
+      return [...prev, { ...product, quantity: 1, restaurantName: product.restaurantName, restaurantId: product.restaurantId }];
     });
   };
 
   const handleRemove = (productId) => {
-    setCart((prev) => prev.filter((p) => p.id !== productId));
+    setCart(prev => prev.filter(p => p.id !== productId));
   };
 
   const handleChangeQuantity = (productId, qty) => {
-    if (qty <= 0) {
-      setCart((prev) => prev.filter((p) => p.id !== productId));
-    } else {
-      setCart((prev) =>
-        prev.map((p) =>
-          p.id === productId ? { ...p, quantity: qty } : p
-        )
-      );
-    }
+    if (qty <= 0) handleRemove(productId);
+    else setCart(prev => prev.map(p => p.id === productId ? { ...p, quantity: qty } : p));
   };
 
+  // ==========================
+  // 🧭 Routing
+  // ==========================
   return (
     <BrowserRouter>
       <Routes>
         {/* ===== USER LAYOUT ===== */}
         <Route
           path="/"
-          element={
-            <UserLayout
-              cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
-              currentUser={currentUser}
-              setCurrentUser={setCurrentUser}
-            />
-          }
+          element={<UserLayout cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)} />}
         >
-          <Route index element={<ProductList onAdd={handleAdd} />} />
-          <Route path="login" element={<Login setCurrentUser={setCurrentUser} />} />
+          <Route index element={<ProductList onAdd={handleAdd} products={productsData} />} />
+          <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
-          <Route path="menu/:categoryKey" element={<ProductList onAdd={handleAdd} />} />
+          <Route path="menu/:categoryKey" element={<ProductList onAdd={handleAdd} products={productsData} />} />
           <Route path="product-detail/:id" element={<ProductDetail onAdd={handleAdd} />} />
-          <Route path="cart"
-            element={<Cart cart={cart}
-              onRemove={handleRemove}
-              onChangeQuantity={handleChangeQuantity}
-              currentUser={currentUser}
-            />} />
-          <Route path="checkout" element={<Checkout cart={cart} setCart={setCart} currentUser={currentUser} />} />
+          <Route path="cart" element={<Cart cart={cart} onRemove={handleRemove} onChangeQuantity={handleChangeQuantity} />} />
+          <Route path="checkout" element={<Checkout cart={cart} setCart={setCart} />} />
           <Route path="order-history" element={<OrderHistory />} />
           <Route path="seller-orders" element={<SellerOrders />} />
           <Route path="waiting/:orderId" element={<WaitingForConfirmation />} />
           <Route path="restaurant" element={<RestaurantList restaurants={restaurantsData} />} />
-          <Route path="restaurant/:id"
-            element={<RestaurantDetail products={productsData}
-              restaurants={restaurantsData}
-              onAdd={handleAdd} />} />
+          <Route path="restaurant/:id" element={<RestaurantDetail products={productsData} restaurants={restaurantsData} onAdd={handleAdd} />} />
         </Route>
 
-        {/* ===== ADMIN LAYOUT ===== */}
+        {/* ===== ADMIN & RESTAURANT LAYOUT ===== */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
           <Route path="orders" element={<Orders />} />
@@ -187,14 +147,13 @@ function App() {
           <Route path="users" element={<Users />} />
         </Route>
 
-
         <Route path="/restaurantadmin/*" element={<RestaurantLayout />}>
           <Route index element={<RestaurantDashboard />} />
           <Route path="orders" element={<RestaurantOrders />} />
           <Route path="orders/:id" element={<RestaurantOrderDetail />} />
           <Route path="products" element={<RestaurantProducts />} />
+          <Route path="drones" element={<DroneList />} />
         </Route>
-
       </Routes>
     </BrowserRouter>
   );

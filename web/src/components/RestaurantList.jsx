@@ -1,11 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase"; // 🔥 import file cấu hình Firestore
 import "./RestaurantList.css";
 
-function RestaurantList({ restaurants }) {
+function RestaurantList() {
     const navigate = useNavigate();
+    const [restaurants, setRestaurants] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
     const perPage = 8;
+
+    useEffect(() => {
+        const fetchRestaurants = async () => {
+            try {
+                const querySnapshot = await getDocs(collection(db, "restaurants"));
+                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setRestaurants(data);
+            } catch (error) {
+                console.error("Lỗi khi lấy danh sách nhà hàng:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchRestaurants();
+    }, []);
+
+    if (loading) return <p>Đang tải danh sách nhà hàng...</p>;
 
     const start = (page - 1) * perPage;
     const currentRestaurants = restaurants.slice(start, start + perPage);
@@ -29,21 +51,10 @@ function RestaurantList({ restaurants }) {
                 ))}
             </div>
 
-            {/* Nút chuyển trang */}
             <div className="pagination">
-                <button
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
-                >
-                    ◀
-                </button>
-                <span> {page}/{totalPages}</span>
-                <button
-                    disabled={page === totalPages}
-                    onClick={() => setPage(page + 1)}
-                >
-                    ▶
-                </button>
+                <button disabled={page === 1} onClick={() => setPage(page - 1)}>◀</button>
+                <span>{page}/{totalPages}</span>
+                <button disabled={page === totalPages} onClick={() => setPage(page + 1)}>▶</button>
             </div>
         </div>
     );
