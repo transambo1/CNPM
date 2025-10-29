@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Table, Input, Select, Slider, Modal } from "antd";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase"; // 🔥 file firebase.js bạn đã cấu hình sẵn
 import "./Products.css";
 
 export default function Products() {
@@ -10,20 +12,30 @@ export default function Products() {
     const [priceRange, setPriceRange] = useState([0, 100000]);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
+    // 🔥 Lấy dữ liệu sản phẩm từ Firestore
     useEffect(() => {
-        fetch("http://localhost:5002/products")
-            .then((res) => res.json())
-            .then((data) => {
-                setData(data);
-                setFilteredData(data);
-            })
-            .catch(() => console.error("Lỗi khi tải dữ liệu!"));
+        async function fetchProducts() {
+            try {
+                const snapshot = await getDocs(collection(db, "products"));
+                const productsData = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setData(productsData);
+                setFilteredData(productsData);
+                console.log("✅ Firestore loaded products:", productsData);
+            } catch (error) {
+                console.error("❌ Lỗi khi tải dữ liệu sản phẩm:", error);
+            }
+        }
+
+        fetchProducts();
     }, []);
 
-    // Danh sách danh mục tự động từ dữ liệu
+    // Danh mục (category) tự động từ dữ liệu
     const categories = ["Tất cả", ...new Set(data.map((item) => item.category))];
 
-    // Lọc tự động
+    // Lọc dữ liệu theo tên, danh mục, giá
     useEffect(() => {
         let filtered = data.filter((item) => {
             const matchName = item.name.toLowerCase().includes(searchText.toLowerCase());
@@ -173,7 +185,6 @@ export default function Products() {
                     </div>
                 )}
             </Modal>
-
         </div>
     );
 }

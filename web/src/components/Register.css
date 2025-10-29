@@ -82,3 +82,10 @@
 .register-container-simple p span:hover {
   text-decoration: underline;
 }
+/* Thêm vào Register.css nếu chưa có */
+.error-message {
+  color: #d2191a;
+  font-size: 0.9em;
+  margin-top: -5px; 
+  margin-bottom: 10px;
+}

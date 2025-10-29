@@ -1,6 +1,9 @@
 // src/components/ProductList.jsx
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
+// 1. Import các hàm Firestore cần thiết và instance 'db'
+import { collection, getDocs, query, where, orderBy, limit, startAfter } from "firebase/firestore"; 
+import { db } from '../firebase'; 
 import Product from "./Product";
 import Banner from "./Banner";
 import "./ProductList.css";
@@ -8,8 +11,6 @@ import "./ProductList.css";
 function ProductList({ onAdd, defaultCategory = "All" }) {
     const { categoryKey } = useParams();
     const location = useLocation();
-
-    // Lấy search từ URL (ví dụ ?search=burger)
     const initialSearch = new URLSearchParams(location.search).get("search") || "";
 
     // State
@@ -18,45 +19,58 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
     const [selectedCategory, setSelectedCategory] = useState(categoryKey || defaultCategory);
     const [currentPage, setCurrentPage] = useState(1);
     const [sortOption, setSortOption] = useState("default");
-
-    // Bộ lọc giá
     const [minPrice, setMinPrice] = useState(0);
-    const [maxPrice, setMaxPrice] = useState(200000);
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 });
+    const [maxPrice, setMaxPrice] = useState(200000); // Sẽ cập nhật từ Firestore
+    const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 }); // Sẽ cập nhật
+    const [loadingProducts, setLoadingProducts] = useState(true); // Thêm state loading
 
     const productsPerPage = 4;
     const bannerImages = ["/Images/1.png", "/Images/Banner2.png", "/Images/Banner3.png"];
 
-    // Fetch sản phẩm (1 lần)
+    // 2. Fetch sản phẩm từ Firestore (chỉ chạy 1 lần khi component mount)
     useEffect(() => {
-        let mounted = true;
-        fetch("http://localhost:5002/products")
-            .then((res) => res.json())
-            .then((data) => {
-                if (!mounted) return;
-                setProducts(data || []);
-                if (data && data.length > 0) {
-                    const prices = data.map((p) => Number(p.price ?? 0));
-                    const min = Math.min(...prices);
-                    const max = Math.max(...prices);
+        const fetchProducts = async () => {
+            setLoadingProducts(true);
+            try {
+                // Tham chiếu đến collection "products" trong Firestore
+                const productsCollectionRef = collection(db, "products"); 
+                
+                // Lấy tất cả documents từ collection
+                const dataSnapshot = await getDocs(productsCollectionRef); 
+                
+                // Chuyển đổi dữ liệu sang dạng mảng [{ id: ..., ...data }]
+                const fetchedProducts = dataSnapshot.docs.map(doc => ({ 
+                    id: doc.id, 
+                    ...doc.data() 
+                }));
+                
+                setProducts(fetchedProducts);
+
+                // Cập nhật khoảng giá min/max dựa trên dữ liệu thực tế
+                if (fetchedProducts && fetchedProducts.length > 0) {
+                    const prices = fetchedProducts.map((p) => Number(p.price ?? 0));
+                    const min = Math.min(0, ...prices); // Đảm bảo min không lớn hơn 0
+                    const max = Math.max(200000, ...prices); // Đảm bảo max ít nhất là 200k
                     setPriceRange({ min, max });
                     setMinPrice(min);
                     setMaxPrice(max);
                 } else {
-                    // Nếu không có data thì giữ giá default
+                    // Giữ giá default nếu không có sản phẩm
                     setPriceRange({ min: 0, max: 200000 });
                     setMinPrice(0);
                     setMaxPrice(200000);
                 }
-            })
-            .catch((err) => {
-                console.error("Lỗi khi fetch API:", err);
-            });
-        return () => {
-            mounted = false;
-        };
-    }, []);
 
+            } catch (err) {
+                console.error("Lỗi khi fetch sản phẩm từ Firestore:", err);
+                setProducts([]); // Set mảng rỗng nếu có lỗi
+            } finally {
+                setLoadingProducts(false); // Kết thúc loading dù thành công hay lỗi
+            }
+        };
+
+        fetchProducts();
+    }, []); // Mảng dependency rỗng [] để chỉ fetch 1 lần
     // Khi query string thay đổi (ví dụ user search từ Header) => cập nhật searchTerm
     useEffect(() => {
         const q = new URLSearchParams(location.search).get("search") || "";

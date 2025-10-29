@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input, Table, Tag, Switch } from "antd";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase"; // 🔥 đường dẫn tới file firebase.js
 import "./Orders.css";
 
 export default function OrdersList() {
@@ -9,11 +11,22 @@ export default function OrdersList() {
     const [darkMode, setDarkMode] = useState(() => localStorage.getItem("theme") === "dark");
     const navigate = useNavigate();
 
+    // 🔥 Lấy dữ liệu từ Firestore
     useEffect(() => {
-        fetch("http://localhost:5002/orders")
-            .then((res) => res.json())
-            .then((data) => setOrders(data))
-            .catch((err) => console.error("Lỗi tải đơn hàng:", err));
+        async function fetchOrders() {
+            try {
+                const querySnapshot = await getDocs(collection(db, "orders"));
+                const data = querySnapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setOrders(data);
+                console.log("✅ Firestore loaded orders:", data);
+            } catch (error) {
+                console.error("❌ Lỗi tải đơn hàng từ Firestore:", error);
+            }
+        }
+        fetchOrders();
     }, []);
 
     useEffect(() => {
@@ -23,7 +36,7 @@ export default function OrdersList() {
 
     const filteredOrders = orders.filter(
         (o) =>
-            o.customer?.name.toLowerCase().includes(search.toLowerCase()) ||
+            o.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
             o.id.toString().includes(search)
     );
 

@@ -1,113 +1,110 @@
-// src/components/Login.jsx
-import React, { useState, } from "react";
-import { useNavigate, useLocation, Link, } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+import "./Login.css";
+import { useAuth } from "../context/AuthContext";
 
-import './Login.css';
+function Login() {
+  const [phonenumber, setPhonenumber] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { setCurrentUser } = useAuth();
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
 
-function Login({ setCurrentUser }) {
-    const [phonenumber, setPhonenumber] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState("");
-    const navigate = useNavigate();
-    const location = useLocation(); // để lấy state.from
+    if (!phonenumber || !password) {
+      setError("Vui lòng nhập đầy đủ số điện thoại và mật khẩu.");
+      return;
+    }
 
-    // Hàm gộp giỏ hàng guest + user
-    const mergeCarts = (userCart, guestCart) => {
-        const merged = [...userCart];
-        guestCart.forEach((item) => {
-            const existing = merged.find((i) => i.id === item.id);
-            if (existing) {
-                existing.quantity += item.quantity; // cộng dồn số lượng
-            } else {
-                merged.push(item);
-            }
-        });
-        return merged;
-    };
+    try {
+      // 🔎 Tìm user có phonenumber khớp
+      const usersRef = collection(db, "users");
+      const q = query(usersRef, where("phonenumber", "==", phonenumber));
+      const querySnapshot = await getDocs(q);
 
-    const handleLogin = async (e) => {
-        e.preventDefault(); // Ngăn form reload
-        setError(""); // Reset lỗi
-        if (!phonenumber || !password) {
-            alert("Vui lòng nhập đầy đủ thông tin");
-            return;
-        }
+      if (querySnapshot.empty) {
+        setError("Số điện thoại không tồn tại.");
+        return;
+      }
 
-        try {
-            // ✅ Kiểm tra user theo số điện thoại và mật khẩu
-            const res = await fetch(`http://localhost:5002/users?phonenumber=${encodeURIComponent(phonenumber)}&password=${encodeURIComponent(password)}`);
-            const data = await res.json();
+      const userDoc = querySnapshot.docs[0];
+      const userData = userDoc.data();
 
-            if (data.length === 0) {
-                setError("Sai số điện thoại hoặc mật khẩu.");
-                return;
-            }
+      // 🔐 Kiểm tra mật khẩu
+    if ((userData.password || "").trim() !== password.trim()) {
+  setError("Sai mật khẩu");
+  return;
+}
 
-            const user = data[0];
+     localStorage.setItem("currentUser", JSON.stringify(userData));
 
-            // --- Merge cart logic ---
-            const guestCartRaw = localStorage.getItem("my_cart");
-            const guestCart = guestCartRaw ? JSON.parse(guestCartRaw) : [];
+// 🔹 Cập nhật AuthContext
+setCurrentUser(userData);
 
-            const userKey = `cart_${user.phonenumber}`;
-            const userCartRaw = localStorage.getItem(userKey);
-            const userCart = userCartRaw ? JSON.parse(userCartRaw) : [];
+// Redirect theo role
+switch (userData.role) {
+  case "admin":
+    navigate("/admin"); // AdminLayout
+    break;
+  case "restaurant":
+    navigate("/restaurantadmin"); // RestaurantLayout
+    break;
+  case "customer":
+  default:
+    navigate("/"); // UserLayout
+    break;
+}
+  } catch (err) {
+    console.error("Login Error:", err);
+    setError("Đã có lỗi xảy ra khi đăng nhập.");
+  }
+};
 
-            const mergedCart = mergeCarts(userCart, guestCart);
+  return (
+    <div className="login-page">
+      <div className="login-container">
+        <h2>Đăng Nhập</h2>
+        <form onSubmit={handleLogin}>
+          <div className="form-group">
+            <label htmlFor="phonenumber">Số điện thoại</label>
+            <input
+              id="phonenumber"
+              type="text"
+              placeholder="Nhập số điện thoại"
+              value={phonenumber}
+              onChange={(e) => setPhonenumber(e.target.value)}
+              required
+            />
+          </div>
 
-            // Lưu lại giỏ mới cho user
-            localStorage.setItem(userKey, JSON.stringify(mergedCart));
-            // Xóa giỏ guest
-            localStorage.removeItem("my_cart");
+          <div className="form-group">
+            <label htmlFor="password">Mật khẩu</label>
+            <input
+              id="password"
+              type="password"
+              placeholder="Nhập mật khẩu"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
 
-            // --- Lưu user hiện tại ---
-            setCurrentUser(user);
-            localStorage.setItem("currentUser", JSON.stringify(user));
+          {error && <p className="error-message">{error}</p>}
 
-            const redirectTo = location.state?.from || "/";
-            navigate(redirectTo);
-        } catch (err) {
-            setError("Đã có lỗi xảy ra. Vui lòng thử lại.");
-            console.error(err);
-        }
-    };
+          <button type="submit" className="login-btn">Đăng nhập</button>
+        </form>
 
-    return (
-        <div className="login-page">
-            <div className="login-container">
-                <h2>Đăng Nhập</h2>
-                <form onSubmit={handleLogin}>
-                    <div className="form-group">
-                        <label htmlFor="phonenumber">Số điện thoại</label>
-                        <input
-                            id="phonenumber"
-                            type="text"
-                            placeholder="Nhập số điện thoại"
-                            value={phonenumber}
-                            onChange={(e) => setPhonenumber(e.target.value)}
-                        />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="password">Mật khẩu</label>
-                        <input
-                            id="password"
-                            type="password"
-                            placeholder="Nhập mật khẩu"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </div>
-
-                    {error && <p className="error-message">{error}</p>}
-
-                    <button type="submit" className="login-btn">Đăng nhập</button>
-                </form>
-                <p className="register-link">
-                    Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
-                </p>
-            </div>
-        </div>
-    );
+        <p className="register-link">
+          Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+        </p>
+      </div>
+    </div>
+  );
 }
 
 export default Login;

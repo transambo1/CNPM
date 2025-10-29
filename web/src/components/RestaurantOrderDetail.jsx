@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./RestaurantOrderDetail.css";
+import { db } from "../firebase";
 
 export default function RestaurantOrderDetail() {
     const { id } = useParams();
