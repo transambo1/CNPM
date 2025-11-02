@@ -24,7 +24,7 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
     const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 }); // Sẽ cập nhật
     const [loadingProducts, setLoadingProducts] = useState(true); // Thêm state loading
 
-    const productsPerPage = 4;
+    const productsPerPage = 6;
     const bannerImages = ["/Images/1.png", "/Images/Banner2.png", "/Images/Banner3.png"];
 
     // 2. Fetch sản phẩm từ Firestore (chỉ chạy 1 lần khi component mount)
