@@ -1,11 +1,15 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore"; // Import Firestore nếu bạn dùng Database
-import { getAuth } from "firebase/auth";       // Import Auth nếu bạn dùng Đăng nhập/Đăng ký
+import { getFirestore } from "firebase/firestore";
+import { 
+  getAuth, 
+  setPersistence, 
+  browserLocalPersistence 
+} from "firebase/auth";
 
-// DÁN MÃ CẤU HÌNH BẠN ĐÃ COPY TỪ FIREBASE CONSOLE VÀO ĐÂY
+// Firebase Config
 const firebaseConfig = {
-  apiKey: "AIzaSyB8A18L-TC1L-d85dN0Ge2LZ1Hcx_h6h2w", // Ví dụ key của bạn
+  apiKey: "AIzaSyB8A18L-TC1L-d85dN0Ge2LZ1Hcx_h6h2w",
   authDomain: "cnpm-6896a.firebaseapp.com",
   projectId: "cnpm-6896a",
   storageBucket: "cnpm-6896a.appspot.com",
@@ -17,6 +21,11 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Export các instance để sử dụng trong các component khác
-export const db = getFirestore(app); // Để dùng Firestore Database
-export const auth = getAuth(app);    // Để dùng Firebase Authentication (Đăng nhập/ký)
+// Firestore
+export const db = getFirestore(app);
+
+// ✅ Authentication với Local Persistence (Web sẽ không mất user khi F5)
+export const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence);
+
+export default app;

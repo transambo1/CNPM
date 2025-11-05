@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import "./RestaurantDashboard.css";
 import {
   collection,
@@ -6,7 +6,7 @@ import {
   doc,
   updateDoc,
 } from "firebase/firestore";
-import { db } from "../firebase"; // 🔥 import Firestore từ file firebase.js
+import { db } from "../firebase";
 
 export default function RestaurantDashboard() {
   const [orders, setOrders] = useState([]);
@@ -14,11 +14,18 @@ export default function RestaurantDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedDrone, setSelectedDrone] = useState({});
 
-  // === Lấy dữ liệu từ Firestore ===
-  const fetchAll = async () => {
+  // --- FILTER STATE ---
+  const [statusFilter, setStatusFilter] = useState("all"); // all | processing | delivering | delivered | other
+  const [droneFilter, setDroneFilter] = useState("all");   // all | droneId
+  const [timeFilter, setTimeFilter]   = useState("all");   // all | 24h | 3d | 7d
+
+  const fetchAll = useCallback(async () => {
     try {
-      const ordersSnap = await getDocs(collection(db, "orders"));
-      const dronesSnap = await getDocs(collection(db, "drones"));
+      setLoading(true);
+      const [ordersSnap, dronesSnap] = await Promise.all([
+        getDocs(collection(db, "orders")),
+        getDocs(collection(db, "drones")),
+      ]);
 
       const oData = ordersSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
       const dData = dronesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -30,17 +37,79 @@ export default function RestaurantDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [fetchAll]);
 
   const refreshData = async () => {
     await fetchAll();
   };
 
   const findDroneById = (id) => drones.find((d) => String(d.id) === String(id));
+
+  // --- Utils: chuẩn hóa createdAt ---
+  const toMillis = (createdAt) => {
+    if (!createdAt) return null;
+    // Firestore Timestamp
+    if (createdAt.seconds) return createdAt.seconds * 1000;
+    // JS Date
+    if (createdAt instanceof Date) return createdAt.getTime();
+    // string/number
+    const t = new Date(createdAt).getTime();
+    return Number.isFinite(t) ? t : null;
+  };
+
+  // --- SOFT FILTER (client-side) ---
+  const filteredOrders = useMemo(() => {
+    const now = Date.now();
+
+    const inTimeRange = (o) => {
+      if (timeFilter === "all") return true;
+      const ms = toMillis(o.createdAt);
+      if (!ms) return false;
+
+      if (timeFilter === "24h") return ms >= now - 24 * 60 * 60 * 1000;
+      if (timeFilter === "3d")  return ms >= now - 3  * 24 * 60 * 60 * 1000;
+      if (timeFilter === "7d")  return ms >= now - 7  * 24 * 60 * 60 * 1000;
+      return true;
+    };
+
+    const normalizeStatus = (s = "") => s.toLowerCase();
+
+    const matchStatus = (o) => {
+      if (statusFilter === "all") return true;
+      const s = normalizeStatus(o.status || "");
+      if (statusFilter === "processing") {
+        return s.includes("xử lý") || s.includes("processing") || s === "confirmed";
+      }
+      if (statusFilter === "delivering") {
+        return s.includes("đang giao") || s.includes("delivering");
+      }
+      if (statusFilter === "delivered") {
+        return s.includes("đã giao") || s.includes("delivered");
+      }
+      if (statusFilter === "other") {
+        const isProc = s.includes("xử lý") || s.includes("processing") || s === "confirmed";
+        const isDeliv = s.includes("đang giao") || s.includes("delivering");
+        const isDone = s.includes("đã giao") || s.includes("delivered");
+        return !isProc && !isDeliv && !isDone;
+      }
+      return true;
+    };
+
+    const matchDrone = (o) => {
+      if (droneFilter === "all") return true;
+      if (!o.droneId) return false;
+      return String(o.droneId) === String(droneFilter);
+    };
+
+    return orders
+      .filter(inTimeRange)
+      .filter(matchStatus)
+      .filter(matchDrone);
+  }, [orders, statusFilter, droneFilter, timeFilter]);
 
   // === Gán drone cho đơn hàng ===
   const handleAssignDrone = async (orderId) => {
@@ -58,7 +127,6 @@ export default function RestaurantDashboard() {
         return;
       }
 
-      // cập nhật drone trong Firestore
       await updateDoc(doc(db, "drones", drone.id), {
         status: "Đang giao",
         currentOrderId: order.id,
@@ -66,7 +134,6 @@ export default function RestaurantDashboard() {
         destination: order.customer?.address || null,
       });
 
-      // cập nhật order trong Firestore
       await updateDoc(doc(db, "orders", order.id), {
         status: "Đang giao",
         droneId: drone.id,
@@ -88,12 +155,10 @@ export default function RestaurantDashboard() {
 
       const droneId = order.droneId ? String(order.droneId) : null;
 
-      // 1️⃣ Cập nhật order
       await updateDoc(doc(db, "orders", order.id), {
         status: "Đã giao",
       });
 
-      // 2️⃣ Giải phóng drone
       if (droneId) {
         await updateDoc(doc(db, "drones", droneId), {
           status: "Rảnh",
@@ -113,20 +178,16 @@ export default function RestaurantDashboard() {
 
   const formatStatusBadge = (status) => {
     if (!status) return <span className="badge other">—</span>;
-    if (status.toLowerCase().includes("giao")) {
-      if (status === "Đang giao" || status.toLowerCase().includes("delivering")) {
+    const s = status.toLowerCase();
+    if (s.includes("giao")) {
+      if (s === "đang giao" || s.includes("delivering")) {
         return <span className="badge delivering">Đang giao</span>;
       }
-      if (status === "Đã giao" || status.toLowerCase().includes("delivered")) {
+      if (s === "đã giao" || s.includes("delivered")) {
         return <span className="badge done">Đã giao</span>;
       }
     }
-    if (
-      status === "confirmed" ||
-      status === "Confirmed" ||
-      status.toLowerCase().includes("xử lý") ||
-      status.toLowerCase().includes("processing")
-    ) {
+    if (s === "confirmed" || s.includes("xử lý") || s.includes("processing")) {
       return <span className="badge pending">Đang xử lý</span>;
     }
     return <span className="badge other">{status}</span>;
@@ -138,6 +199,71 @@ export default function RestaurantDashboard() {
     <div className="restaurant-dashboard">
       <h2>📦 Quản lý Đơn Hàng</h2>
 
+      {/* FILTER BAR */}
+      <div className="filter-bar">
+        {/* Trạng thái */}
+        <div className="filter-item">
+          <label>Trạng thái</label>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            <option value="processing">Đang xử lý</option>
+            <option value="delivering">Đang giao</option>
+            <option value="delivered">Đã giao</option>
+            <option value="other">Chờ xác nhận</option>
+          </select>
+        </div>
+
+        {/* Drone */}
+        <div className="filter-item">
+          <label>Drone</label>
+          <select
+            value={droneFilter}
+            onChange={(e) => setDroneFilter(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            {drones.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} ({d.battery}%)
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Thời gian */}
+        <div className="filter-item">
+          <label>Thời gian</label>
+          <select
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            <option value="24h">24 giờ qua</option>
+            <option value="3d">3 ngày qua</option>
+            <option value="7d">7 ngày qua</option>
+          </select>
+        </div>
+
+        {/* Nút xóa lọc nhanh (tuỳ chọn) */}
+        <button
+          className="btn reset"
+          onClick={() => {
+            setStatusFilter("all");
+            setDroneFilter("all");
+            setTimeFilter("all");
+          }}
+        >
+          Xóa lọc
+        </button>
+      </div>
+
+      <div className="table-meta">
+        <span>Hiển thị: <b>{filteredOrders.length}</b> / {orders.length} đơn</span>
+   
+      </div>
+
       <table className="orders-table">
         <thead>
           <tr>
@@ -145,15 +271,18 @@ export default function RestaurantDashboard() {
             <th>Khách</th>
             <th>Địa chỉ</th>
             <th>Nhà hàng</th>
+            <th>Thời gian</th>
             <th>Trạng thái</th>
             <th>Drone giao hàng</th>
             <th>Hành động</th>
           </tr>
         </thead>
         <tbody>
-          {orders.map((order) => {
+          {filteredOrders.map((order) => {
             const oStatus = order.status || "";
             const assignedDrone = order.droneId ? findDroneById(order.droneId) : null;
+            const createdAtMs = toMillis(order.createdAt);
+            const createdAtTxt = createdAtMs ? new Date(createdAtMs).toLocaleString() : "—";
 
             return (
               <tr key={order.id}>
@@ -164,6 +293,7 @@ export default function RestaurantDashboard() {
                 </td>
                 <td>{order.customer?.address}</td>
                 <td>{order.items?.[0]?.restaurant}</td>
+                <td>{createdAtTxt}</td>
                 <td>{formatStatusBadge(oStatus)}</td>
 
                 <td>

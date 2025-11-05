@@ -128,3 +128,63 @@
         font-size: 14px;
     }
 }
+/* --- Filter bar --- */
+/* --- Filter bar (1 dòng + scroll ngang) --- */
+/* --- Filter bar: luôn 1 dòng, không xuống hàng --- */
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin: 12px 0 6px;
+  flex-wrap: nowrap;     /* ❗ Không cho xuống dòng */
+  white-space: nowrap;   /* Ngăn các phần tử wrap */
+}
+
+/* Mỗi filter */
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 160px; /* Giảm từ 180 → 160 để dễ fit 1 dòng */
+}
+
+/* Label */
+.filter-item label {
+  font-size: 13px;
+  color: #444;
+  font-weight: 600;
+}
+
+/* Select */
+.filter-item select {
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid #e3e6ea;
+  padding: 0 10px;
+  background: #fff;
+}
+
+/* Meta line */
+.table-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 6px 0 12px;
+  font-size: 14px;
+  color: #333;
+}
+
+/* Button Reset */
+.btn.reset {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid #e3e6ea;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap; /* tránh text xuống dòng */
+}
+
+.btn.reset:hover {
+  background: #f8f9fb;
+}

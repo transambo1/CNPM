@@ -25,15 +25,7 @@ function Footer() {
                     </a>
                 </div>
 
-                {/* Dùng chung className="footer-column" */}
-                <div className="footer-column">
-                    <h3 className="footer-title">Thông Tin</h3>
-                    {/* Thay thế <p> bằng <Link> và thêm các class cần thiết */}
-                    <Link to="/about">Về Meow Chick</Link>
-                    <Link to="/menu">Thực đơn</Link>
-                    <Link to="/news">Tin tức</Link>
-                    <Link to="/restaurants">Nhà hàng</Link>
-                </div>
+           
 
                 {/* Dùng chung className="footer-column" */}
                 <div className="footer-column">

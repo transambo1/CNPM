@@ -46,17 +46,19 @@ function RoutingMachine({ from, to, onRouteFound }) {
     }
 
     const control = L.Routing.control({
-      router: L.Routing.osrmv1({
-        serviceUrl: "https://routing.openstreetmap.de/routed-car/route/v1",
-      }),
-      waypoints: [L.latLng(from.lat, from.lng), L.latLng(to.lat, to.lng)],
-      lineOptions: { styles: [{ color: "#007bff", weight: 5, opacity: 0.8 }] },
-      addWaypoints: false,
-      draggableWaypoints: false,
-      fitSelectedRoutes: true,
-      showAlternatives: false,
-      createMarker: () => null,
-    });
+  router: L.Routing.osrmv1({
+    serviceUrl: "https://routing.openstreetmap.de/routed-car/route/v1",
+  }),
+  waypoints: [L.latLng(from.lat, from.lng), L.latLng(to.lat, to.lng)],
+  lineOptions: { styles: [{ color: "#007bff", weight: 5, opacity: 0.8 }] },
+  addWaypoints: false,
+  draggableWaypoints: false,
+  fitSelectedRoutes: true,
+  showAlternatives: false,
+  show: false,          // ⛔ Ẩn bảng hướng dẫn
+  createMarker: () => null,
+});
+
 
     control.on("routesfound", (e) => {
       if (e.routes && e.routes[0]) {
@@ -273,11 +275,13 @@ export default function WaitingForConfirmation() {
             <p><strong>Thời gian còn lại:</strong> {formatTime(remainingTime)}</p>
           </div>
 
-          {(order.status === "Đang giao" || order.status === "Đang giao bằng drone") && (
-            <button className="wfc-btn-received" onClick={handleReceived}>
-              ✅ Đã nhận hàng
-            </button>
-          )}
+          {(order.status === "Đang giao" || order.status === "Đang giao bằng drone") && 
+  remainingDistance !== null &&
+  remainingDistance < 80 && ( // < 80m mới hiện
+    <button className="wfc-btn-received" onClick={handleReceived}>
+      ✅ Đã nhận hàng
+    </button>
+)}
         </div>
 
         <div className="wfc-map-panel">

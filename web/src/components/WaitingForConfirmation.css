@@ -1,117 +1,161 @@
-.wp-container {
-    padding: 20px;
-    font-family: "Segoe UI", sans-serif;
-    background-color: #f9fafb;
-    border-radius: 12px;
+/* ================================
+   📦 WAITING FOR CONFIRMATION PAGE
+   Tone: Trắng – Đen – Vàng – Đỏ (Luxury Clean)
+===================================*/
+
+.wfc-page {
+  padding: 24px;
+  font-family: "Segoe UI", sans-serif;
+  background-color: #ffffff;
+  min-height: 100vh;
+  color: #2b2623;
 }
 
-.wp-title {
-    text-align: center;
-    color: #2c3e50;
-    font-size: 22px;
-    margin-bottom: 20px;
-    font-weight: 600;
+/* ====== Title ====== */
+.wfc-page h2 {
+  text-align: center;
+  color: #d2191a;
+  font-size: 26px;
+  margin-bottom: 24px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.wp-layout {
-    display: flex;
-    gap: 20px;
-    align-items: flex-start;
+/* ====== Main Layout ====== */
+.wfc-container {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
 }
 
-.wp-left {
-    flex: 1;
-    background: white;
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+/* ====== Left Info Card ====== */
+.wfc-info-panel {
+  flex: 1;
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+  border: 1.5px solid #f3d18c;
 }
 
-.wp-right {
-    flex: 1.2;
-    background: white;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+/* Title inside box */
+.wfc-info-panel h3 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 14px;
+  color: #2b2623;
+  border-left: 4px solid #fcb32c;
+  padding-left: 10px;
 }
 
-.wp-info p {
-    margin: 6px 0;
-    color: #333;
+/* Section Title */
+.wfc-section-title {
+  margin-top: 20px;
+  font-weight: 700;
+  font-size: 17px;
+  color: #d2191a;
 }
 
-.wp-items {
-    margin-top: 15px;
+/* Order detail rows */
+.wfc-detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: 15px;
+  color: #333;
 }
 
-.wp-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 10px;
-    border-bottom: 1px solid #eee;
+.wfc-detail-row span:first-child {
+  font-weight: 600;
+  color: #2b2623;
 }
 
-.wp-item img {
-    width: 70px;
-    height: 70px;
-    border-radius: 10px;
-    object-fit: cover;
+/* Items list box */
+.wfc-item-list {
+  margin-top: 12px;
+  background: #fff8e6;
+  padding: 14px;
+  border-radius: 10px;
+  border: 1px solid #f6dba7;
 }
 
-.wp-item-info {
-    flex: 1;
+.wfc-item-list ul {
+  list-style: none;
+  margin: 8px 0 0 0;
+  padding: 0;
 }
 
-.wp-item-name {
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: #007bff;
+.wfc-item-list li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+  font-size: 15px;
+  color: #2b2623;
 }
 
-.wp-total {
-    margin-top: 15px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #2c3e50;
+.wfc-item-list li:last-child {
+  border-bottom: none;
 }
 
-.wp-tracking {
-    margin-top: 20px;
-    background: #f1f5f9;
-    padding: 10px;
-    border-radius: 8px;
-    font-size: 14px;
+/* Tracking info */
+.wfc-tracking-box {
+  margin-top: 16px;
+  background: #f1f5f9;
+  padding: 12px;
+  border-radius: 10px;
+  border-left: 4px solid #fcb32c;
+  font-size: 15px;
+  color: #222;
 }
 
-.wp-map-title {
-    text-align: center;
-    color: #2c3e50;
-    margin-bottom: 10px;
+/* ====== Button: Confirm Received ====== */
+.wfc-btn-received {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #d2191a;
+  color: #fff;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.25s ease-in-out;
 }
 
-.wp-map {
-    height: 500px;
-    width: 100%;
-    border-radius: 12px;
-    overflow: hidden;
+.wfc-btn-received:hover {
+  background-color: #b31516;
+  transform: scale(1.03);
 }
 
-.wp-btn {
-    display: block;
-    margin-top: 20px;
-    padding: 10px 15px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.3s;
+/* ====== Map Panel (Right Side) ====== */
+.wfc-map-panel {
+  flex: 1.25;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1.5px solid #f3d18c;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
 }
 
-.wp-btn:hover {
-    background-color: #218838;
-    transform: scale(1.03);
+.wfc-map-panel h3 {
+  text-align: center;
+  color: #2b2623;
+  margin-bottom: 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* Map */
+.leaflet-container {
+  border-radius: 12px;
+  overflow: hidden;
+  height: 600px !important;
+}
+
+/* ====== Responsive ====== */
+@media (max-width: 992px) {
+  .wfc-container {
+    flex-direction: column;
+  }
 }

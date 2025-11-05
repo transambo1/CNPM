@@ -1,83 +1,77 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  collection,
-  getDocs,
-  getDoc,
-  doc,
-  updateDoc
-} from "firebase/firestore";
-import { db } from "../firebase"; // import từ file firebase.js
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 import "./RestaurantOrders.css";
 
 export default function RestaurantOrders() {
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [droneFilter, setDroneFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
 
-  // 🔹 Lấy danh sách đơn hàng từ Firestore
-  const fetchOrders = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "orders"));
-      const ordersData = querySnapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      }));
-      setOrders(ordersData);
-    } catch (err) {
-      console.error("❌ Lỗi lấy đơn hàng:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchOrders();
-
-    // 🔄 Cập nhật danh sách mỗi 5s (nếu muốn realtime)
-    const interval = setInterval(fetchOrders, 5000);
-    return () => clearInterval(interval);
   }, []);
 
-  // 🔹 Xác nhận đơn hàng
-  const handleConfirm = async (orderId) => {
-    try {
-      const orderRef = doc(db, "orders", orderId);
-      const orderSnap = await getDoc(orderRef);
+  const fetchOrders = async () => {
+    const snap = await getDocs(collection(db, "orders"));
+    const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    setOrders(data);
+  };
 
-      if (!orderSnap.exists()) {
-        alert("❌ Không tìm thấy đơn hàng!");
-        return;
-      }
+  // Convert createdAt → milliseconds
+  const toMillis = (createdAt) => {
+    if (!createdAt) return null;
+    if (createdAt.seconds) return createdAt.seconds * 1000; // Firestore Timestamp
+    if (createdAt instanceof Date) return createdAt.getTime(); // Date object
+    const t = new Date(createdAt).getTime(); // String/Number
+    return Number.isFinite(t) ? t : null;
+  };
 
-      const updatedOrder = {
-        ...orderSnap.data(),
-        status: "Đang giao bằng drone",
-        droneId: Math.floor(Math.random() * 1000) + 1,
-      };
+  // === FILTER ORDERS ===
+  const filteredOrders = useMemo(() => {
+    const now = Date.now();
 
-      await updateDoc(orderRef, updatedOrder);
+    const inTimeRange = (o) => {
+      if (timeFilter === "all") return true;
+      const ms = toMillis(o.createdAt);
+      if (!ms) return false;
 
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { id: orderId, ...updatedOrder } : o))
-      );
+      if (timeFilter === "24h") return ms >= now - 24 * 60 * 60 * 1000;
+      if (timeFilter === "3d") return ms >= now - 3 * 24 * 60 * 60 * 1000;
+      if (timeFilter === "7d") return ms >= now - 7 * 24 * 60 * 60 * 1000;
 
-      alert(`✅ Đơn hàng #${orderId} đã được xác nhận!`);
-    } catch (err) {
-      console.error("❌ Lỗi xác nhận đơn:", err);
-      alert("Không thể xác nhận đơn, vui lòng thử lại!");
+      return true;
+    };
+
+    let result = [...orders];
+
+    // 1️⃣ Status Filter
+    if (statusFilter !== "all") {
+      result = result.filter((o) => o.status === statusFilter);
     }
-  };
 
-  const handleViewDetail = (orderId) => {
+    // 2️⃣ Drone Filter
+    if (droneFilter === "withDrone") result = result.filter((o) => o.droneId);
+    if (droneFilter === "noDrone") result = result.filter((o) => !o.droneId);
+
+    // 3️⃣ Time Filter (giống file 1)
+    result = result.filter(inTimeRange);
+
+    return result;
+  }, [orders, statusFilter, droneFilter, timeFilter]);
+
+  const handleViewDetail = (orderId) =>
     navigate(`/restaurantadmin/orders/${orderId}`);
-  };
 
   const renderStatus = (status) => {
     switch (status) {
       case "Chờ xác nhận":
         return <span className="rso-status rso-wait">🟡 {status}</span>;
-      case "Đang giao bằng drone":
+      case "Đang giao":
         return <span className="rso-status rso-shipping">🔵 {status}</span>;
       case "Đã giao":
         return <span className="rso-status rso-done">🟢 {status}</span>;
@@ -86,15 +80,62 @@ export default function RestaurantOrders() {
     }
   };
 
-  if (loading)
-    return <p className="rso-loading">⏳ Đang tải danh sách đơn hàng...</p>;
-
   return (
     <div className="rso-container">
       <h2 className="rso-title">📦 Danh sách đơn hàng</h2>
 
-      {orders.length === 0 ? (
-        <p className="rso-empty">Chưa có đơn hàng nào.</p>
+      {/* 🔥 FILTER UI giống file 1 */}
+      <div className="filter-bar">
+        <div className="filter-item">
+          <label>Trạng thái</label>
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <option value="all">Tất cả</option>
+            <option value="Chờ xác nhận">Chờ xác nhận</option>
+            <option value="Đang giao">Đang giao</option>
+            <option value="Đã giao">Đã giao</option>
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>Drone</label>
+          <select value={droneFilter} onChange={(e) => setDroneFilter(e.target.value)}>
+            <option value="all">Tất cả</option>
+            <option value="withDrone">Có drone</option>
+            <option value="noDrone">Chưa có drone</option>
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>Thời gian</label>
+          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
+            <option value="all">Tất cả</option>
+            <option value="24h">24 giờ qua</option>
+            <option value="3d">3 ngày qua</option>
+            <option value="7d">7 ngày qua</option>
+          </select>
+        </div>
+
+        <button
+          className="btn reset"
+          onClick={() => {
+            setStatusFilter("all");
+            setDroneFilter("all");
+            setTimeFilter("all");
+          }}
+        >
+          Xóa lọc
+        </button>
+      </div>
+
+      {/* Meta line giống file 1 */}
+      <div className="table-meta">
+        <span>
+          Hiển thị: <b>{filteredOrders.length}</b> / {orders.length} đơn
+        </span>
+      </div>
+
+      {filteredOrders.length === 0 ? (
+        <p className="rso-empty">Không có đơn hàng nào phù hợp.</p>
       ) : (
         <table className="rso-table">
           <thead>
@@ -105,11 +146,11 @@ export default function RestaurantOrders() {
               <th>Địa chỉ</th>
               <th>Tổng tiền</th>
               <th>Trạng thái</th>
-              <th>Hành động</th>
+              <th>Drone</th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((order) => (
+            {filteredOrders.map((order) => (
               <tr
                 key={order.id}
                 className="rso-row"
@@ -121,21 +162,7 @@ export default function RestaurantOrders() {
                 <td>{order.customer?.address}</td>
                 <td>{order.total?.toLocaleString()}₫</td>
                 <td>{renderStatus(order.status)}</td>
-                <td>
-                  {order.status === "Chờ xác nhận" ? (
-                    <button
-                      className="rso-btn-confirm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleConfirm(order.id);
-                      }}
-                    >
-                      Xác nhận
-                    </button>
-                  ) : (
-                    <span className="rso-processed">✅ Xong</span>
-                  )}
-                </td>
+                <td>{order.droneId ? `Drone #${order.droneId}` : "—"}</td>
               </tr>
             ))}
           </tbody>

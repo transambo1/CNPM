@@ -7,56 +7,47 @@ import { doc, getDoc } from "firebase/firestore";
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(
+    JSON.parse(localStorage.getItem("currentUser")) || null
+  );
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log("🔥 Firebase Auth State:", user);
+
       if (user) {
         try {
-          // 🔹 Lấy dữ liệu user từ Firestore
-          const userRef = doc(db, "users", user.uid);
-          const userSnap = await getDoc(userRef);
-          const userData = userSnap.exists() ? userSnap.data() : {};
+          const snap = await getDoc(doc(db, "users", user.uid));
+          const dbUser = snap.exists() ? snap.data() : {};
 
-          setCurrentUser({
+          const formattedUser = {
             uid: user.uid,
             email: user.email,
-            role: userData.role || "customer",
-            firstname: userData.firstname || "",
-            lastname: userData.lastname || "",
-            ...userData,
-          });
+            ...dbUser,
+          };
+
+          setCurrentUser(formattedUser);
+
+          // ✅ Chỉ save khi có user
+          localStorage.setItem("currentUser", JSON.stringify(formattedUser));
         } catch (err) {
           console.error("🔥 Error fetching user data:", err);
-          setCurrentUser({
-            uid: user.uid,
-            email: user.email,
-            role: "custiomer",
-          });
         }
-      } else {
-        setCurrentUser(null);
       }
+
+      // ❌ Không remove localStorage khi user null — tránh mất user khi F5
       setLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // 🔹 Logout
   const logout = async () => {
     await signOut(auth);
     setCurrentUser(null);
+    localStorage.removeItem("currentUser"); // ✔ chỉ xóa khi thật sự logout
   };
-
-  // 🔹 Lưu currentUser vào localStorage để reload trang vẫn nhớ
- useEffect(() => {
-  const storedUser = localStorage.getItem("currentUser");
-  if (storedUser && !currentUser) {
-    setCurrentUser(JSON.parse(storedUser));
-  }
-}, []);
 
   return (
     <AuthContext.Provider value={{ currentUser, setCurrentUser, logout }}>

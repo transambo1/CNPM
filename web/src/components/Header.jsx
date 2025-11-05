@@ -10,6 +10,7 @@ function Header({ cartCount }) {
 
   // 🔹 Lấy currentUser từ context
   const { currentUser, logout } = useAuth(); 
+    if (currentUser === undefined) return null;
 
   useEffect(() => {
   console.log("Header currentUser:", currentUser);
@@ -77,9 +78,8 @@ function Header({ cartCount }) {
           </div>
         </div>
 
-        <button onClick={() => navigate("/")}>Ưu đãi</button>
         <button onClick={() => navigate("/restaurant")}>Nhà hàng</button>
-        <button onClick={() => navigate("/")}>Về chúng tôi</button>
+   
 
         <Link to="/Cart" className="cart-button">
           Giỏ hàng ({cartCount > 0 ? cartCount : 0})
