@@ -2,8 +2,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 // 1. Import các hàm Firestore cần thiết và instance 'db'
-import { collection, getDocs, query, where, orderBy, limit, startAfter } from "firebase/firestore"; 
-import { db } from '../firebase'; 
+import { collection, getDocs, query, where, orderBy, limit, startAfter } from "firebase/firestore";
+import { db } from '../firebase';
 import Product from "./Product";
 import Banner from "./Banner";
 import "./ProductList.css";
@@ -33,17 +33,17 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
             setLoadingProducts(true);
             try {
                 // Tham chiếu đến collection "products" trong Firestore
-                const productsCollectionRef = collection(db, "products"); 
-                
+                const productsCollectionRef = collection(db, "products");
+
                 // Lấy tất cả documents từ collection
-                const dataSnapshot = await getDocs(productsCollectionRef); 
-                
+                const dataSnapshot = await getDocs(productsCollectionRef);
+
                 // Chuyển đổi dữ liệu sang dạng mảng [{ id: ..., ...data }]
-                const fetchedProducts = dataSnapshot.docs.map(doc => ({ 
-                    id: doc.id, 
-                    ...doc.data() 
+                const fetchedProducts = dataSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
                 }));
-                
+
                 setProducts(fetchedProducts);
 
                 // Cập nhật khoảng giá min/max dựa trên dữ liệu thực tế

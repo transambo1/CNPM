@@ -1,4 +1,6 @@
-.product-card {
+/* ✅ src/components/ProductCard.css (đã tối ưu độ rộng và màu sắc) */
+
+.prd-card {
   background-color: #ffffff;
   border-radius: 12px;
   overflow: hidden;
@@ -6,49 +8,49 @@
   border: 1px solid #e9e9e9;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+  height: 100%;
+  width: 100%;
 }
 
-.product-card:hover {
+.prd-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 12px 28px rgba(18, 24, 35, 0.15);
 }
 
-.product-card img {
-  width: 100%;
-  height: 220px;
-  object-fit: cover;
-}
-
-.product-link {
+.prd-link {
   text-decoration: none;
   color: inherit;
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* ✅ căn giữa nội dung trong link */
   justify-content: space-between;
   flex-grow: 1;
   width: 100%;
-
 }
 
-.product-info {
-  width: none;
+.prd-img {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
 }
 
-.product-info {
-  padding: 16px 20px;
+.prd-info {
+  padding: 12px 8px;
+  /* Giảm padding ngang */
   text-align: center;
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  width: 100%;
 }
 
-.product-info h3 {
-  margin: 0 0 8px 0;
+.prd-name {
+  margin: 0 0 6px 0;
+  /* Giảm margin dưới */
   font-size: 1.4em;
   font-weight: 700;
   color: #333;
@@ -56,28 +58,39 @@
   text-align: center;
   word-break: break-word;
   width: 100%;
-  max-width: 90%;
+  max-width: 80%;
+  /* Giảm độ rộng */
 }
 
-.product-info p {
-  margin: 0 0 8px 0;
+.prd-price {
+  margin: 0 0 6px 0;
+  /* Giảm margin dưới */
   font-size: 1.2em;
   font-weight: 700;
-  color: #d2191a;
+  /* ✅ ĐỔI MÀU CAM */
+  color: #e85d04;
   line-height: 1.2;
   text-align: center;
 }
 
-.product-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 20px 20px 20px;
-  width: 100%;
+.prd-restaurant {
+  font-size: 0.9em;
+  color: #777;
+  margin: 0;
+  /* Xóa margin của nhà hàng để nó khít với giá */
 }
 
-.add-to-cart-btn {
-  width: 100%;
+.prd-actions {
+  display: flex;
+  justify-content: center;
+  /* ✅ Giảm padding dưới thêm */
+  padding: 0 8px 12px 8px;
+  /* Giảm từ 0 10px 10px 10px xuống 0 8px 12px 8px */
+
+}
+
+.prd-add-btn {
+  width: 95%;
   padding: 12px 0;
   font-size: 1em;
   font-weight: bold;
@@ -85,11 +98,20 @@
   cursor: pointer;
   text-align: center;
   border: none;
-  background-color: #fcb32c;
-  color: #2b2623;
+  /* ✅ Đổi màu nút thành gradient cam */
+  background: linear-gradient(90deg, #ff7a00, #ff5400);
+  color: #fff;
+  /* Chữ trắng để nổi bật trên nền cam */
   transition: all 0.2s ease;
+  box-shadow: 0 4px 15px rgba(255, 122, 0, 0.3);
+  /* Thêm bóng cho nút */
 }
 
-.add-to-cart-btn:hover {
-  background-color: #e09d22;
+.prd-add-btn:hover {
+  /* ✅ Đổi màu hover của nút */
+  background: linear-gradient(90deg, #ff5400, #ff7a00);
+  transform: translateY(-2px);
+  /* Hiệu ứng nhấc nhẹ khi hover */
+  box-shadow: 0 6px 20px rgba(255, 122, 0, 0.4);
+  /* Bóng đậm hơn khi hover */
 }

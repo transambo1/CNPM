@@ -1,79 +1,59 @@
 // src/components/ProductDetail.jsx
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-// 1. Import các hàm Firestore cần thiết và instance 'db'
-import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore"; 
-import { db } from '../firebase'; // Đảm bảo đường dẫn này đúng
-import './ProductDetail.css'; // Import CSS
+import { doc, getDoc, collection, query, where, getDocs, limit } from "firebase/firestore";
+import { db } from '../firebase';
+import './ProductDetail.css';
 
 function ProductDetail({ onAdd }) {
-    const { id } = useParams(); // Lấy ID sản phẩm từ URL
+    const { id } = useParams();
     const [product, setProduct] = useState(null);
-    const [restaurant, setRestaurant] = useState(null); // Giữ lại state nhà hàng nếu cần
+    const [restaurant, setRestaurant] = useState(null);
     const [relatedProducts, setRelatedProducts] = useState([]);
-    const [loading, setLoading] = useState(true); // State theo dõi tải dữ liệu
+    const [loading, setLoading] = useState(true);
 
-    // --- Lấy chi tiết sản phẩm từ Firestore ---
     useEffect(() => {
         const fetchProductDetail = async () => {
-            setLoading(true); // Bắt đầu tải
+            setLoading(true);
             try {
-                // 2. Tạo tham chiếu đến document sản phẩm trong collection "products"
-                const productDocRef = doc(db, "products", id); 
-                // 3. Lấy dữ liệu của document đó
-                const docSnap = await getDoc(productDocRef); 
+                const productDocRef = doc(db, "products", id);
+                const docSnap = await getDoc(productDocRef);
 
                 if (docSnap.exists()) {
-                    // Nếu document tồn tại, gán dữ liệu vào state
                     const productData = { id: docSnap.id, ...docSnap.data() };
                     setProduct(productData);
 
-                    // 3.1 (Thêm) Fetch thông tin nhà hàng nếu product có restaurantId
                     if (productData.restaurantId) {
-                         try {
-                            const restaurantDocRef = doc(db, "restaurants", productData.restaurantId);
-                            const restaurantSnap = await getDoc(restaurantDocRef);
-                            if (restaurantSnap.exists()) {
-                                setRestaurant({ id: restaurantSnap.id, ...restaurantSnap.data() });
-                            } else {
-                                console.warn("Không tìm thấy nhà hàng với ID:", productData.restaurantId);
-                            }
-                         } catch (restaurantErr) {
-                             console.error("Lỗi khi fetch nhà hàng:", restaurantErr);
-                         }
+                        const restaurantDocRef = doc(db, "restaurants", productData.restaurantId);
+                        const restaurantSnap = await getDoc(restaurantDocRef);
+                        if (restaurantSnap.exists()) {
+                            setRestaurant({ id: restaurantSnap.id, ...restaurantSnap.data() });
+                        }
                     }
-
                 } else {
-                    // Nếu không tìm thấy
-                    console.log("Không tìm thấy sản phẩm với ID:", id);
-                    setProduct(null); // Hoặc có thể điều hướng về trang 404
+                    setProduct(null);
                 }
             } catch (err) {
                 console.error("Lỗi khi fetch chi tiết sản phẩm:", err);
             } finally {
-                setLoading(false); // Kết thúc tải
+                setLoading(false);
             }
         };
         fetchProductDetail();
-    }, [id]); // Chạy lại khi ID trên URL thay đổi
+    }, [id]);
 
-    // --- Lấy danh sách sản phẩm gợi ý từ Firestore ---
     useEffect(() => {
         const fetchRelatedProducts = async () => {
-            // Chỉ chạy khi đã có thông tin sản phẩm chính (để biết category)
             if (product && product.category) {
                 try {
                     const productsCol = collection(db, "products");
-                    // 4. Tạo query: lấy products cùng category, khác ID hiện tại, giới hạn 4
                     const q = query(
                         productsCol,
-                        where("category", "==", product.category), // Lọc theo category
-                        where("__name__", "!=", id), // Loại trừ chính sản phẩm đang xem (__name__ là ID document)
-                        limit(4) // Giới hạn số lượng
+                        where("category", "==", product.category),
+                        where("__name__", "!=", id),
+                        limit(4)
                     );
-                    // 5. Thực thi query
                     const querySnapshot = await getDocs(q);
-                    // 6. Xử lý kết quả
                     const relatedList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setRelatedProducts(relatedList);
                 } catch (err) {
@@ -81,83 +61,68 @@ function ProductDetail({ onAdd }) {
                 }
             }
         };
-        // Chạy khi có thông tin 'product' hoặc 'id' thay đổi
-        fetchRelatedProducts(); 
-    }, [product, id]); 
+        fetchRelatedProducts();
+    }, [product, id]);
 
-    // Hiển thị loading
-    if (loading) {
-        return <p className="loading-message">⏳ Đang tải sản phẩm...</p>;
-    }
-    // Hiển thị nếu không tìm thấy sản phẩm
-    if (!product) {
-        return <p className="loading-message">Không tìm thấy sản phẩm.</p>;
-    }
+    if (loading) return <p className="productDetail__loading">⏳ Đang tải sản phẩm...</p>;
+    if (!product) return <p className="productDetail__loading">Không tìm thấy sản phẩm.</p>;
 
-    // Tính giá giảm (giữ nguyên)
     const discountedPrice = product.discount
         ? Math.round(product.price * (1 - product.discount / 100))
         : product.price;
 
-    // JSX return (Đã cập nhật onAdd để gửi thông tin nhà hàng)
     return (
-        <div className="product-detail-page">
-            <div className="product-detail-container">
-                {/* Ảnh sản phẩm */}
-                <div className="product-detail-image">
+        <div className="productDetail">
+            <div className="productDetail__container">
+                <div className="productDetail__image">
                     <img src={product.img} alt={product.name} />
                 </div>
 
-                {/* Thông tin chi tiết */}
-                <div className="product-detail-info">
-                    <h2 className="product-name">{product.name}</h2>
+                <div className="productDetail__info">
+                    <h2 className="productDetail__name">{product.name}</h2>
 
-                    <div className="rating-section">
+                    <div className="productDetail__rating">
                         <span className="stars">⭐ {product.rating || 4.5}</span>
-                        <span className="reviews">
-                            ({product.reviews || 100} đánh giá)
-                        </span>
+                        <span className="reviews">({product.reviews || 100} đánh giá)</span>
                     </div>
 
-                    <div className="price-section">
+                    <div className="productDetail__price">
                         {product.discount > 0 ? (
                             <>
-                                <p className="price-discounted">{discountedPrice.toLocaleString()}₫</p>
-                                <p className="price-original">{product.price.toLocaleString()}₫</p>
-                                <span className="discount-badge">-{product.discount}%</span>
+                                <p className="price--discounted">{discountedPrice.toLocaleString()}₫</p>
+                                <p className="price--original">{product.price.toLocaleString()}₫</p>
+                                <span className="price--badge">-{product.discount}%</span>
                             </>
                         ) : (
-                            <p className="price-discounted">{product.price.toLocaleString()}₫</p>
+                            <p className="price--discounted">{product.price.toLocaleString()}₫</p>
                         )}
                     </div>
 
-                    {/* Hiển thị tên nhà hàng */}
                     {restaurant && (
-                        <p className="restaurant-name">
+                        <p className="productDetail__restaurant">
                             Nhà hàng: <strong>{restaurant.name}</strong>
                         </p>
                     )}
 
-                    <p className="product-description">{product.description}</p>
+                    <p className="productDetail__desc">{product.description}</p>
 
                     {product.ingredients && (
-                        <div className="ingredients">
+                        <div className="productDetail__ingredients">
                             <h4>Nguyên liệu:</h4>
                             <ul>
-                                {product.ingredients.map((item, index) => (
-                                    <li key={index}>{item}</li>
+                                {product.ingredients.map((item, i) => (
+                                    <li key={i}>{item}</li>
                                 ))}
                             </ul>
                         </div>
                     )}
 
-                    {/* Cập nhật onAdd để gửi cả thông tin nhà hàng */}
                     <button
-                        className="add-to-cart-btn-detail"
+                        className="productDetail__addBtn"
                         onClick={() =>
                             onAdd({
                                 ...product,
-                                restaurantId: product.restaurantId || null, // Đảm bảo gửi restaurantId
+                                restaurantId: product.restaurantId || null,
                                 restaurantName: restaurant?.name || "Chưa xác định",
                             })
                         }
@@ -165,51 +130,45 @@ function ProductDetail({ onAdd }) {
                         🛒 Thêm vào giỏ hàng
                     </button>
 
-                    <div className="product-deal-progress">
-                        <div className="progress-header">
+                    <div className="productDetail__progress">
+                        <div className="progress__header">
                             <span>Sắp cháy hàng!</span>
-                            <span className="claimed">84% đã bán</span>
+                            <span className="progress__claimed">84% đã bán</span>
                         </div>
-                        <div className="progress-bar-container">
-                            <div
-                                className="progress-bar-fill"
-                                style={{ width: "84%" }}
-                            ></div>
+                        <div className="progress__bar">
+                            <div className="progress__fill" style={{ width: "84%" }}></div>
                         </div>
                     </div>
 
-                    <Link to="/" className="back-link">
+                    <Link to="/" className="productDetail__backLink">
                         ⬅ Quay lại danh sách sản phẩm
                     </Link>
                 </div>
             </div>
 
-            {/* Sản phẩm gợi ý (Đã sửa Link và onClick cho nút Thêm) */}
-            <div className="related-products">
+            <div className="relatedProducts">
                 <h3>Gợi ý cho bạn</h3>
-                <div className="related-grid">
+                <div className="relatedProducts__grid">
                     {relatedProducts.length > 0 ? (
                         relatedProducts.map((item) => (
-                            <Link 
-                                key={item.id} 
-                                to={`/product-detail/${item.id}`} 
-                                className="related-item-link" 
+                            <Link
+                                key={item.id}
+                                to={`/product-detail/${item.id}`}
+                                className="relatedProducts__link"
                             >
-                                <div className="related-item">
+                                <div className="relatedProducts__item">
                                     <img src={item.img} alt={item.name} />
                                     <h4>{item.name}</h4>
                                     <p>{item.price.toLocaleString()}₫</p>
                                     <button
-                                        className="add-btn"
-                                        onClick={(e) => { 
-                                            e.preventDefault(); 
-                                            // Gửi cả thông tin nhà hàng của sản phẩm gợi ý (nếu cần)
-                                            // Bạn cần fetch thông tin nhà hàng cho item này nếu muốn hiển thị tên
-                                            onAdd({ 
+                                        className="relatedProducts__addBtn"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            onAdd({
                                                 ...item,
                                                 restaurantId: item.restaurantId || null,
-                                                restaurantName: "N/A" // Cần fetch riêng nếu muốn tên nhà hàng ở đây
-                                             });
+                                                restaurantName: "N/A"
+                                            });
                                         }}
                                     >
                                         🛒 Thêm

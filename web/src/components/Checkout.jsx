@@ -1,10 +1,9 @@
-// src/components/Checkout.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
-import "./Checkout.css";
+import "./Checkout.css"; // Import file CSS
 
 export default function Checkout({ cart, setCart }) {
   const navigate = useNavigate();
@@ -22,7 +21,7 @@ export default function Checkout({ cart, setCart }) {
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Load thông tin user
+  // Load thông tin user (giữ nguyên)
   useEffect(() => {
     if (currentUser) {
       setForm({
@@ -35,7 +34,7 @@ export default function Checkout({ cart, setCart }) {
     }
   }, [currentUser]);
 
-  // Lấy thông tin nhà hàng từ Firestore
+  // Lấy thông tin nhà hàng (giữ nguyên)
   useEffect(() => {
     const fetchRestaurantDetails = async () => {
       if (!restaurantId) return;
@@ -56,21 +55,31 @@ export default function Checkout({ cart, setCart }) {
     setForm({ ...form, [name]: value });
   };
 
-  // Lấy tọa độ từ địa chỉ
+  // ✅ SỬA LỖI 1: Cải thiện hàm lấy tọa độ
   const getCoordinatesForAddress = async (address) => {
     try {
-      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1&countrycodes=vn`;
+      // Thêm "Ho Chi Minh City" để tăng độ chính xác
+      const query = `${address}, Ho Chi Minh City, Vietnam`;
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=vn`;
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+
       if (!res.ok) throw new Error(`Lỗi Geocoding: ${res.statusText}`);
+
       const data = await res.json();
-      if (data.length > 0) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-      return null;
+      if (data.length > 0) {
+        // Tìm thấy, trả về tọa độ
+        return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+      }
+
+      console.warn("API Nominatim không tìm thấy địa chỉ:", query);
+      return null; // Không tìm thấy, trả về null
     } catch (err) {
-      console.error("Lỗi Geocoding:", err);
-      return null;
+      console.error("Lỗi Geocoding (catch):", err);
+      return null; // Bị lỗi, trả về null
     }
   };
 
+  // ✅ SỬA LỖI 2: Thêm bước kiểm tra tọa độ trước khi đặt hàng
   const handleCheckout = async () => {
     if (!currentUser) {
       alert("⚠️ Bạn cần đăng nhập để thanh toán!");
@@ -83,16 +92,26 @@ export default function Checkout({ cart, setCart }) {
       return;
     }
     if (!restaurantDetails) {
-      alert("⚠️ Không tải được thông tin nhà hàng.");
+      alert("⚠️ Không tải được thông tin nhà hàng. Vui lòng thử lại.");
       return;
     }
 
     setIsProcessing(true);
     try {
+      // 1. Lấy tọa độ
       const customerCoords = await getCoordinatesForAddress(form.address);
 
+      // 2. *** BƯỚC KIỂM TRA QUAN TRỌNG NHẤT ***
+      // Code cũ của bạn thiếu bước này
+      if (!customerCoords) {
+        // Nếu tọa độ là null, báo lỗi và DỪNG LẠI
+        alert("❌ Lỗi địa chỉ!\nKhông thể tìm thấy tọa độ cho địa chỉ của bạn. Vui lòng nhập địa chỉ cụ thể hơn (ví dụ: '28 An Dương Vương, Phường 9, Quận 5').");
+        setIsProcessing(false); // Dừng xử lý
+        return; // Dừng hàm, KHÔNG cho đặt hàng
+      }
+
+      // 3. Nếu tọa độ OK, mới tiếp tục tạo đơn hàng
       const newOrder = {
-        // Dùng uid của currentUser để chắc chắn không undefined
         userId: currentUser.uid || "unknown_user",
         restaurantId,
         restaurantName: restaurantDetails.name,
@@ -101,8 +120,8 @@ export default function Checkout({ cart, setCart }) {
           phone: form.phone,
           email: form.email,
           address: form.address,
-          latitude: customerCoords?.lat || null,
-          longitude: customerCoords?.lng || null
+          latitude: customerCoords.lat, // Chắc chắn có dữ liệu
+          longitude: customerCoords.lng // Chắc chắn có dữ liệu
         },
         items: cart.map(item => ({
           id: item.id,
@@ -120,9 +139,12 @@ export default function Checkout({ cart, setCart }) {
       const docRef = await addDoc(collection(db, "orders"), newOrder);
 
       setCart([]);
-      localStorage.removeItem(`cart_${currentUser.username}`);
+      if (currentUser && currentUser.username) {
+        localStorage.removeItem(`cart_${currentUser.username}`);
+      }
       alert(`✅ Đặt đơn hàng thành công!\nMã đơn hàng: ${docRef.id}`);
       navigate(`/waiting/${docRef.id}`);
+
     } catch (err) {
       console.error("❌ Lỗi khi lưu order:", err);
       alert("Có lỗi xảy ra khi đặt hàng, vui lòng thử lại!");
@@ -137,24 +159,27 @@ export default function Checkout({ cart, setCart }) {
     handleCheckout();
   };
 
+  // Phần JSX (Đã sửa bố cục)
   return (
     <div className="checkout-page">
       <div className="checkout-header">
-        <Link to="/cart"><button className="back-btn">⬅ Quay lại giỏ hàng</button></Link>
+        <Link to="/cart"><button className="checkout-back-btn">⬅ Quay lại giỏ hàng</button></Link>
         <h2>🔒 THÔNG TIN ĐẶT HÀNG</h2>
       </div>
 
       <div className="checkout-container">
+
+        {/* ===== CỘT TRÁI (INFO) ===== */}
         <div className="checkout-info">
-          <div className="info-block">
+          <div className="checkout-info-block">
             <h3>ĐƯỢC GIAO TỪ:</h3>
             <p className="store-name">{restaurantDetails ? restaurantDetails.name : "Đang tải..."}</p>
             <p className="store-address">{restaurantDetails ? restaurantDetails.address : "..."}</p>
           </div>
 
-          <div className="info-block">
+          <div className="checkout-info-block">
             <h3>GIAO ĐẾN:</h3>
-            <input type="text" name="address" value={form.address} onChange={handleChange} placeholder="Nhập địa chỉ giao hàng..." className="address-input"/>
+            <input type="text" name="address" value={form.address} onChange={handleChange} placeholder="Nhập địa chỉ giao hàng..." className="address-input" />
             <iframe
               title="map"
               src={`https://maps.google.com/maps?q=${encodeURIComponent(form.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
@@ -163,47 +188,74 @@ export default function Checkout({ cart, setCart }) {
               style={{ border: 0, margin: "20px 0", borderRadius: "10px" }}
             />
           </div>
-
-          <div className="info-block">
-            <h2>THÔNG TIN KHÁCH HÀNG:</h2>
-            <form onSubmit={handleSubmit}>
-              <div><label>Họ</label><input type="text" name="lastName" value={form.lastName} onChange={handleChange} /></div>
-              <div><label>Tên</label><input type="text" name="firstName" value={form.firstName} onChange={handleChange} required /></div>
-              <div><label>Số điện thoại</label><input type="tel" name="phone" value={form.phone} onChange={handleChange} required /></div>
-              <div><label>Email</label><input type="email" name="email" value={form.email} onChange={handleChange} required /></div>
-
-              <div className="payment-section">
-                <h2>PHƯƠNG THỨC THANH TOÁN:</h2>
-                <label><input type="radio" name="payment" value="cod" defaultChecked /> Thanh toán khi nhận hàng (COD)</label>
-                <label><input type="radio" name="payment" value="bank" /> Chuyển khoản ngân hàng</label>
-
-                <button type="submit" className="btn-primary" disabled={isProcessing}>
-                  {isProcessing ? "Đang xử lý..." : "Xác nhận đặt hàng"}
-                </button>
-              </div>
-            </form>
-          </div>
         </div>
 
+        {/* ===== CỘT PHẢI (SUMMARY + FORM) ===== */}
         <aside className="checkout-summary">
+          {/* 1. TÓM TẮT ĐƠN HÀNG */}
           <div className="summary-card">
             <h3>TÓM TẮT ĐƠN HÀNG:</h3>
             <ul>
               {cart.map(item => (
-                <li key={item.id}>
+                <li key={item.id} className="summary-item">
                   <span>{item.quantity} x {item.name}</span>
                   <span>{(item.price * item.quantity).toLocaleString()}₫</span>
+
                 </li>
               ))}
             </ul>
-            <div className="line">
+            <div className="summary-line">
               <span>Tổng đơn hàng</span>
               <strong>{total.toLocaleString()}₫</strong>
             </div>
-            <div className="line total">
+            <div className="summary-line total">
               <span>Tổng thanh toán</span>
               <strong>{total.toLocaleString()}₫</strong>
             </div>
+          </div>
+
+          {/* 2. KHỐI THÔNG TIN KHÁCH HÀNG */}
+          <div className="customer-info-card">
+            <h2>THÔNG TIN KHÁCH HÀNG:</h2>
+            <form onSubmit={handleSubmit} className="checkout-form">
+              <div className="form-group-inline">
+                <div className="form-group">
+                  <label>Họ</label>
+
+                  <input type="text" name="lastName" value={form.lastName} onChange={handleChange} />
+                </div>
+                <div className="form-group">
+                  <label>Tên</label>
+                  <input type="text" name="firstName" value={form.firstName} onChange={handleChange} placeHolder="faafaf" required />
+
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Số điện thoại</label>
+                <input type="tel" name="phone" value={form.phone} onChange={handleChange} required />
+                Vui lòng nhập số điện thoại
+                _Bắt buộc
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" name="email" value={form.email} onChange={handleChange} required />
+                Vui lòng nhập email
+              </div>
+
+              <div className="payment-section">
+                <h2>PHƯƠNG THỨC THANH TOÁN:</h2>
+                <div className="payment-option">
+                  <input type="radio" id="payment-bank" name="payment" value="bank" defaultChecked />
+                  Lựa chọn thanh toán
+                  <label htmlFor="payment-bank">Thanh toán khi nhận hàng (COD)</label>
+                </div>
+              </div>
+
+              <button type="submit" className="checkout-btn-primary" disabled={isProcessing}>
+                {isProcessing ? "Đang xử lý..." : "Xác nhận đặt hàng"}
+              </button>
+
+            </form>
           </div>
         </aside>
       </div>

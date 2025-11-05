@@ -2,14 +2,13 @@
 import React from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import "./Cart.css";
+import "./Cart.css"; // Đảm bảo file CSS này cũng được đổi tên
 
 function Cart({ cart = [], onRemove, onChangeQuantity }) {
-    const { currentUser } = useAuth(); // ✅ lấy trực tiếp từ context
+    const { currentUser } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Tổng tiền
     const total = cart.reduce((sum, item) => {
         const price = Number(item.price || 0);
         const qty = Number(item.quantity || 1);
@@ -18,7 +17,8 @@ function Cart({ cart = [], onRemove, onChangeQuantity }) {
 
     if (!cart || cart.length === 0) {
         return (
-            <div className="cart-page empty-cart">
+            // ✅ Đổi tên class
+            <div className="cart-page-wrapper cart-page-empty-cart">
                 <h2>🛒 Giỏ hàng của bạn trống</h2>
                 <Link to="/">⬅ Quay lại menu</Link>
             </div>
@@ -27,7 +27,6 @@ function Cart({ cart = [], onRemove, onChangeQuantity }) {
 
     const handleCheckout = () => {
         if (!currentUser) {
-            // Redirect về login kèm thông tin từ đâu
             navigate("/login", { state: { from: location.pathname } });
         } else {
             navigate("/checkout");
@@ -35,38 +34,52 @@ function Cart({ cart = [], onRemove, onChangeQuantity }) {
     };
 
     return (
-        <div className="cart-page">
-            <div className="cart-container">
-                <div className="cart-column">
+        // ✅ Đổi tên class
+        <div className="cart-page-wrapper">
+            {/* ✅ Đổi tên class */}
+            <div className="cart-page-container">
+                {/* ✅ Đổi tên class */}
+                <div className="cart-page-cart-column">
                     <h2>Giỏ hàng của tôi</h2>
                     {cart.map((item) => {
                         const price = Number(item.price || 0);
                         const qty = Number(item.quantity || 1);
                         return (
-                            <div className="cart-item" key={item.id}>
+                            // ✅ Đổi tên class
+                            <div className="cart-page-item" key={item.id}>
                                 <img src={item.img || "/placeholder.png"} alt={item.name || "Sản phẩm"} loading="lazy" />
-                                <div className="cart-item-info">
+                                {/* ✅ Đổi tên class */}
+                                <div className="cart-page-item-info">
                                     <h3>{item.name}</h3>
                                     <p>Giá: {price.toLocaleString("vi-VN")}₫</p>
-                                    <div className="qty-controls">
-                                        <button onClick={() => onChangeQuantity(item.id, qty - 1)} disabled={qty <= 1}>-</button>
-                                        <span>{qty}</span>
-                                        <button onClick={() => onChangeQuantity(item.id, qty + 1)}>+</button>
-                                        <button onClick={() => onRemove(item.id)} className="remove-btn">❌ Xóa</button>
+                                    {/* ✅ Đổi tên class */}
+                                    <div className="cart-page-qty-controls-tong">
+                                        <div className="cart-page-qty-controls">
+                                            <button onClick={() => onChangeQuantity(item.id, qty - 1)} disabled={qty <= 1}>-</button>
+                                            <span>{qty}</span>
+                                            <button onClick={() => onChangeQuantity(item.id, qty + 1)}>+</button>
+                                            {/* ✅ Đổi tên class */}
+
+                                        </div>
+                                        <button onClick={() => onRemove(item.id)} className="cart-page-remove-btn">❌ Xóa</button>
                                     </div>
                                 </div>
-                                <div className="cart-item-price">{(price * qty).toLocaleString("vi-VN")}₫</div>
+                                {/* ✅ Đổi tên class */}
+                                <div className="cart-page-item-price">{(price * qty).toLocaleString("vi-VN")}₫</div>
                             </div>
                         );
                     })}
                 </div>
 
-                <aside className="summary-column">
-                    <div className="summary-card">
+                {/* ✅ Đổi tên class */}
+                <aside className="cart-page-summary-column">
+                    {/* ✅ Đổi tên class */}
+                    <div className="cart-page-summary-card">
                         <h3>Tổng quan đơn hàng</h3>
                         <ul>
                             {cart.map((item) => (
-                                <li key={item.id}>
+                                // ✅ Thêm class cho li
+                                <li key={item.id} className="cart-page-summary-item">
                                     <span>{item.quantity} x {item.name}</span>
                                     <span>{(item.price * item.quantity).toLocaleString("vi-VN")}₫</span>
                                 </li>
@@ -74,19 +87,23 @@ function Cart({ cart = [], onRemove, onChangeQuantity }) {
                         </ul>
                         <h3>{cart.length} món</h3>
 
-                        <div className="summary-lines">
-                            <div className="line">
+                        {/* ✅ Đổi tên class */}
+                        <div className="cart-page-summary-lines">
+                            {/* ✅ Đổi tên class */}
+                            <div className="cart-page-line">
                                 <span>Tổng đơn hàng</span>
                                 <strong>{total.toLocaleString("vi-VN")}₫</strong>
                             </div>
-                            <div className="line total">
+                            {/* ✅ Đổi tên class */}
+                            <div className="cart-page-line cart-page-total">
                                 <span>Tổng thanh toán</span>
                                 <strong>{total.toLocaleString("vi-VN")}₫</strong>
                             </div>
-                        </div>
 
-                        <button className="btn-primary" onClick={handleCheckout}>Thanh toán</button>
-                        <Link to="/" className="back-to-menu-link">⬅ Quay lại menu</Link>
+                            <button className="cart-page-btn-primary" onClick={handleCheckout}>Thanh toán</button>
+                            {/* ✅ Đổi tên class */}
+                            <Link to="/" className="cart-page-back-link">⬅ Quay lại menu</Link>
+                        </div>
                     </div>
                 </aside>
             </div>

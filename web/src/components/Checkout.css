@@ -1,128 +1,250 @@
-/* Checkout Css */
+/* ===== TỔNG THỂ TRANG CHECKOUT ===== */
 .checkout-page {
-  padding: 20px;
-  font-family: Arial, sans-serif;
+  width: 100%;
+  background-color: #f9f9f9;
+  min-height: 100vh;
 }
 
+/* ===== HEADER ===== */
 .checkout-header {
+  background-color: #fff;
+  padding: 20px 40px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 20px;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .checkout-header h2 {
-  order: 1;
-}
-
-.checkout-header a {
-  order: 2;
-}
-
-.back-btn {
-  border: 1px solid #ccc;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.checkout-container {
-  display: flex;
-  gap: 20px;
-  align-items: flex-start;
-}
-
-.checkout-info {
-  flex: 2;
-}
-
-.info-block {
-  background: #f9f9f9;
-  padding: 15px;
-  margin-bottom: 16px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-}
-
-.info-block h3 {
-  margin: 0 0 8px;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.checkout-summary {
-  flex: 1;
-}
-
-/* ... (Phần summary-card và line được dùng chung, có thể để ở App.css hoặc copy qua) ... */
-/* Nếu muốn đóng gói hoàn toàn, bạn nên copy cả các class dùng chung qua đây */
-
-/* --- CHECKOUT FORM STYLES --- */
-.info-block form>div {
-  margin-bottom: 18px;
-}
-
-.info-block form label {
-  display: block;
-  font-weight: 600;
+  margin: 0;
+  font-size: 1.5rem;
   color: #333;
-  margin-bottom: 6px;
-  font-size: 14px;
 }
 
-.info-block form input[type="text"],
-.info-block form input[type="tel"],
-.info-block form input[type="email"] {
-  width: 100%;
-  padding: 12px 15px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+.checkout-back-btn {
+  background: #f0f0f0;
+  border: 1px solid #ddd;
+  color: #555;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.info-block form input[type="text"]:focus,
-.info-block form input[type="tel"]:focus,
-.info-block form input[type="email"]:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+.checkout-back-btn:hover {
+  background: #e5e5e5;
 }
 
-.info-block .store-name {
-  font-weight: bold;
-  font-size: 1.1em;
-  color: #222;
+/* ===== BỐ CỤC CHÍNH (GRID) ===== */
+.checkout-container {
+  display: grid;
+  /* ✅ YÊU CẦU: Cột trái (3 phần) nhỏ hơn, Cột phải (2 phần) to ra */
+  /* Tỉ lệ cũ có thể là 2fr 1fr, giờ đổi thành 3fr 2fr */
+  grid-template-columns: 3fr 2fr;
+  gap: 30px;
+  max-width: 1600px;
+  margin: 30px auto;
+  padding: 0 40px;
+}
+
+/* ===== CỘT TRÁI (INFO) ===== */
+.checkout-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.checkout-info-block {
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.checkout-info-block h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #555;
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.store-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #333;
   margin: 0;
 }
 
-.info-block .store-address {
+.store-address {
+  font-size: 1rem;
   color: #666;
-  font-size: 0.9em;
-  margin-top: 4px;
-}
-
-.info-block iframe {
-  border: none;
-  border-radius: 8px;
-  margin-top: 20px;
+  margin: 5px 0 0 0;
 }
 
 .address-input {
   width: 100%;
   padding: 12px 15px;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 8px;
+  font-size: 1rem;
 }
 
-.address-input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+/* ===== CỘT PHẢI (SUMMARY) ===== */
+.checkout-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+/* Card tóm tắt đơn hàng */
+.summary-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  /* Dính lại khi cuộn */
+  position: sticky;
+  top: 30px;
+}
+
+.summary-card h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  color: #555;
+  border-bottom: 1px dashed #eee;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 15px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.summary-line.total {
+  font-size: 1.3rem;
+  color: #e85d04;
+  /* Màu cam đậm */
+}
+
+.summary-line.total strong {
+  font-size: 1.4rem;
+}
+
+
+/* ✅ (MỚI) Card thông tin khách hàng */
+.customer-info-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 25px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.customer-info-card h2 {
+  margin-top: 0;
+  font-size: 1.2rem;
+}
+
+/* ===== FORM STYLING ===== */
+.checkout-form .form-group-inline {
+  display: flex;
+  gap: 20px;
+}
+
+.checkout-form .form-group-inline .form-group {
+  flex: 1;
+}
+
+.checkout-form .form-group {
+  margin-bottom: 15px;
+}
+
+.checkout-form label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #444;
+  margin-bottom: 5px;
+}
+
+.checkout-form input[type="text"],
+.checkout-form input[type="tel"],
+.checkout-form input[type="email"] {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+/* Payment Section */
+.payment-section {
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.payment-section h2 {
+  font-size: 1.2rem;
+  margin-top: 0;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fdfdfd;
+}
+
+.payment-option input[type="radio"] {
+  margin-right: 10px;
+  width: 18px;
+  height: 18px;
+}
+
+.payment-option label {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Nút đặt hàng */
+.checkout-btn-primary {
+  display: block;
+  width: 100%;
+  margin-top: 25px;
+  background: linear-gradient(90deg, #ff7a00, #ff5400);
+  color: #fff;
+  border: none;
+  padding: 15px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(255, 122, 0, 0.3);
+  transition: all 0.3s ease;
+}
+
+.checkout-btn-primary:hover {
+  background: linear-gradient(90deg, #ff5400, #ff7a00);
+  transform: translateY(-2px);
+}
+
+.checkout-btn-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
 }
