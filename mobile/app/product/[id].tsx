@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,12 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { app } from "../../libs/firebase";
+import { useCart } from "../../libs/CartContext";
 
 type Product = {
   id: string;
@@ -31,6 +31,8 @@ export default function DetailProduct() {
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
+  const { addItem, restaurantId: cartRestaurantId } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -73,6 +75,34 @@ export default function DetailProduct() {
   else router.push("/" as never);
 };
 
+  useEffect(() => {
+    setQuantity(1);
+  }, [id]);
+
+  const isDifferentRestaurant = useMemo(() => {
+    if (!product) return false;
+    if (!cartRestaurantId) return false;
+    return cartRestaurantId !== product.restaurantId;
+  }, [cartRestaurantId, product]);
+
+  const increaseQuantity = () => setQuantity((prev) => Math.min(prev + 1, 99));
+  const decreaseQuantity = () => setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+
+  const handleAddToCart = () => {
+    if (!product) return;
+
+    addItem(
+      {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        img: product.img,
+        restaurantId: product.restaurantId,
+      },
+      quantity
+    );
+  };
+
   if (loading) {
     return <ActivityIndicator size="large" color="#00A74F" style={{ marginTop: 50 }} />;
   }
@@ -98,7 +128,7 @@ export default function DetailProduct() {
         <View style={{ width: 34 }} />
       </View>
 
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 140 }}>
         <Image source={{ uri: product.img }} style={styles.image} />
 
         <View style={styles.content}>
@@ -131,10 +161,35 @@ export default function DetailProduct() {
         </View>
       </ScrollView>
 
-      {/* Floating Add to Cart Button */}
-      <TouchableOpacity style={styles.floatingBtn}>
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <View style={styles.bottomBar}>
+        <View style={styles.quantitySelector}>
+          <TouchableOpacity
+            onPress={decreaseQuantity}
+            style={[styles.quantityButton, quantity === 1 && styles.quantityButtonDisabled]}
+            disabled={quantity === 1}
+          >
+            <Ionicons name="remove" size={18} color={quantity === 1 ? "#999" : "#111"} />
+          </TouchableOpacity>
+          <Text style={styles.quantityValue}>{quantity}</Text>
+          <TouchableOpacity onPress={increaseQuantity} style={styles.quantityButton}>
+            <Ionicons name="add" size={18} color="#111" />
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.addCartButton, isDifferentRestaurant && styles.addCartButtonWarning]}
+          activeOpacity={0.9}
+          onPress={handleAddToCart}
+        >
+          <View>
+            <Text style={styles.addCartText}>Thêm vào giỏ</Text>
+            <Text style={styles.addCartSubText}>
+              {(product.price * quantity).toLocaleString()}đ
+            </Text>
+          </View>
+          <Ionicons name="cart" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -174,19 +229,53 @@ const styles = StyleSheet.create({
   noData: { fontSize: 16, color: "#777" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  floatingBtn: {
+  bottomBar: {
     position: "absolute",
-    bottom: 28,
-    right: 22,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: GREEN,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+    borderTopWidth: 1,
+    borderTopColor: BORDER,
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 16,
+  },
+  quantitySelector: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F7F8",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  quantityButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 5 },
-    }),
   },
+  quantityButtonDisabled: {
+    opacity: 0.4,
+  },
+  quantityValue: { fontSize: 18, fontWeight: "700", marginHorizontal: 8 },
+  addCartButton: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: GREEN,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+  },
+  addCartButtonWarning: {
+    backgroundColor: "#FF7043",
+  },
+  addCartText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+  addCartSubText: { color: "#F0FFEB", fontSize: 13, marginTop: 2 },
 });

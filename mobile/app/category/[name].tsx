@@ -1,7 +1,7 @@
 // file: app/category/[name].js
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { View, Text, FlatList, StyleSheet, ActivityIndicator, Image, TouchableOpacity } from 'react-native';
+import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { getFirestore, collection, query, where, getDocs } from 'firebase/firestore';
@@ -16,17 +16,18 @@ type Product = {
     discount?: number;
     rating?: number;
     reviews?: number;
+    restaurantId: string;
 };
 
 // 2. Component ProductCard (Để hiển thị sản phẩm)
-const ProductCard = ({ item }: { item: Product }) => (
-    <View style={styles.cardContainer}>
+const ProductCard = ({ item, onPress }: { item: Product; onPress: () => void }) => (
+    <TouchableOpacity style={styles.cardContainer} activeOpacity={0.9} onPress={onPress}>
         <Image source={{ uri: item.img }} style={styles.cardImagePlaceholder} />
         <View style={styles.cardInfo}>
             <Text style={styles.cardTitle}>{item.name}</Text>
             <View style={styles.cardRating}>
                 <Ionicons name="star" size={14} color="#FFC107" />
-                <Text style={styles.cardRatingText}>{item.rating} ({item.reviews} đánh giá)</Text>
+                <Text style={styles.cardRatingText}>{item.rating ?? '4.5'} ({item.reviews ?? 120} đánh giá)</Text>
             </View>
             <View style={styles.cardPriceContainer}>
                 <Text style={styles.cardPrice}>{item.price.toLocaleString('vi-VN')}đ</Text>
@@ -40,12 +41,13 @@ const ProductCard = ({ item }: { item: Product }) => (
                 </View>
             )}
         </View>
-    </View>
+    </TouchableOpacity>
 );
 
 export default function CategoryPage() {
     // 3. Lấy tên danh mục từ URL (ví dụ: "Lẩu")
     const { name } = useLocalSearchParams();
+    const router = useRouter();
     const [products, setProducts] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -75,6 +77,7 @@ export default function CategoryPage() {
                         discount: data.discount,
                         rating: data.rating,
                         reviews: data.reviews,
+                        restaurantId: data.restaurantId,
                     } as Product;
                 });
                 setProducts(productsData);
@@ -93,18 +96,35 @@ export default function CategoryPage() {
             {/* 6. Đặt tiêu đề cho trang (ví dụ: "Danh mục: Lẩu") */}
             <Stack.Screen options={{
                 title: `Danh mục: ${name}`,
-                headerBackTitle: "Trở về"
+                headerBackTitle: "Trở về",
+                headerShown: false
             }} />
+
+            <View style={styles.appBar}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                    <Ionicons name="chevron-back" size={24} color="#111" />
+                </TouchableOpacity>
+                <Text style={styles.appBarTitle} numberOfLines={1}>{name}</Text>
+                <View style={{ width: 32 }} />
+            </View>
 
             {loading ? (
                 <ActivityIndicator size="large" color="#00A74F" style={{ marginTop: 20 }} />
             ) : (
                 <FlatList
                     data={products}
-                    renderItem={({ item }) => <ProductCard item={item} />}
+                    renderItem={({ item }) => (
+                        <ProductCard
+                            item={item}
+                            onPress={() => router.push({
+                                pathname: '/product/[id]',
+                                params: { id: item.id }
+                            } as never)}
+                        />
+                    )}
                     keyExtractor={item => item.id}
                     ListEmptyComponent={
-                        <Text style={styles.emptyText}>Không tìm thấy sản phẩm nào cho danh mục "{name}"</Text>
+                        <Text style={styles.emptyText}>Không tìm thấy sản phẩm nào cho danh mục “{name}”</Text>
                     }
                 />
             )}
@@ -123,6 +143,28 @@ const styles = StyleSheet.create({
         marginTop: 50,
         fontSize: 16,
         color: '#777',
+    },
+    appBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingBottom: 12,
+        paddingTop: 6,
+    },
+    backButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F3F5F6',
+    },
+    appBarTitle: {
+        flex: 1,
+        textAlign: 'center',
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#111',
     },
     cardContainer: {
         paddingHorizontal: 15,

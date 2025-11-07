@@ -14,6 +14,7 @@ import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "fi
 
 import { Ionicons } from "@expo/vector-icons";
 import { app } from "../../libs/firebase";
+import { useCart } from "../../libs/CartContext";
 
 
 // ==== Types ====
@@ -37,6 +38,7 @@ type Restaurant = {
 export default function RestaurantMenu() {
   const router = useRouter();
   const { id } = useLocalSearchParams(); // restaurantId
+  const { addItem, totalItems, totalPrice, restaurantId: cartRestaurantId } = useCart();
  
   const [products, setProducts] = useState<Product[]>([]);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -48,85 +50,109 @@ export default function RestaurantMenu() {
   );
 
   useEffect(() => {
-  const fetchAll = async () => {
-    setLoading(true);
-    const db = getFirestore(app);
+    const fetchAll = async () => {
+      setLoading(true);
+      const db = getFirestore(app);
 
-    try {
-      // ✅ 1) Restaurant info bằng Document ID
-      const docRef = doc(db, "restaurants", id as string);
-      const rSnap = await getDoc(docRef);
+      try {
+        // ✅ 1) Restaurant info bằng Document ID
+        const docRef = doc(db, "restaurants", id as string);
+        const rSnap = await getDoc(docRef);
 
-      if (rSnap.exists()) {
-        const r = rSnap.data() as any;
-        setRestaurant({
-          id: id as string,
-          name: r.name,
-          address: r.address,
-          image: r.image,
+        if (rSnap.exists()) {
+          const r = rSnap.data() as any;
+          setRestaurant({
+            id: id as string,
+            name: r.name,
+            address: r.address,
+            image: r.image,
+          });
+        }
+
+        // ✅ 2) Products theo restaurantId
+        const pQuery = query(
+          collection(db, "products"),
+          where("restaurantId", "==", id)
+        );
+        const pSnap = await getDocs(pQuery);
+
+        const pData = pSnap.docs.map((doc) => {
+          const d = doc.data() as any;
+          return {
+            id: doc.id,
+            name: d.name,
+            img: d.img,
+            price: d.price,
+            rating: d.rating ?? undefined,
+            reviews: d.reviews ?? undefined,
+          } as Product;
         });
+
+        setProducts(pData);
+      } catch (e) {
+        console.error("Fetch restaurant menu error:", e);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // ✅ 2) Products theo restaurantId
-      const pQuery = query(collection(db, "products"), where("restaurantId", "==", id));
-      const pSnap = await getDocs(pQuery);
+    fetchAll();
+  }, [id]);
 
-      const pData = pSnap.docs.map((doc) => {
-        const d = doc.data() as any;
-        return {
-          id: doc.id,
-          name: d.name,
-          img: d.img,
-          price: d.price,
-          rating: d.rating ?? undefined,
-          reviews: d.reviews ?? undefined,
-        } as Product;
-      });
 
-      setProducts(pData);
-    } catch (e) {
-      console.error("Fetch restaurant menu error:", e);
-    } finally {
-      setLoading(false);
-    }
+  const handleAddToCart = (item: Product) => {
+    addItem(
+      {
+        id: item.id,
+        name: item.name,
+        price: item.price ?? 0,
+        img: item.img,
+        restaurantId: id as string,
+      },
+      1
+    );
   };
 
-  fetchAll();
-}, [id]);
-
-
   const renderItem = ({ item }: { item: Product }) => (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      style={styles.card}
-    onPress={() =>
-  router.push({
-    pathname: "/product/[id]",
-    params: { id: item.id },
-  })
-}
-
-
-    >
-      <Image source={{ uri: item.img }} style={styles.cardImage} />
-      <View style={styles.cardBody}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {item.name}
-        </Text>
-
-        <View style={styles.cardMetaRow}>
-          <Ionicons name="star" size={14} color="#FFC107" />
-          <Text style={styles.cardMetaText}>
-            {item.rating ? item.rating.toFixed(1) : "4.5"}
+    <View style={styles.card}>
+      <TouchableOpacity
+        activeOpacity={0.9}
+        style={styles.cardContent}
+        onPress={() =>
+          router.push({
+            pathname: "/product/[id]",
+            params: { id: item.id },
+          })
+        }
+      >
+        <Image source={{ uri: item.img }} style={styles.cardImage} />
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle} numberOfLines={2}>
+            {item.name}
           </Text>
-          <Text style={styles.cardMetaSub}>
-            {"  "}({item.reviews ?? 120})
-          </Text>
+
+          <View style={styles.cardMetaRow}>
+            <Ionicons name="star" size={14} color="#FFC107" />
+            <Text style={styles.cardMetaText}>
+              {item.rating ? item.rating.toFixed(1) : "4.5"}
+            </Text>
+            <Text style={styles.cardMetaSub}>
+              {"  "}({item.reviews ?? 120})
+            </Text>
+          </View>
+
+          <Text style={styles.cardPrice}>{(item.price ?? 0).toLocaleString()}đ</Text>
         </View>
+      </TouchableOpacity>
 
-        <Text style={styles.cardPrice}>{(item.price ?? 0).toLocaleString()}đ</Text>
-      </View>
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.addButton}
+        activeOpacity={0.85}
+        onPress={() => handleAddToCart(item)}
+      >
+        <Text style={styles.addButtonText}>Thêm</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   if (loading) {
@@ -179,8 +205,27 @@ export default function RestaurantMenu() {
           data={products}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, paddingTop: 6 }}
+          contentContainerStyle={{ padding: 16, paddingTop: 6, paddingBottom: 120 }}
         />
+      )}
+
+      {totalItems > 0 && cartRestaurantId === id && (
+        <TouchableOpacity
+          style={styles.cartBar}
+          activeOpacity={0.9}
+          onPress={() => router.push("/(tabs)/payment" as never)}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            </View>
+            <View>
+              <Text style={styles.cartLabel}>Xem giỏ hàng</Text>
+              <Text style={styles.cartSubLabel}>Tổng cộng {totalPrice.toLocaleString()}đ</Text>
+            </View>
+          </View>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
+        </TouchableOpacity>
       )}
     </View>
   );
@@ -240,8 +285,6 @@ const styles = StyleSheet.create({
 
   // Product card (premium)
   card: {
-    flexDirection: "row",
-    alignItems: "center",
     padding: 12,
     marginBottom: 12,
     borderRadius: 14,
@@ -252,6 +295,10 @@ const styles = StyleSheet.create({
       ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
       android: { elevation: 2 },
     }),
+  },
+  cardContent: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   cardImage: {
     width: 92,
@@ -266,7 +313,40 @@ const styles = StyleSheet.create({
   cardMetaText: { marginLeft: 4, fontSize: 13, color: "#222", fontWeight: "600" },
   cardMetaSub: { fontSize: 12, color: "#666" },
   cardPrice: { fontSize: 16, color: GREEN, fontWeight: "800", marginTop: 2 },
+  addButton: {
+    marginTop: 12,
+    alignSelf: "flex-end",
+    backgroundColor: GREEN,
+    paddingHorizontal: 18,
+    paddingVertical: 8,
+    borderRadius: 999,
+  },
+  addButtonText: { color: "#fff", fontWeight: "700" },
 
   // No data
   noData: { textAlign: "center", marginTop: 30, fontSize: 16, color: "#777" },
+  cartBar: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+    bottom: 24,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+    backgroundColor: GREEN,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  cartBadge: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.18)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartBadgeText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  cartLabel: { color: "#fff", fontSize: 15, fontWeight: "700" },
+  cartSubLabel: { color: "#F0FFEB", fontSize: 13, marginTop: 2 },
 });

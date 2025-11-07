@@ -14,7 +14,7 @@ export default function ProtectedLayout() {
     if (!user) {
       router.replace("/(auth)/login");
     }
-  }, [user, loading]);
+  }, [user, loading, router]);
 
   if (loading || !user) {
     return null;
