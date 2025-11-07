@@ -38,7 +38,7 @@ export default function ProtectedLayout() {
           } else if (route.name === 'payment') {
             iconName = focused ? 'wallet' : 'wallet-outline';
           } else if (route.name === 'activity') {
-            iconName = focused ? 'receipt-outline' : 'receipt-outline';
+            iconName = focused ? 'time' : 'time-outline';
           } else if (route.name === 'profile') {
             iconName = focused ? 'person' : 'person-outline';
           }
@@ -60,19 +60,20 @@ export default function ProtectedLayout() {
         }}
       />
 
-      {/* Tab 2: Thanh toán */}
+      {/* Tab 2: Thanh toán (ẩn khỏi tab bar, chỉ dùng để điều hướng từ giỏ hàng) */}
       <Tabs.Screen
         name="payment"
         options={{
-          title: "Thanh toán",
+          href: null,
+          tabBarButton: () => null,
         }}
       />
 
-      {/* Tab 3: Hoạt động */}
+      {/* Tab 3: Lịch sử đơn hàng */}
       <Tabs.Screen
         name="activity"
         options={{
-          title: "Hoạt động",
+          title: "Lịch sử đơn",
         }}
       />
 

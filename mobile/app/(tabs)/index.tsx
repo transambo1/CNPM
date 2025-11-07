@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,10 +26,29 @@ type Restaurant = {
   name: string;
   image: string;
   address: string;
+  rating?: number;
+  deliveryTime?: number;
+  hasPromo?: boolean;
+  promoText?: string;
+  categories?: string[];
 };
 
+type QuickFilterId = 'all' | 'promo' | 'fast' | 'rating';
+
+const QUICK_FILTERS: { id: QuickFilterId; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { id: 'all', label: 'Tất cả', icon: 'options-outline' },
+  { id: 'promo', label: 'Ưu đãi', icon: 'pricetag-outline' },
+  { id: 'fast', label: 'Giao nhanh', icon: 'flash-outline' },
+  { id: 'rating', label: 'Đánh giá cao', icon: 'star-outline' },
+];
+
 // --- Header ---
-const FoodPageHeader = () => {
+type FoodPageHeaderProps = {
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+};
+
+const FoodPageHeader = ({ searchTerm, onSearchChange }: FoodPageHeaderProps) => {
   const router = useRouter();
   const { user } = useAuth();
   const { totalItems } = useCart();
@@ -74,6 +93,8 @@ const FoodPageHeader = () => {
           placeholder="Bạn đang thèm gì nào?"
           style={styles.searchInput}
           placeholderTextColor="#666"
+          value={searchTerm}
+          onChangeText={onSearchChange}
         />
       </View>
     </SafeAreaView>
@@ -81,8 +102,33 @@ const FoodPageHeader = () => {
 };
 
 // --- Header Content (Banner, Category, Suggestions, Filter) ---
-const FoodScreenListHeader = ({ categories, suggestions }: { categories: Category[], suggestions: Suggestion[] }) => {
+type SelectedCategory = { id: string | null; name: string | null };
+
+type FoodScreenListHeaderProps = {
+  categories: Category[];
+  suggestions: Suggestion[];
+  selectedCategory: SelectedCategory;
+  onSelectCategory: (category: SelectedCategory) => void;
+  activeQuickFilter: QuickFilterId;
+  onQuickFilterChange: (filter: QuickFilterId) => void;
+};
+
+const FoodScreenListHeader = ({
+  categories,
+  suggestions,
+  selectedCategory,
+  onSelectCategory,
+  activeQuickFilter,
+  onQuickFilterChange,
+}: FoodScreenListHeaderProps) => {
   const router = useRouter();
+  const selectedCategoryFromList = useMemo(
+    () => categories.find((cat) => cat.id === selectedCategory.id || cat.name === selectedCategory.name),
+    [categories, selectedCategory.id, selectedCategory.name]
+  );
+  const selectedCategoryId = selectedCategory.id;
+  const shouldShowClear = Boolean(selectedCategory.id || selectedCategory.name);
+  const selectedCategoryLabel = selectedCategoryFromList?.name ?? selectedCategory.name ?? '';
 
   return (
     <View style={styles.listHeaderContainer}>
@@ -100,9 +146,102 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
         </TouchableOpacity>
       </View>
 
+      <View style={styles.quickFilterSection}>
+        <Text style={styles.sectionLabel}>Bộ lọc nổi bật</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 15 }}
+        >
+          {QUICK_FILTERS.map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              style={[
+                styles.filterChip,
+                activeQuickFilter === filter.id && styles.filterChipActive,
+              ]}
+              onPress={() => onQuickFilterChange(filter.id)}
+            >
+              <Ionicons
+                name={filter.icon}
+                size={16}
+                color={activeQuickFilter === filter.id ? '#fff' : '#111'}
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.filterChipText,
+                  activeQuickFilter === filter.id && styles.filterChipTextActive,
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.categoryFilterSection}>
+        <View style={styles.categoryFilterHeader}>
+          <Text style={styles.sectionLabel}>Danh mục phổ biến</Text>
+          {shouldShowClear ? (
+            <TouchableOpacity onPress={() => onSelectCategory({ id: null, name: null })}>
+              <Text style={styles.clearFilterText}>
+                Bỏ lọc {selectedCategoryLabel}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingRight: 15 }}
+        >
+          <TouchableOpacity
+            style={[
+              styles.categoryChip,
+              !selectedCategoryId && !selectedCategory.name && styles.categoryChipActive,
+            ]}
+            onPress={() => onSelectCategory({ id: null, name: null })}
+          >
+            <Text
+              style={[
+                styles.categoryChipText,
+                !selectedCategoryId && styles.categoryChipTextActive,
+              ]}
+            >
+              Tất cả
+            </Text>
+          </TouchableOpacity>
+          {categories.map((cat) => (
+          <TouchableOpacity
+            key={cat.id}
+            style={[
+              styles.categoryChip,
+              (selectedCategoryId === cat.id || selectedCategory.name === cat.name) && styles.categoryChipActive,
+            ]}
+            onPress={() => onSelectCategory({ id: cat.id, name: cat.name })}
+              onLongPress={() =>
+                router.push({ pathname: '/category/[name]', params: { name: cat.name } } as never)
+              }
+            >
+              <Text
+              style={[
+                styles.categoryChipText,
+                (selectedCategoryId === cat.id || selectedCategory.name === cat.name) && styles.categoryChipTextActive,
+              ]}
+              >
+                {cat.name}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+        <Text style={styles.filterHint}>Chạm để lọc nhanh, nhấn giữ để mở danh mục chi tiết.</Text>
+      </View>
+
       <ScrollView
         horizontal
-        nestedScrollEnabled={true}
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         style={styles.categoryScroll}
         contentContainerStyle={{ paddingRight: 20 }}
@@ -112,8 +251,8 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
             key={cat.id}
             style={styles.categoryItem}
             onPress={() => router.push({
-              pathname: "/category/[name]",
-              params: { name: cat.name }
+              pathname: '/category/[name]',
+              params: { name: cat.name },
             } as never)}
           >
             <Image source={{ uri: cat.image }} style={styles.categoryImage} />
@@ -124,7 +263,7 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
 
       <ScrollView
         horizontal
-        nestedScrollEnabled={true}
+        nestedScrollEnabled
         showsHorizontalScrollIndicator={false}
         style={styles.suggestionScroll}
         contentContainerStyle={{ paddingRight: 15 }}
@@ -133,27 +272,16 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
           <TouchableOpacity
             key={sug.id}
             style={styles.suggestionCard}
-            onPress={() => router.push({
-              pathname: "/category/[name]",
-              params: { name: sug.name }
-            } as never)}
+            onPress={() => onSelectCategory({ id: sug.id, name: sug.name })}
+            onLongPress={() =>
+              router.push({ pathname: '/category/[name]', params: { name: sug.name } } as never)
+            }
           >
             <Image source={{ uri: sug.image }} style={styles.suggestionImage} />
             <Text style={styles.suggestionText}>{sug.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
-
-      <View style={styles.filterContainer}>
-        <TouchableOpacity style={styles.filterButton}>
-          <Ionicons name="filter-outline" size={20} color="#333" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.filterSortButton}>
-          <Ionicons name="swap-vertical" size={20} color="#333" style={{ marginRight: 6 }} />
-          <Text style={styles.filterSortText}>Lọc theo</Text>
-          <Ionicons name="chevron-down" size={16} color="#333" />
-        </TouchableOpacity>
-      </View>
 
       <View style={styles.footerBannerContainer}>
         <Text style={styles.footerText}>Deal chớp nhoáng giảm thêm 15.000đ</Text>
@@ -171,6 +299,12 @@ export default function HomePage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<SelectedCategory>({
+    id: null,
+    name: null,
+  });
+  const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilterId>('all');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -180,13 +314,31 @@ export default function HomePage() {
       try {
         const restaurantsQuery = query(collection(db, 'restaurants'));
         const restaurantsSnapshot = await getDocs(restaurantsQuery);
-        const restaurantsData = restaurantsSnapshot.docs.map(doc => {
-          const data = doc.data();
+        const restaurantsData = restaurantsSnapshot.docs.map((docSnap) => {
+          const data = docSnap.data() as any;
+          const categoriesField = Array.isArray(data.categories)
+            ? data.categories.map((c: any) => String(c))
+            : data.category
+            ? [String(data.category)]
+            : [];
+
           return {
-            id: data.id,
+            id: docSnap.id,
             name: data.name,
             image: data.image,
             address: data.address,
+            rating: typeof data.rating === 'number' ? data.rating : data.score,
+            deliveryTime:
+              typeof data.deliveryTime === 'number'
+                ? data.deliveryTime
+                : typeof data.eta === 'number'
+                ? data.eta
+                : typeof data.time === 'number'
+                ? data.time
+                : undefined,
+            hasPromo: Boolean(data.hasPromo ?? data.promo ?? data.discount),
+            promoText: data.promoText ?? data.promo ?? data.discountText ?? '',
+            categories: categoriesField,
           } as Restaurant;
         });
         setRestaurants(restaurantsData);
@@ -219,48 +371,155 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+  }, []);
+
+  const handleSelectCategory = useCallback((category: SelectedCategory) => {
+    setSelectedCategory((prev) => {
+      if (prev.id === category.id && prev.name === category.name) {
+        return { id: null, name: null };
+      }
+      return category;
+    });
+  }, []);
+
+  const handleQuickFilterChange = useCallback((filter: QuickFilterId) => {
+    setActiveQuickFilter((prev) => {
+      if (filter === 'all') return 'all';
+      return prev === filter ? 'all' : filter;
+    });
+  }, []);
+
+  const filteredRestaurants = useMemo(() => {
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+
+    return restaurants.filter((restaurant) => {
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        [restaurant.name, restaurant.address]
+          .filter(Boolean)
+          .some((value) => value.toLowerCase().includes(normalizedSearch));
+
+      const restaurantCategories = (restaurant.categories ?? []).map((c) => String(c).toLowerCase());
+      const selectedKey = (selectedCategory.id ?? selectedCategory.name ?? '').toLowerCase();
+      const matchesCategory =
+        !selectedKey ||
+        restaurantCategories.includes(selectedKey) ||
+        restaurantCategories.includes((selectedCategory.name ?? '').toLowerCase()) ||
+        restaurantCategories.includes((selectedCategory.id ?? '').toLowerCase()) ||
+        restaurant.name.toLowerCase().includes(selectedKey);
+
+      const matchesQuick = (() => {
+        switch (activeQuickFilter) {
+          case 'promo':
+            return Boolean(restaurant.hasPromo || restaurant.promoText);
+          case 'fast':
+            return typeof restaurant.deliveryTime === 'number' ? restaurant.deliveryTime <= 25 : true;
+          case 'rating':
+            return (restaurant.rating ?? 0) >= 4.5;
+          default:
+            return true;
+        }
+      })();
+
+      return matchesSearch && matchesCategory && matchesQuick;
+    });
+  }, [restaurants, searchTerm, selectedCategory, activeQuickFilter]);
+
   const renderRestaurant = ({ item }: { item: Restaurant }) => (
     <TouchableOpacity
       style={styles.restaurantCard}
-    onPress={() =>
-  router.push({
-    pathname: "/restaurant/[id]",
-    params: { id: item.id },
-  })
-}
-
+      activeOpacity={0.88}
+      onPress={() =>
+        router.push({
+          pathname: '/restaurant/[id]',
+          params: { id: item.id },
+        } as never)
+      }
     >
       <Image source={{ uri: item.image }} style={styles.restaurantImage} />
       <View style={styles.restaurantInfo}>
-        <Text style={styles.restaurantName}>{item.name}</Text>
-        <Text style={styles.restaurantAddress} numberOfLines={1}>{item.address}</Text>
+        <View style={styles.restaurantHeaderRow}>
+          <Text style={styles.restaurantName}>{item.name}</Text>
+          {item.hasPromo ? (
+            <View style={styles.promoBadge}>
+              <Ionicons name="pricetag-outline" size={12} color="#fff" style={{ marginRight: 4 }} />
+              <Text style={styles.promoBadgeText}>Ưu đãi</Text>
+            </View>
+          ) : null}
+        </View>
+        <Text style={styles.restaurantAddress} numberOfLines={1}>
+          {item.address}
+        </Text>
+        <View style={styles.restaurantMetaRow}>
+          <View style={styles.metaItem}>
+            <Ionicons name="star" size={14} color="#FFC107" style={{ marginRight: 4 }} />
+            <Text style={styles.metaPrimary}>{(item.rating ?? 4.5).toFixed(1)}</Text>
+          </View>
+          <View style={styles.metaSeparator} />
+          <View style={styles.metaItem}>
+            <Ionicons name="time-outline" size={14} color="#64748B" style={{ marginRight: 4 }} />
+            <Text style={styles.metaSecondary}>{item.deliveryTime ?? 20} phút</Text>
+          </View>
+        </View>
+        {item.promoText ? (
+          <View style={styles.restaurantPromoRow}>
+            <Ionicons name="gift-outline" size={14} color="#00A74F" style={{ marginRight: 6 }} />
+            <Text style={styles.restaurantPromoText} numberOfLines={1}>
+              {item.promoText}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
 
   return (
     <View style={styles.container}>
-      <FoodPageHeader />
+      <FoodPageHeader searchTerm={searchTerm} onSearchChange={handleSearchChange} />
 
       {loading ? (
         <ActivityIndicator size="large" color="#00A74F" style={{ marginTop: 50 }} />
       ) : (
-       <FlatList
-  data={restaurants}
-  renderItem={renderRestaurant}
-  keyExtractor={(item) => String(item.id)}
-  ListHeaderComponent={
-    <FoodScreenListHeader
-      categories={categories}
-      suggestions={suggestions}
-    />
-  }
-  showsVerticalScrollIndicator={false}
-/>
-)}
-
-          
-   
+        <FlatList
+          data={filteredRestaurants}
+          renderItem={renderRestaurant}
+          keyExtractor={(item) => String(item.id)}
+          ListHeaderComponent={
+            <FoodScreenListHeader
+              categories={categories}
+              suggestions={suggestions}
+              selectedCategory={selectedCategory}
+              onSelectCategory={handleSelectCategory}
+              activeQuickFilter={activeQuickFilter}
+              onQuickFilterChange={handleQuickFilterChange}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyFilterState}>
+              <Ionicons name="compass-outline" size={48} color="#A0AEC0" />
+              <Text style={styles.emptyTitle}>Chưa có nhà hàng phù hợp</Text>
+              <Text style={styles.emptySubtitle}>
+                Thử thay đổi bộ lọc hoặc tìm kiếm khác để thấy thêm lựa chọn hấp dẫn nhé.
+              </Text>
+              <TouchableOpacity
+                style={styles.clearFiltersButton}
+                onPress={() => {
+                  handleSearchChange('');
+                  handleSelectCategory({ id: null, name: null });
+                  handleQuickFilterChange('all');
+                }}
+              >
+                <Ionicons name="refresh" size={16} color="#00A74F" style={{ marginRight: 6 }} />
+                <Text style={styles.clearFiltersText}>Đặt lại bộ lọc</Text>
+              </TouchableOpacity>
+            </View>
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={filteredRestaurants.length === 0 ? { flexGrow: 1 } : undefined}
+        />
+      )}
     </View>
   );
 }
@@ -393,7 +652,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   categoryScroll: {
-    marginTop: 20,
+    marginTop: 16,
     paddingLeft: 15,
   },
   categoryItem: {
@@ -435,33 +694,81 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     padding: 10,
   },
-  filterContainer: {
+  quickFilterSection: {
+    marginTop: 22,
+    paddingLeft: 15,
+    paddingRight: 5,
+  },
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#222',
+    marginBottom: 12,
+  },
+  filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    marginTop: 25,
-  },
-  filterButton: {
-    padding: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
     marginRight: 10,
   },
-  filterSortButton: {
+  filterChipActive: {
+    backgroundColor: '#00A74F',
+    borderColor: '#00A74F',
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#111',
+  },
+  filterChipTextActive: {
+    color: '#fff',
+  },
+  categoryFilterSection: {
+    marginTop: 24,
+    paddingLeft: 15,
+    paddingRight: 5,
+  },
+  categoryFilterHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 20,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
-  filterSortText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-    marginRight: 4,
+  clearFilterText: {
+    fontSize: 12,
+    color: '#00A74F',
+    fontWeight: '600',
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
+    marginRight: 10,
+  },
+  categoryChipActive: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#22C55E',
+  },
+  categoryChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  categoryChipTextActive: {
+    color: '#047857',
+  },
+  filterHint: {
+    marginTop: 10,
+    fontSize: 12,
+    color: '#64748B',
   },
   footerBannerContainer: {
     backgroundColor: '#FF6F00',
@@ -487,14 +794,16 @@ const styles = StyleSheet.create({
   restaurantCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 12,
+    padding: 14,
     marginHorizontal: 15,
     marginBottom: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#eee',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
   },
   restaurantImage: {
     width: 80,
@@ -506,14 +815,110 @@ const styles = StyleSheet.create({
   restaurantInfo: {
     flex: 1,
   },
+  restaurantHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   restaurantName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#222',
-    marginBottom: 4,
+    fontWeight: '700',
+    color: '#1F2937',
+    flex: 1,
+    marginRight: 8,
+  },
+  promoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#00A74F',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  promoBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
   },
   restaurantAddress: {
     fontSize: 13,
-    color: '#777',
+    color: '#64748B',
+    marginTop: 4,
+  },
+  restaurantMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaPrimary: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#111',
+  },
+  metaSecondary: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  metaSeparator: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#E2E8F0',
+    marginHorizontal: 12,
+  },
+  restaurantPromoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    backgroundColor: '#F0FFF4',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  restaurantPromoText: {
+    color: '#047857',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+  emptyFilterState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 40,
+  },
+  emptyTitle: {
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  emptySubtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  clearFiltersButton: {
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#00A74F',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#E6F7EF',
+  },
+  clearFiltersText: {
+    color: '#007A3B',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });

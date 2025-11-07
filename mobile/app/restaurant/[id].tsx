@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -7,24 +7,34 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Platform,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
+  RefreshControl,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from 'firebase/firestore';
+import { Ionicons } from '@expo/vector-icons';
 
-import { Ionicons } from "@expo/vector-icons";
-import { app } from "../../libs/firebase";
-import { useCart } from "../../libs/CartContext";
+import { app } from '../../libs/firebase';
+import { useCart } from '../../libs/CartContext';
 
+const formatCurrency = (value: number) =>
+  value.toLocaleString('vi-VN', { minimumFractionDigits: 0 }) + 'đ';
 
-// ==== Types ====
 type Product = {
   id: string;
   name: string;
   img: string;
   price: number;
-  rating?: number;   // optional
-  reviews?: number;  // optional
+  rating?: number;
+  reviews?: number;
 };
 
 type Restaurant = {
@@ -32,114 +42,180 @@ type Restaurant = {
   name: string;
   image: string;
   address: string;
+  rating?: number;
+  deliveryTime?: number;
+  isOpen?: boolean;
+  promoText?: string;
 };
 
-// ==== Screen ====
 export default function RestaurantMenu() {
   const router = useRouter();
-  const { id } = useLocalSearchParams(); // restaurantId
+  const { id } = useLocalSearchParams();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const { totalItems } = useCart();
 
-  const titleText = useMemo(
-    () => (restaurant?.name ? restaurant.name : "Nhà hàng"),
-    [restaurant?.name]
-  );
+  const db = useMemo(() => getFirestore(app), []);
 
-  useEffect(() => {
-  const fetchAll = async () => {
-    setLoading(true);
-    const db = getFirestore(app);
+  const titleText = restaurant?.name ? restaurant.name : 'Nhà hàng';
+
+  const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
+    if (!id) return;
+    const silent = options?.silent ?? false;
+    if (!silent) {
+      setLoading(true);
+    }
+    const restaurantId = Array.isArray(id) ? id[0] : id;
 
     try {
-      // ✅ 1) Restaurant info bằng Document ID
-      const docRef = doc(db, "restaurants", id as string);
+      const docRef = doc(db, 'restaurants', restaurantId as string);
       const rSnap = await getDoc(docRef);
 
       if (rSnap.exists()) {
         const r = rSnap.data() as any;
         setRestaurant({
-          id: id as string,
+          id: restaurantId as string,
           name: r.name,
           address: r.address,
           image: r.image,
+          rating: r.rating ?? 4.6,
+          deliveryTime: r.deliveryTime ?? r.eta ?? 20,
+          isOpen: r.isOpen ?? r.open ?? true,
+          promoText: r.promoText ?? r.promo ?? '',
         });
       }
 
-      // ✅ 2) Products theo restaurantId
-      const pQuery = query(collection(db, "products"), where("restaurantId", "==", id));
+      const pQuery = query(collection(db, 'products'), where('restaurantId', '==', restaurantId));
       const pSnap = await getDocs(pQuery);
 
-      const pData = pSnap.docs.map((doc) => {
-        const d = doc.data() as any;
+      const pData = pSnap.docs.map((productDoc) => {
+        const d = productDoc.data() as any;
         return {
-          id: doc.id,
+          id: productDoc.id,
           name: d.name,
           img: d.img,
-          price: d.price,
+          price: Number(d.price ?? 0),
           rating: d.rating ?? undefined,
           reviews: d.reviews ?? undefined,
         } as Product;
       });
 
       setProducts(pData);
-    } catch (e) {
-      console.error("Fetch restaurant menu error:", e);
+    } catch (error) {
+      console.error('Fetch restaurant menu error:', error);
+      setProducts([]);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
-  };
+  }, [db, id]);
 
-  fetchAll();
-}, [id]);
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
 
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchAll({ silent: true });
+  }, [fetchAll]);
 
-  const renderItem = ({ item }: { item: Product }) => (
+  const renderMenuItem = ({ item }: { item: Product }) => (
     <TouchableOpacity
       activeOpacity={0.9}
-      style={styles.card}
-    onPress={() =>
-  router.push({
-    pathname: "/product/[id]",
-    params: { id: item.id },
-  })
-}
-
-
+      style={styles.menuCard}
+      onPress={() =>
+        router.push({ pathname: '/product/[id]', params: { id: item.id } } as never)
+      }
     >
-      <Image source={{ uri: item.img }} style={styles.cardImage} />
-      <View style={styles.cardBody}>
-        <Text style={styles.cardTitle} numberOfLines={2}>
-          {item.name}
-        </Text>
-
-        <View style={styles.cardMetaRow}>
-          <Ionicons name="star" size={14} color="#FFC107" />
-          <Text style={styles.cardMetaText}>
-            {item.rating ? item.rating.toFixed(1) : "4.5"}
+      <Image source={{ uri: item.img }} style={styles.menuImage} />
+      <View style={styles.menuContent}>
+        <View style={styles.menuHeader}>
+          <Text style={styles.menuTitle} numberOfLines={2}>
+            {item.name}
           </Text>
-          <Text style={styles.cardMetaSub}>
-            {"  "}({item.reviews ?? 120})
-          </Text>
+          <Text style={styles.menuPrice}>{formatCurrency(item.price ?? 0)}</Text>
         </View>
-
-        <Text style={styles.cardPrice}>{(item.price ?? 0).toLocaleString()}đ</Text>
+        <View style={styles.menuMeta}>
+          <View style={styles.metaGroup}>
+            <Ionicons name="star" size={14} color="#FFC107" />
+            <Text style={styles.metaText}>{(item.rating ?? 4.5).toFixed(1)}</Text>
+            <Text style={styles.metaSub}>({item.reviews ?? 120})</Text>
+          </View>
+          <View style={styles.metaGroup}>
+            <Ionicons name="flame-outline" size={14} color="#FF6B6B" />
+            <Text style={styles.metaSub}>Bán chạy</Text>
+          </View>
+        </View>
       </View>
     </TouchableOpacity>
   );
 
+  const listHeader = () => (
+    <View>
+      {restaurant && (
+        <View style={styles.heroWrapper}>
+          <Image source={{ uri: restaurant.image }} style={styles.heroImage} />
+          <View style={styles.heroOverlay} />
+          <View style={styles.heroContent}>
+            <Text style={styles.heroName}>{restaurant.name}</Text>
+            <Text style={styles.heroAddress} numberOfLines={1}>
+              {restaurant.address}
+            </Text>
+            <View style={styles.heroBadges}>
+              <View style={styles.badgeChip}>
+                <Ionicons name="star" size={14} color="#FFC107" style={{ marginRight: 4 }} />
+                <Text style={styles.badgeText}>{(restaurant.rating ?? 4.6).toFixed(1)} điểm</Text>
+              </View>
+              <View style={styles.badgeChip}>
+                <Ionicons name="time-outline" size={14} color="#00A74F" style={{ marginRight: 4 }} />
+                <Text style={styles.badgeText}>{restaurant.deliveryTime ?? 20} phút</Text>
+              </View>
+              <View style={styles.badgeChip}>
+                <Ionicons name={restaurant.isOpen ? 'checkmark-circle-outline' : 'moon-outline'} size={14} color="#fff" style={{ marginRight: 4 }} />
+                <Text style={styles.badgeText}>{restaurant.isOpen ? 'Đang mở cửa' : 'Đóng cửa'}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.infoBanner}>
+        <View style={styles.infoRow}>
+          <Ionicons name="bicycle-outline" size={20} color="#00A74F" />
+          <View style={{ marginLeft: 10 }}>
+            <Text style={styles.infoTitle}>Giao nhanh bởi Grab</Text>
+            <Text style={styles.infoSubtitle}>Theo dõi đơn hàng trong thời gian thực ngay trên ứng dụng</Text>
+          </View>
+        </View>
+        {restaurant?.promoText ? (
+          <View style={styles.promoRow}>
+            <Ionicons name="pricetag-outline" size={16} color="#00A74F" style={{ marginRight: 6 }} />
+            <Text style={styles.promoText}>{restaurant.promoText}</Text>
+          </View>
+        ) : null}
+      </View>
+
+      <Text style={styles.sectionTitle}>Món nổi bật</Text>
+    </View>
+  );
+
   if (loading) {
-    return <ActivityIndicator size="large" color="#00A74F" style={{ marginTop: 50 }} />;
+    return (
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }] }>
+        <Stack.Screen options={{ headerShown: false }} />
+        <ActivityIndicator size="large" color="#00A74F" />
+      </SafeAreaView>
+    );
   }
 
   return (
-    <View style={styles.container}>
-      {/* Top AppBar (Back + Title) */}
+    <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.appBar}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)/index')} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={26} color="#111" />
         </TouchableOpacity>
         <Text numberOfLines={1} style={styles.appBarTitle}>
@@ -159,150 +235,270 @@ export default function RestaurantMenu() {
         </TouchableOpacity>
       </View>
 
-      {/* Header banner của nhà hàng */}
-      {restaurant && (
-        <View style={styles.header}>
-          <Image source={{ uri: restaurant.image }} style={styles.headerImage} />
-          <View style={styles.headerInfo}>
-            <Text style={styles.headerName} numberOfLines={1}>
-              {restaurant.name}
-            </Text>
-            <Text style={styles.headerAddress} numberOfLines={1}>
-              {restaurant.address}
-            </Text>
-            <View style={styles.headerTags}>
-              <View style={styles.tagPill}>
-                <Ionicons name="bicycle-outline" size={14} color="#00A74F" />
-                <Text style={styles.tagText}>Giao nhanh</Text>
-              </View>
-              <View style={styles.tagPill}>
-                <Ionicons name="pricetag-outline" size={14} color="#00A74F" />
-                <Text style={styles.tagText}>Ưu đãi</Text>
-              </View>
-            </View>
+      <FlatList
+        data={products}
+        renderItem={renderMenuItem}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={products.length === 0 ? styles.emptyListContent : styles.listContent}
+        ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="fast-food-outline" size={56} color="#A0AEC0" />
+            <Text style={styles.emptyTitle}>Nhà hàng đang cập nhật menu</Text>
+            <Text style={styles.emptySubtitle}>Vui lòng quay lại sau để xem thêm món hấp dẫn nhé.</Text>
           </View>
-        </View>
-      )}
-
-      {products.length === 0 ? (
-        <Text style={styles.noData}>Nhà hàng này chưa có món ăn</Text>
-      ) : (
-        <FlatList
-          data={products}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ padding: 16, paddingTop: 6 }}
-        />
-      )}
-    </View>
+        }
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#00A74F"
+            colors={["#00A74F"]}
+          />
+        }
+      />
+    </SafeAreaView>
   );
 }
 
-// ==== Styles (GrabFood Premium) ====
-const GREEN = "#00A74F";
-const BORDER = "#EEF1F1";
-
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-
-  // AppBar
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F6F8FB',
+  },
   appBar: {
     height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
     borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    backgroundColor: "#fff",
+    borderBottomColor: '#E5E9F0',
+    backgroundColor: '#fff',
   },
-  backBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
-  appBarTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "700", color: "#111" },
+  backBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F3F6',
+  },
+  appBarTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111',
+  },
   cartButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F0F3F6',
   },
   cartBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: -4,
     right: -4,
     minWidth: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: "#FF3B30",
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 4,
   },
   cartBadgeText: {
-    color: "#fff",
+    color: '#fff',
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: '700',
   },
-
-  // Restaurant header
-  header: {
-    flexDirection: "row",
-    padding: 14,
-    gap: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: BORDER,
-    backgroundColor: "#fff",
+  heroWrapper: {
+    margin: 16,
+    borderRadius: 18,
+    overflow: 'hidden',
+    height: 200,
   },
-  headerImage: {
-    width: 86,
-    height: 86,
-    borderRadius: 12,
-    backgroundColor: "#F2F4F5",
+  heroImage: {
+    width: '100%',
+    height: '100%',
   },
-  headerInfo: { flex: 1, justifyContent: "center" },
-  headerName: { fontSize: 18, fontWeight: "800", color: "#111", marginBottom: 4 },
-  headerAddress: { fontSize: 13, color: "#666" },
-  headerTags: { flexDirection: "row", gap: 8, marginTop: 10 },
-  tagPill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
+  heroOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+  },
+  heroContent: {
+    position: 'absolute',
+    bottom: 18,
+    left: 18,
+    right: 18,
+  },
+  heroName: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 6,
+  },
+  heroAddress: {
+    color: '#F1F5F9',
+    fontSize: 14,
+  },
+  heroBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 14,
+  },
+  badgeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: GREEN,
     borderRadius: 999,
-    backgroundColor: "#F5FFF9",
+    backgroundColor: 'rgba(255,255,255,0.18)',
   },
-  tagText: { fontSize: 12, color: GREEN, fontWeight: "600" },
-
-  // Product card (premium)
-  card: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
+  badgeText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  infoBanner: {
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111',
+  },
+  infoSubtitle: {
+    marginTop: 4,
+    color: '#64748B',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  promoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 14,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    backgroundColor: '#E6F7EF',
+  },
+  promoText: {
+    color: '#008D4C',
+    fontWeight: '600',
+  },
+  sectionTitle: {
+    marginTop: 26,
     marginBottom: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: BORDER,
-    backgroundColor: "#fff",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOpacity: 0.06, shadowRadius: 8, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 2 },
-    }),
+    marginHorizontal: 16,
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#111',
   },
-  cardImage: {
+  listContent: {
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+  },
+  emptyListContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
+  menuCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+  menuImage: {
     width: 92,
     height: 92,
-    borderRadius: 12,
-    backgroundColor: "#F2F4F5",
+    borderRadius: 14,
     marginRight: 12,
+    backgroundColor: '#F1F5F9',
   },
-  cardBody: { flex: 1 },
-  cardTitle: { fontSize: 16, fontWeight: "700", color: "#111", marginBottom: 6 },
-  cardMetaRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
-  cardMetaText: { marginLeft: 4, fontSize: 13, color: "#222", fontWeight: "600" },
-  cardMetaSub: { fontSize: 12, color: "#666" },
-  cardPrice: { fontSize: 16, color: GREEN, fontWeight: "800", marginTop: 2 },
-
-  // No data
-  noData: { textAlign: "center", marginTop: 30, fontSize: 16, color: "#777" },
+  menuContent: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 10,
+  },
+  menuTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111',
+  },
+  menuPrice: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#00A74F',
+  },
+  menuMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 14,
+  },
+  metaGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    marginLeft: 6,
+    fontSize: 13,
+    color: '#111',
+    fontWeight: '600',
+  },
+  metaSub: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    marginTop: 40,
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 12,
+    color: '#111',
+  },
+  emptySubtitle: {
+    marginTop: 4,
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+  },
 });
