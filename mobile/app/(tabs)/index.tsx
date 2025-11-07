@@ -1,4 +1,3 @@
-// file: app/(tabs)/index.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -18,20 +17,17 @@ import { useAuth } from '../../libs/AuthContext';
 import { getFirestore, collection, query, getDocs } from 'firebase/firestore';
 import { app } from '../../libs/firebase';
 
-// --- Định nghĩa Types (Giữ nguyên) ---
+// --- Types ---
 type Category = { id: string; name: string; image: string; };
 type Suggestion = { id: string; name: string; image: string; };
-type Product = {
+type Restaurant = {
   id: string;
   name: string;
-  img: string;
-  price: number;
-  discount?: number;
-  rating?: number;
-  reviews?: number;
+  image: string;
+  address: string;
 };
 
-// --- Header Cố định (Giữ nguyên) ---
+// --- Header ---
 const FoodPageHeader = () => {
   const router = useRouter();
   const { user } = useAuth();
@@ -39,7 +35,7 @@ const FoodPageHeader = () => {
   return (
     <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
       <View style={styles.addressHeader}>
-        <TouchableOpacity onPress={() => { /* Mở máy quét */ }}>
+        <TouchableOpacity>
           <Ionicons name="scan-outline" size={26} color="#000" />
         </TouchableOpacity>
         <View style={styles.addressBox}>
@@ -55,29 +51,30 @@ const FoodPageHeader = () => {
           <Ionicons name="person-circle-outline" size={32} color="#000" />
         </TouchableOpacity>
       </View>
+
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
         <TextInput
-          placeholder="Bạn đang thêm gì nào?"
+          placeholder="Bạn đang thèm gì nào?"
           style={styles.searchInput}
           placeholderTextColor="#666"
         />
       </View>
     </SafeAreaView>
   );
-}
+};
 
-// --- Component ListHeader (Đã thêm nút Lọc) ---
+// --- Header Content (Banner, Category, Suggestions, Filter) ---
 const FoodScreenListHeader = ({ categories, suggestions }: { categories: Category[], suggestions: Suggestion[] }) => {
-  const router = useRouter(); // <-- 1. Thêm router
+  const router = useRouter();
 
   return (
     <View style={styles.listHeaderContainer}>
-      {/* ... (Banner và Segment giữ nguyên) ... */}
       <View style={styles.bannerContainer}>
         <Text style={styles.bannerTitle}>Deal matcha HOT</Text>
         <Text style={styles.bannerSubtitle}>Order matcha ngay</Text>
       </View>
+
       <View style={styles.segmentContainer}>
         <TouchableOpacity style={[styles.segmentButton, styles.segmentButtonActive]}>
           <Text style={[styles.segmentText, styles.segmentTextActive]}>Giao hàng</Text>
@@ -87,9 +84,9 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
         </TouchableOpacity>
       </View>
 
-      {/* Danh mục (Cơm, Bún, Phở...) */}
       <ScrollView
         horizontal
+        nestedScrollEnabled={true}
         showsHorizontalScrollIndicator={false}
         style={styles.categoryScroll}
         contentContainerStyle={{ paddingRight: 20 }}
@@ -98,7 +95,6 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
           <TouchableOpacity
             key={cat.id}
             style={styles.categoryItem}
-            // 2. Phục hồi onPress (với 'as never' để fix lỗi TS)
             onPress={() => router.push({
               pathname: "/category/[name]",
               params: { name: cat.name }
@@ -110,9 +106,9 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
         ))}
       </ScrollView>
 
-      {/* Gợi ý (Gần tôi, Một người ăn...) */}
       <ScrollView
         horizontal
+        nestedScrollEnabled={true}
         showsHorizontalScrollIndicator={false}
         style={styles.suggestionScroll}
         contentContainerStyle={{ paddingRight: 15 }}
@@ -121,7 +117,6 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
           <TouchableOpacity
             key={sug.id}
             style={styles.suggestionCard}
-            // 3. Phục hồi onPress
             onPress={() => router.push({
               pathname: "/category/[name]",
               params: { name: sug.name }
@@ -133,7 +128,6 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
         ))}
       </ScrollView>
 
-      {/* --- 4. THÊM NÚT LỌC VÀO ĐÂY --- */}
       <View style={styles.filterContainer}>
         <TouchableOpacity style={styles.filterButton}>
           <Ionicons name="filter-outline" size={20} color="#333" />
@@ -143,45 +137,23 @@ const FoodScreenListHeader = ({ categories, suggestions }: { categories: Categor
           <Text style={styles.filterSortText}>Lọc theo</Text>
           <Ionicons name="chevron-down" size={16} color="#333" />
         </TouchableOpacity>
-        {/* Bạn có thể thêm các nút lọc nhanh khác ở đây */}
       </View>
-      {/* --- KẾT THÚC NÚT LỌC --- */}
 
       <View style={styles.footerBannerContainer}>
         <Text style={styles.footerText}>Deal chớp nhoáng giảm thêm 15.000đ</Text>
       </View>
-      <Text style={styles.sectionTitle}>Khám phá mĩ vị mới</Text>
+
+      <Text style={styles.sectionTitle}>Nhà hàng gần bạn</Text>
     </View>
   );
 };
 
-// --- Component Card Sản phẩm (Giữ nguyên) ---
-const ProductCard = ({ item }: { item: Product }) => (
-  <View style={styles.cardContainer}>
-    <Image source={{ uri: item.img }} style={styles.cardImage} />
-    <View style={styles.cardInfo}>
-      <Text style={styles.cardTitle}>{item.name}</Text>
-      <View style={styles.cardRating}>
-        <Ionicons name="star" size={14} color="#FFC107" />
-        <Text style={styles.cardRatingText}>{item.rating} ({item.reviews} đánh giá)</Text>
-      </View>
-      <Text style={styles.cardDeliveryInfo}>Miễn phí 9.000đ • 15 phút trở lên</Text>
-      {item.discount && (
-        <View style={styles.cardPromo}>
-          <Ionicons name="pricetag" size={14} color="#E53935" style={{ marginRight: 4 }} />
-          <Text style={styles.cardPromoText}>Giảm {item.discount}%</Text>
-        </View>
-      )}
-    </View>
-  </View>
-);
-
-// --- Màn hình chính (HomePage) (Giữ nguyên) ---
+// --- MAIN PAGE ---
 export default function HomePage() {
-  // ... (Toàn bộ code fetch data của HomePage giữ nguyên) ...
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -190,47 +162,39 @@ export default function HomePage() {
       const db = getFirestore(app);
 
       try {
-        // Fetch Products
-        const productsQuery = query(collection(db, 'products'));
-        const productsSnapshot = await getDocs(productsQuery);
-        const productsData = productsSnapshot.docs.map(doc => {
+        const restaurantsQuery = query(collection(db, 'restaurants'));
+        const restaurantsSnapshot = await getDocs(restaurantsQuery);
+        const restaurantsData = restaurantsSnapshot.docs.map(doc => {
           const data = doc.data();
           return {
-            id: doc.id,
+            id: data.id,
             name: data.name,
-            img: data.img,
-            price: data.price,
-            discount: data.discount,
-            rating: data.rating,
-            reviews: data.reviews,
-          } as Product;
+            image: data.image,
+            address: data.address,
+          } as Restaurant;
         });
-        setProducts(productsData);
+        setRestaurants(restaurantsData);
 
-        // Fetch Categories
         try {
           const categoriesQuery = query(collection(db, 'categories'));
           const categoriesSnapshot = await getDocs(categoriesQuery);
           const categoriesData = categoriesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Category[];
           setCategories(categoriesData);
-        } catch (e) {
-          console.warn("Không tìm thấy collection 'categories'");
+        } catch {
           setCategories([]);
         }
 
-        // Fetch Suggestions
         try {
           const suggestionsQuery = query(collection(db, 'suggestions'));
           const suggestionsSnapshot = await getDocs(suggestionsQuery);
           const suggestionsData = suggestionsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Suggestion[];
           setSuggestions(suggestionsData);
-        } catch (e) {
-          console.warn("Không tìm thấy collection 'suggestions'");
+        } catch {
           setSuggestions([]);
         }
 
       } catch (error) {
-        console.error("Lỗi khi fetch dữ liệu products:", error);
+        console.error("Lỗi khi fetch danh sách nhà hàng:", error);
       } finally {
         setLoading(false);
       }
@@ -239,6 +203,25 @@ export default function HomePage() {
     fetchData();
   }, []);
 
+  const renderRestaurant = ({ item }: { item: Restaurant }) => (
+    <TouchableOpacity
+      style={styles.restaurantCard}
+    onPress={() =>
+  router.push({
+    pathname: "/restaurant/[id]",
+    params: { id: item.id },
+  })
+}
+
+    >
+      <Image source={{ uri: item.image }} style={styles.restaurantImage} />
+      <View style={styles.restaurantInfo}>
+        <Text style={styles.restaurantName}>{item.name}</Text>
+        <Text style={styles.restaurantAddress} numberOfLines={1}>{item.address}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <FoodPageHeader />
@@ -246,29 +229,32 @@ export default function HomePage() {
       {loading ? (
         <ActivityIndicator size="large" color="#00A74F" style={{ marginTop: 50 }} />
       ) : (
-        <FlatList
-          data={products}
-          renderItem={({ item }) => <ProductCard item={item} />}
-          keyExtractor={item => item.id}
-          ListHeaderComponent={
-            <FoodScreenListHeader
-              categories={categories}
-              suggestions={suggestions}
-            />
-          }
-        />
-      )}
+       <FlatList
+  data={restaurants}
+  renderItem={renderRestaurant}
+  keyExtractor={(item) => String(item.id)}
+  ListHeaderComponent={
+    <FoodScreenListHeader
+      categories={categories}
+      suggestions={suggestions}
+    />
+  }
+  showsVerticalScrollIndicator={false}
+/>
+)}
+
+          
+   
     </View>
   );
 }
 
-// --- StyleSheet (Đã thêm style cho Nút lọc) ---
+// --- Styles --- (GIỮ NGUYÊN + RESTAURANT CARD)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
-  // ... (styles của header, banner, segment, category, suggestion giữ nguyên)
   headerSafeArea: {
     backgroundColor: '#fff',
     borderBottomWidth: 1,
@@ -408,8 +394,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     padding: 10,
   },
-
-  // --- 5. STYLES CHO NÚT LỌC ---
   filterContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -420,7 +404,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 20, // Bo tròn
+    borderRadius: 20,
     marginRight: 10,
   },
   filterSortButton: {
@@ -430,7 +414,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderWidth: 1,
     borderColor: '#ddd',
-    borderRadius: 20, // Bo tròn
+    borderRadius: 20,
   },
   filterSortText: {
     fontSize: 14,
@@ -438,14 +422,12 @@ const styles = StyleSheet.create({
     color: '#333',
     marginRight: 4,
   },
-  // --- KẾT THÚC STYLES LỌC ---
-
   footerBannerContainer: {
     backgroundColor: '#FF6F00',
     padding: 15,
     borderRadius: 12,
     marginHorizontal: 15,
-    marginTop: 25, // <-- Đã có
+    marginTop: 25,
   },
   footerText: {
     color: '#fff',
@@ -460,62 +442,37 @@ const styles = StyleSheet.create({
     marginLeft: 15,
   },
 
-  // ... (Styles của ProductCard giữ nguyên)
-  cardContainer: {
+  // ===== RESTAURANT CARD =====
+  restaurantCard: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingHorizontal: 15,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0'
-  },
-  cardImage: {
-    width: 100,
-    height: 100,
+    paddingVertical: 12,
+    marginHorizontal: 15,
+    marginBottom: 12,
     borderRadius: 12,
-    backgroundColor: '#eee',
-    marginRight: 15,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#eee',
   },
-  cardInfo: {
+  restaurantImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: '#f2f2f2',
+    marginRight: 12,
+  },
+  restaurantInfo: {
     flex: 1,
   },
-  cardTitle: {
+  restaurantName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#222',
-    marginBottom: 5,
+    marginBottom: 4,
   },
-  cardRating: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 5,
-  },
-  cardRatingText: {
-    marginLeft: 5,
+  restaurantAddress: {
     fontSize: 13,
-    color: '#555',
-  },
-  cardDeliveryInfo: {
-    fontSize: 13,
-    color: '#555',
-    marginBottom: 8,
-  },
-  cardPriceContainer: {},
-  cardPrice: {},
-  cardOldPrice: {},
-  cardPromo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    alignSelf: 'flex-start',
-    paddingVertical: 0,
-    paddingHorizontal: 0,
-    borderRadius: 0,
-    marginTop: 5,
-  },
-  cardPromoText: {
-    fontSize: 13,
-    color: '#E53935',
-    fontWeight: '500',
+    color: '#777',
   },
 });
