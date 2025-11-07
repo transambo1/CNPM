@@ -8,11 +8,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Platform,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { Ionicons } from "@expo/vector-icons";
 import { app } from "../../libs/firebase";
+import { useCart } from "../../libs/CartContext";
 
 type Product = {
   id: string;
@@ -31,6 +33,7 @@ export default function DetailProduct() {
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const { addToCart, totalItems, totalPrice } = useCart();
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -72,6 +75,18 @@ export default function DetailProduct() {
   else if (product?.restaurantId) router.push(`/restaurant/${product.restaurantId}` as never);
   else router.push("/" as never);
 };
+
+  const handleAddToCart = () => {
+    if (!product) return;
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      img: product.img,
+      restaurantId: product.restaurantId,
+    });
+    Alert.alert("Đã thêm vào giỏ", `${product.name} x1`);
+  };
 
   if (loading) {
     return <ActivityIndicator size="large" color="#00A74F" style={{ marginTop: 50 }} />;
@@ -131,10 +146,24 @@ export default function DetailProduct() {
         </View>
       </ScrollView>
 
-      {/* Floating Add to Cart Button */}
-      <TouchableOpacity style={styles.floatingBtn}>
-        <Ionicons name="add" size={28} color="#fff" />
-      </TouchableOpacity>
+      <View style={styles.bottomBar}>
+        {totalItems > 0 && (
+          <TouchableOpacity
+            style={styles.viewCartButton}
+            onPress={() => router.push('/cart')}
+          >
+            <View>
+              <Text style={styles.viewCartText}>Xem giỏ hàng ({totalItems})</Text>
+              <Text style={styles.viewCartSub}>{totalPrice.toLocaleString()}đ</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
+          <Ionicons name="cart" size={20} color="#fff" style={{ marginRight: 6 }} />
+          <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -174,19 +203,49 @@ const styles = StyleSheet.create({
   noData: { fontSize: 16, color: "#777" },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  floatingBtn: {
+  bottomBar: {
     position: "absolute",
-    bottom: 28,
-    right: 22,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: GREEN,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === "ios" ? 26 : 16,
+    backgroundColor: "rgba(255,255,255,0.95)",
+    borderTopWidth: 1,
+    borderTopColor: BORDER,
+    gap: 12,
+  },
+  addButton: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    ...Platform.select({
-      ios: { shadowColor: "#000", shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 4 } },
-      android: { elevation: 5 },
-    }),
+    backgroundColor: GREEN,
+    paddingVertical: 14,
+    borderRadius: 28,
+  },
+  addButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  viewCartButton: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "#111",
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 18,
+  },
+  viewCartText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  viewCartSub: {
+    color: "#E5E5EA",
+    marginTop: 2,
+    fontSize: 13,
   },
 });

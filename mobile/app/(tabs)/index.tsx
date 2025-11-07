@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../libs/AuthContext';
 import { getFirestore, collection, query, getDocs } from 'firebase/firestore';
 import { app } from '../../libs/firebase';
+import { useCart } from '../../libs/CartContext';
 
 // --- Types ---
 type Category = { id: string; name: string; image: string; };
@@ -31,6 +32,7 @@ type Restaurant = {
 const FoodPageHeader = () => {
   const router = useRouter();
   const { user } = useAuth();
+  const { totalItems } = useCart();
 
   return (
     <SafeAreaView edges={['top']} style={styles.headerSafeArea}>
@@ -47,9 +49,23 @@ const FoodPageHeader = () => {
             <Ionicons name="chevron-down" size={16} color="#000" />
           </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
-          <Ionicons name="person-circle-outline" size={32} color="#000" />
-        </TouchableOpacity>
+        <View style={styles.headerActions}>
+          <TouchableOpacity
+            onPress={() => router.push('/cart')}
+            style={styles.cartButton}
+            accessibilityLabel="Mở giỏ hàng"
+          >
+            <Ionicons name="cart-outline" size={26} color="#000" />
+            {totalItems > 0 && (
+              <View style={styles.cartBadge}>
+                <Text style={styles.cartBadgeText}>{totalItems}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(tabs)/profile')}>
+            <Ionicons name="person-circle-outline" size={32} color="#000" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.searchContainer}>
@@ -270,6 +286,31 @@ const styles = StyleSheet.create({
   addressBox: {
     flex: 1,
     marginHorizontal: 10,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  cartButton: {
+    padding: 4,
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FF3B30',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
   addressTitle: {
     fontSize: 12,
