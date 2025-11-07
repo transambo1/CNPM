@@ -71,7 +71,7 @@ export default function CartScreen() {
 
   const handleCheckout = () => {
     router.push({
-      pathname: '/(tabs)/payment',
+      pathname: '/checkout/payment',
       params: { total: totalPrice.toString() },
     } as never);
   };
@@ -99,7 +99,7 @@ export default function CartScreen() {
           </Text>
           <TouchableOpacity
             style={styles.emptyButton}
-            onPress={() => router.push('/(tabs)/index')}
+            onPress={() => router.push('/(tabs)')}
           >
             <Text style={styles.emptyButtonText}>Khám phá món ngon</Text>
           </TouchableOpacity>

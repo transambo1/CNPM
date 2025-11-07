@@ -64,7 +64,6 @@ export default function ProtectedLayout() {
       <Tabs.Screen
         name="payment"
         options={{
-          href: null,
           tabBarButton: () => null,
         }}
       />

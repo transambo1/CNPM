@@ -103,21 +103,11 @@ export default function DetailProduct() {
     Alert.alert('Đã thêm vào giỏ', `${product.name} x1`);
   };
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    addToCart({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      img: product.img,
-      restaurantId: product.restaurantId,
-    });
-    Alert.alert("Đã thêm vào giỏ", `${product.name} x1`);
-  };
+
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }] }>
+      <SafeAreaView style={[styles.safeArea, { justifyContent: 'center', alignItems: 'center' }]}>
         <Stack.Screen options={{ headerShown: false }} />
         <ActivityIndicator size="large" color="#00A74F" />
       </SafeAreaView>
