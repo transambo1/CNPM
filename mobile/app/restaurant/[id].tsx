@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "fi
 
 import { Ionicons } from "@expo/vector-icons";
 import { app } from "../../libs/firebase";
+import { useCart } from "../../libs/CartContext";
 
 
 // ==== Types ====
@@ -37,10 +38,11 @@ type Restaurant = {
 export default function RestaurantMenu() {
   const router = useRouter();
   const { id } = useLocalSearchParams(); // restaurantId
- 
+
   const [products, setProducts] = useState<Product[]>([]);
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
   const [loading, setLoading] = useState(true);
+  const { totalItems } = useCart();
 
   const titleText = useMemo(
     () => (restaurant?.name ? restaurant.name : "Nhà hàng"),
@@ -143,8 +145,18 @@ export default function RestaurantMenu() {
         <Text numberOfLines={1} style={styles.appBarTitle}>
           {titleText}
         </Text>
-        {/* Spacer để cân 2 bên */}
-        <View style={{ width: 34 }} />
+        <TouchableOpacity
+          onPress={() => router.push('/cart')}
+          style={styles.cartButton}
+          accessibilityLabel="Xem giỏ hàng"
+        >
+          <Ionicons name="cart-outline" size={24} color="#111" />
+          {totalItems > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
       </View>
 
       {/* Header banner của nhà hàng */}
@@ -205,6 +217,30 @@ const styles = StyleSheet.create({
   },
   backBtn: { width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   appBarTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "700", color: "#111" },
+  cartButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cartBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FF3B30",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+  },
 
   // Restaurant header
   header: {

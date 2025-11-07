@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   ActivityIndicator
 } from 'react-native';
 import { useAuth } from '../../libs/AuthContext';
