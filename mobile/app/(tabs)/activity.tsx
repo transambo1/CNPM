@@ -21,7 +21,7 @@ import { useAuth } from '../../libs/AuthContext';
 import { app } from '../../libs/firebase';
 
 const STATUS_META: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  pending: { label: 'Đang xử lý', color: '#F59E0B', icon: 'time-outline' },
+  pending: { label: 'Chờ xử lý', color: '#F59E0B', icon: 'time-outline' },
   confirmed: { label: 'Đã xác nhận', color: '#3B82F6', icon: 'checkmark-done-outline' },
   delivering: { label: 'Đang giao', color: '#00A74F', icon: 'bicycle-outline' },
   completed: { label: 'Hoàn tất', color: '#10B981', icon: 'checkmark-circle-outline' },

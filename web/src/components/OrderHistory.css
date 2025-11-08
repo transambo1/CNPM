@@ -136,7 +136,9 @@
   color: white;
 }
 
-.status-tag.đang-xử-lý {
+.status-tag.đang-xử-lý,
+.status-tag.chờ-xử-lí,
+.status-tag.chờ-xử-lý {
   background-color: #ff5116;
   /* cam */
   color: white;

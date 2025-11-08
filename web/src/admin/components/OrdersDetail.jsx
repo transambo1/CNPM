@@ -40,6 +40,7 @@ export default function OrderDetail() {
             case "Đang giao bằng drone":
                 return "blue";
             case "Đang xử lý":
+            case "Chờ xử lý":
                 return "orange";
             default:
                 return "volcano";
