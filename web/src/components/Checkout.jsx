@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { collection, addDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, doc, getDoc, serverTimestamp, updateDoc, arrayUnion } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
 import "./Checkout.css"; // Import file CSS
 
 export default function Checkout({ cart, setCart }) {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const restaurantId = cart.length > 0 ? cart[0].restaurantId : null;
 
@@ -19,6 +19,13 @@ export default function Checkout({ cart, setCart }) {
     email: "",
     address: ""
   });
+  const [savedAddresses, setSavedAddresses] = useState([]);
+  const [selectedAddressId, setSelectedAddressId] = useState(null);
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState("");
+  const [newAddressLabel, setNewAddressLabel] = useState("");
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [addressError, setAddressError] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Load thông tin user (giữ nguyên)
@@ -33,6 +40,73 @@ export default function Checkout({ cart, setCart }) {
       });
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (!currentUser?.uid) {
+        setSavedAddresses([]);
+        setSelectedAddressId(null);
+        return;
+      }
+
+      setLoadingAddresses(true);
+      setAddressError("");
+      try {
+        const snap = await getDoc(doc(db, "users", currentUser.uid));
+        if (!snap.exists()) {
+          setSavedAddresses([]);
+          setSelectedAddressId(null);
+          return;
+        }
+
+        const data = snap.data();
+        const addressesFromDb = Array.isArray(data.addresses) ? data.addresses : [];
+        const normalizedMap = new Map();
+
+        if (data.address && addressesFromDb.length === 0) {
+          normalizedMap.set("legacy-address", {
+            id: "legacy-address",
+            label: "Địa chỉ mặc định",
+            value: data.address,
+            isDefault: true,
+          });
+        }
+
+        addressesFromDb.forEach((addr, index) => {
+          if (!addr || !addr.value) return;
+          const id = addr.id || `saved-${index}`;
+          normalizedMap.set(id, {
+            id,
+            label: addr.label || `Địa chỉ ${index + 1}`,
+            value: addr.value,
+            isDefault: Boolean(addr.isDefault),
+          });
+        });
+
+        const normalized = Array.from(normalizedMap.values());
+        const preferred =
+          normalized.find((addr) => addr.isDefault) ||
+          normalized[0] ||
+          null;
+
+        setSavedAddresses(normalized);
+
+        if (preferred) {
+          setSelectedAddressId(preferred.id);
+          setForm((prev) => ({ ...prev, address: preferred.value }));
+        }
+      } catch (err) {
+        console.error("Lỗi tải danh sách địa chỉ:", err);
+        setAddressError("Không thể tải địa chỉ đã lưu.");
+        setSavedAddresses([]);
+        setSelectedAddressId(null);
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    loadAddresses();
+  }, [currentUser?.uid]);
 
   // Lấy thông tin nhà hàng (giữ nguyên)
   useEffect(() => {
@@ -53,6 +127,75 @@ export default function Checkout({ cart, setCart }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm({ ...form, [name]: value });
+    if (name === "address") {
+      setSelectedAddressId(null);
+    }
+  };
+
+  const handleSelectAddress = (addressId) => {
+    setSelectedAddressId(addressId);
+    const found = savedAddresses.find((addr) => addr.id === addressId);
+    if (found) {
+      setForm((prev) => ({ ...prev, address: found.value }));
+    }
+    setIsAddingAddress(false);
+    setAddressError("");
+  };
+
+  const handleAddNewAddress = async () => {
+    const trimmedValue = newAddress.trim();
+    if (!trimmedValue) {
+      setAddressError("Vui lòng nhập địa chỉ mới.");
+      return;
+    }
+
+    if (!currentUser?.uid) {
+      alert("⚠️ Vui lòng đăng nhập lại để lưu địa chỉ mới.");
+      return;
+    }
+
+    const label = newAddressLabel.trim() || `Địa chỉ ${savedAddresses.length + 1}`;
+    const generatedId =
+      typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `addr-${Date.now()}`;
+
+    const addressObj = {
+      id: generatedId,
+      label,
+      value: trimmedValue,
+      isDefault: savedAddresses.length === 0,
+    };
+
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        addresses: arrayUnion(addressObj),
+        address: trimmedValue,
+      });
+
+      const updatedAddresses = [...savedAddresses, addressObj];
+      setSavedAddresses(updatedAddresses);
+      setSelectedAddressId(addressObj.id);
+      setForm((prev) => ({ ...prev, address: trimmedValue }));
+      setNewAddress("");
+      setNewAddressLabel("");
+      setIsAddingAddress(false);
+      setAddressError("");
+
+      if (typeof setCurrentUser === "function") {
+        setCurrentUser({ ...currentUser, addresses: updatedAddresses, address: trimmedValue });
+      }
+    } catch (err) {
+      console.error("Lỗi lưu địa chỉ mới:", err);
+      setAddressError("Không thể lưu địa chỉ mới. Vui lòng thử lại.");
+    }
+  };
+
+  const handleCancelNewAddress = () => {
+    setIsAddingAddress(false);
+    setNewAddress("");
+    setNewAddressLabel("");
+    setAddressError("");
   };
 
   // ✅ SỬA LỖI 1: Cải thiện hàm lấy tọa độ
@@ -96,10 +239,16 @@ export default function Checkout({ cart, setCart }) {
       return;
     }
 
+    const trimmedAddress = form.address.trim();
+    if (!trimmedAddress) {
+      alert("⚠️ Vui lòng chọn hoặc nhập địa chỉ giao hàng.");
+      return;
+    }
+
     setIsProcessing(true);
     try {
       // 1. Lấy tọa độ
-      const customerCoords = await getCoordinatesForAddress(form.address);
+      const customerCoords = await getCoordinatesForAddress(trimmedAddress);
 
       // 2. *** BƯỚC KIỂM TRA QUAN TRỌNG NHẤT ***
       // Code cũ của bạn thiếu bước này
@@ -119,7 +268,7 @@ export default function Checkout({ cart, setCart }) {
           name: `${form.lastName} ${form.firstName}`.trim(),
           phone: form.phone,
           email: form.email,
-          address: form.address,
+          address: trimmedAddress,
           latitude: customerCoords.lat, // Chắc chắn có dữ liệu
           longitude: customerCoords.lng // Chắc chắn có dữ liệu
         },
@@ -131,7 +280,7 @@ export default function Checkout({ cart, setCart }) {
           restaurantId: item.restaurantId
         })),
         total,
-        status: "Chờ xác nhận",
+        status: "Chờ xử lý",
         createdAt: serverTimestamp(),
         droneId: null
       };
@@ -179,7 +328,89 @@ export default function Checkout({ cart, setCart }) {
 
           <div className="checkout-info-block">
             <h3>GIAO ĐẾN:</h3>
-            <input type="text" name="address" value={form.address} onChange={handleChange} placeholder="Nhập địa chỉ giao hàng..." className="address-input" />
+            {loadingAddresses ? (
+              <p className="address-loading">⏳ Đang tải địa chỉ đã lưu...</p>
+            ) : (
+              <>
+                {savedAddresses.length > 0 ? (
+                  <div className="address-book">
+                    {savedAddresses.map((addr) => (
+                      <label
+                        key={addr.id}
+                        className={`address-item ${selectedAddressId === addr.id ? "active" : ""}`}
+                      >
+                        <input
+                          type="radio"
+                          name="savedAddress"
+                          value={addr.id}
+                          checked={selectedAddressId === addr.id}
+                          onChange={() => handleSelectAddress(addr.id)}
+                        />
+                        <div className="address-item-content">
+                          <span className="address-item-label">{addr.label}</span>
+                          <span className="address-item-value">{addr.value}</span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="address-empty">
+                    Bạn chưa lưu địa chỉ nào. Hãy thêm địa chỉ mới bên dưới để sử dụng nhanh.
+                  </p>
+                )}
+
+                {addressError && <p className="address-error">{addressError}</p>}
+
+                {isAddingAddress ? (
+                  <div className="new-address-form">
+                    <input
+                      type="text"
+                      placeholder="Tên gợi nhớ (ví dụ: Nhà, Công ty)"
+                      value={newAddressLabel}
+                      onChange={(e) => setNewAddressLabel(e.target.value)}
+                    />
+                    <textarea
+                      placeholder="Nhập địa chỉ mới chi tiết..."
+                      value={newAddress}
+                      onChange={(e) => setNewAddress(e.target.value)}
+                      rows={2}
+                    />
+                    <div className="new-address-actions">
+                      <button type="button" onClick={handleAddNewAddress}>
+                        Lưu địa chỉ
+                      </button>
+                      <button type="button" className="secondary" onClick={handleCancelNewAddress}>
+                        Hủy
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="add-address-btn"
+                    onClick={() => {
+                      setIsAddingAddress(true);
+                      setAddressError("");
+                    }}
+                  >
+                    + Thêm địa chỉ mới
+                  </button>
+                )}
+              </>
+            )}
+
+            <label className="address-input-label" htmlFor="address-input">
+              Địa chỉ giao hàng chi tiết
+            </label>
+            <input
+              id="address-input"
+              type="text"
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+              placeholder="Nhập địa chỉ giao hàng chi tiết..."
+              className="address-input"
+            />
             <iframe
               title="map"
               src={`https://maps.google.com/maps?q=${encodeURIComponent(form.address)}&t=&z=15&ie=UTF8&iwloc=&output=embed`}

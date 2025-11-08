@@ -11,6 +11,7 @@ function ProductDetail({ onAdd }) {
     const [restaurant, setRestaurant] = useState(null);
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
         const fetchProductDetail = async () => {
@@ -39,6 +40,7 @@ function ProductDetail({ onAdd }) {
                 setLoading(false);
             }
         };
+        setQuantity(1);
         fetchProductDetail();
     }, [id]);
 
@@ -117,14 +119,46 @@ function ProductDetail({ onAdd }) {
                         </div>
                     )}
 
+                    <div className="productDetail__quantity">
+                        <span>Số lượng:</span>
+                        <div className="quantity__controls">
+                            <button
+                                type="button"
+                                onClick={() => setQuantity((prev) => (prev > 1 ? prev - 1 : 1))}
+                                aria-label="Giảm số lượng"
+                            >
+                                −
+                            </button>
+                            <input
+                                type="number"
+                                min="1"
+                                value={quantity}
+                                onChange={(e) => {
+                                    const value = Number(e.target.value);
+                                    setQuantity(Number.isFinite(value) && value > 0 ? Math.floor(value) : 1);
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setQuantity((prev) => prev + 1)}
+                                aria-label="Tăng số lượng"
+                            >
+                                +
+                            </button>
+                        </div>
+                    </div>
+
                     <button
                         className="productDetail__addBtn"
                         onClick={() =>
-                            onAdd({
-                                ...product,
-                                restaurantId: product.restaurantId || null,
-                                restaurantName: restaurant?.name || "Chưa xác định",
-                            })
+                            onAdd(
+                                {
+                                    ...product,
+                                    restaurantId: product.restaurantId || null,
+                                    restaurantName: restaurant?.name || "Chưa xác định",
+                                },
+                                quantity
+                            )
                         }
                     >
                         🛒 Thêm vào giỏ hàng
@@ -164,11 +198,14 @@ function ProductDetail({ onAdd }) {
                                         className="relatedProducts__addBtn"
                                         onClick={(e) => {
                                             e.preventDefault();
-                                            onAdd({
-                                                ...item,
-                                                restaurantId: item.restaurantId || null,
-                                                restaurantName: "N/A"
-                                            });
+                                            onAdd(
+                                                {
+                                                    ...item,
+                                                    restaurantId: item.restaurantId || null,
+                                                    restaurantName: "N/A"
+                                                },
+                                                1
+                                            );
                                         }}
                                     >
                                         🛒 Thêm

@@ -187,7 +187,12 @@ export default function RestaurantDashboard() {
         return <span className="badge done">Đã giao</span>;
       }
     }
-    if (s === "confirmed" || s.includes("xử lý") || s.includes("processing")) {
+    if (
+      s === "confirmed" ||
+      s.includes("xử lý") ||
+      s.includes("processing") ||
+      (s.includes("chờ") && s.includes("xử"))
+    ) {
       return <span className="badge pending">Đang xử lý</span>;
     }
     return <span className="badge other">{status}</span>;
@@ -209,7 +214,7 @@ export default function RestaurantDashboard() {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">Tất cả</option>
-            <option value="processing">Đang xử lý</option>
+            <option value="processing">Đang/Chờ xử lý</option>
             <option value="delivering">Đang giao</option>
             <option value="delivered">Đã giao</option>
             <option value="other">Chờ xác nhận</option>

@@ -33,7 +33,7 @@ function Product({ product, onAdd }) {
             <div className="prd-actions">
                 <button
                     className="prd-add-btn"
-                    onClick={() => onAdd(product)}
+                    onClick={() => onAdd(product, 1)}
                 >
                     🛒 Thêm vào giỏ
                 </button>

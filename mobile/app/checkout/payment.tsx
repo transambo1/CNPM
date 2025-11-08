@@ -15,17 +15,27 @@ import {
     PanResponder,
     KeyboardAvoidingView,
     Platform,
+    Alert,
+    Switch,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { app } from "../../libs/firebase";
 import { useCart } from "../../libs/CartContext";
+import { useAuth } from "../../libs/AuthContext";
 import {
     getFirestore,
     collection,
     getDocs,
     query,
     where,
+    addDoc,
+    serverTimestamp,
+    onSnapshot,
+    orderBy,
+    doc,
+    writeBatch,
+    getDoc,
 } from "firebase/firestore";
 
 // ===== Types & Utils =====
@@ -42,6 +52,46 @@ type PaymentMethod = "momo" | "bank" | "vnpay";
 
 const VND = (v: number) =>
     (Number(v) || 0).toLocaleString("vi-VN", { minimumFractionDigits: 0 }) + "đ";
+
+type AddressItem = {
+    id: string;
+    label?: string;
+    detail: string;
+    note?: string;
+    contactName?: string;
+    phone?: string;
+    isDefault?: boolean;
+    fromProfile?: boolean;
+};
+
+type NewAddressForm = {
+    label: string;
+    detail: string;
+    note: string;
+    contactName: string;
+    phone: string;
+    isDefault: boolean;
+};
+
+const composeAddressLine = (addr: AddressItem) => {
+    const parts = [addr.label?.trim(), addr.detail.trim()].filter(Boolean);
+    const base = parts.join(" • ");
+    if (addr.note) {
+        return `${base} (${addr.note.trim()})`;
+    }
+    return base;
+};
+
+const buildOrderAddress = (addr: AddressItem) => {
+    const segments = [composeAddressLine(addr)];
+    if (addr.contactName) {
+        segments.push(`Người nhận: ${addr.contactName}`);
+    }
+    if (addr.phone) {
+        segments.push(`SĐT: ${addr.phone}`);
+    }
+    return segments.filter(Boolean).join(" | ");
+};
 
 const screenH = Dimensions.get("window").height;
 
@@ -168,14 +218,37 @@ const SwipeableCartRow: React.FC<SwipeItemProps> = ({ p, onDelete }) => {
 // ===== Main Screen =====
 export default function PaymentScreen() {
     const { items, totalPrice, addToCart, clearCart, removeFromCart } = useCart();
+    const { user, updateUser } = useAuth();
     const restaurantId = items[0]?.restaurantId ?? null;
 
     const db = useMemo(() => getFirestore(app), []);
+    const defaultContactName = useMemo(() => {
+        const fullName = [user?.firstname, user?.lastname].filter(Boolean).join(" ").trim();
+        return fullName || user?.username || "";
+    }, [user?.firstname, user?.lastname, user?.username]);
+    const defaultPhone = useMemo(() => user?.phonenumber ?? "", [user?.phonenumber]);
+
     const [menu, setMenu] = useState<Product[]>([]);
     const [loadingMenu, setLoadingMenu] = useState(false);
     const [search, setSearch] = useState("");
 
     const [payment, setPayment] = useState<PaymentMethod>("momo");
+    const [restaurantInfo, setRestaurantInfo] = useState<{ name: string; address?: string } | null>(null);
+
+    const [addresses, setAddresses] = useState<AddressItem[]>([]);
+    const [addressLoading, setAddressLoading] = useState(false);
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [addressSheetMode, setAddressSheetMode] = useState<"list" | "form">("list");
+    const [newAddressForm, setNewAddressForm] = useState<NewAddressForm>({
+        label: "",
+        detail: "",
+        note: "",
+        contactName: defaultContactName,
+        phone: defaultPhone,
+        isDefault: true,
+    });
+    const [savingAddress, setSavingAddress] = useState(false);
+    const [placingOrder, setPlacingOrder] = useState(false);
 
     // Undo snackbar
     const [undoItem, setUndoItem] = useState<null | {
@@ -186,6 +259,148 @@ export default function PaymentScreen() {
     // BottomSheets
     const addSheet = useBottomSheet(false);
     const paySheet = useBottomSheet(false, Math.min(420, screenH * 0.6));
+    const addressSheet = useBottomSheet(false, Math.min(520, screenH * 0.82));
+
+    const profileAddress = useMemo<AddressItem | null>(() => {
+        if (!user?.address) return null;
+        return {
+            id: "__profile",
+            label: "Địa chỉ hiện tại",
+            detail: user.address,
+            contactName: defaultContactName,
+            phone: defaultPhone,
+            isDefault: addresses.length === 0,
+            fromProfile: true,
+        };
+    }, [user?.address, defaultContactName, defaultPhone, addresses.length]);
+
+    const combinedAddresses = useMemo(() => {
+        const list = [...addresses];
+        if (profileAddress) {
+            list.unshift(profileAddress);
+        }
+        return list;
+    }, [addresses, profileAddress]);
+
+    const selectedAddress = useMemo(() => {
+        if (!selectedAddressId) {
+            return combinedAddresses[0] ?? null;
+        }
+        return (
+            combinedAddresses.find((addr) => addr.id === selectedAddressId) ??
+            combinedAddresses[0] ??
+            null
+        );
+    }, [combinedAddresses, selectedAddressId]);
+
+    useEffect(() => {
+        if (combinedAddresses.length === 0) {
+            setSelectedAddressId(null);
+            return;
+        }
+        const hasCurrent = combinedAddresses.some((addr) => addr.id === selectedAddressId);
+        if (!hasCurrent) {
+            const defaultAddr = combinedAddresses.find((addr) => addr.isDefault) ?? combinedAddresses[0];
+            if (defaultAddr) {
+                setSelectedAddressId(defaultAddr.id);
+            }
+        }
+    }, [combinedAddresses, selectedAddressId]);
+
+    useEffect(() => {
+        setNewAddressForm((prev) => ({
+            ...prev,
+            contactName: prev.contactName || defaultContactName,
+            phone: prev.phone || defaultPhone,
+        }));
+    }, [defaultContactName, defaultPhone]);
+
+    useEffect(() => {
+        if (!addressSheet.open) {
+            setAddressSheetMode("list");
+        }
+    }, [addressSheet.open]);
+
+    const resetNewAddressForm = useCallback(() => {
+        setNewAddressForm({
+            label: "",
+            detail: "",
+            note: "",
+            contactName: defaultContactName,
+            phone: defaultPhone,
+            isDefault: addresses.length === 0,
+        });
+    }, [addresses.length, defaultContactName, defaultPhone]);
+
+    useEffect(() => {
+        if (!user?.id) {
+            setAddresses([]);
+            setAddressLoading(false);
+            setSelectedAddressId(null);
+            return;
+        }
+
+        setAddressLoading(true);
+        const addressesRef = collection(db, "users", user.id, "addresses");
+        const q = query(addressesRef, orderBy("createdAt", "desc"));
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const mapped: AddressItem[] = snapshot.docs
+                    .map((docSnap) => {
+                        const data = docSnap.data() as any;
+                        const detail = (data.detail ?? data.address ?? "").toString().trim();
+                        if (!detail) return null;
+                        return {
+                            id: docSnap.id,
+                            label: data.label ?? data.title ?? "",
+                            detail,
+                            note: data.note ?? "",
+                            contactName: data.contactName ?? data.recipient ?? "",
+                            phone: data.phone ?? data.phoneNumber ?? "",
+                            isDefault: Boolean(data.isDefault),
+                        } as AddressItem;
+                    })
+                    .filter((addr): addr is AddressItem => Boolean(addr));
+
+                setAddresses(mapped);
+                setAddressLoading(false);
+            },
+            (error) => {
+                console.warn("Không thể tải địa chỉ:", error);
+                setAddresses([]);
+                setAddressLoading(false);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [db, user?.id]);
+
+    useEffect(() => {
+        if (!restaurantId) {
+            setRestaurantInfo(null);
+            return;
+        }
+
+        const fetchRestaurant = async () => {
+            try {
+                const ref = doc(db, "restaurants", restaurantId);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data() as any;
+                    setRestaurantInfo({ name: data.name ?? data.title ?? "GrabFood", address: data.address });
+                } else {
+                    setRestaurantInfo(null);
+                }
+            } catch (error) {
+                console.warn("Không thể tải thông tin nhà hàng:", error);
+                setRestaurantInfo(null);
+            }
+        };
+
+        fetchRestaurant();
+    }, [db, restaurantId]);
 
     // Filtered menu
     const filteredMenu = useMemo(() => {
@@ -246,15 +461,13 @@ export default function PaymentScreen() {
     // Undo
     const undoDelete = useCallback(() => {
         if (!undoItem) return;
-        for (let i = 0; i < (undoItem.quantity || 1); i++) {
-            addToCart({
-                id: undoItem.id,
-                name: undoItem.name,
-                img: undoItem.img,
-                price: undoItem.price,
-                restaurantId: undoItem.restaurantId,
-            });
-        }
+        addToCart({
+            id: undoItem.id,
+            name: undoItem.name,
+            img: undoItem.img,
+            price: undoItem.price,
+            restaurantId: undoItem.restaurantId,
+        }, undoItem.quantity || 1);
         if (undoTimer.current) clearTimeout(undoTimer.current);
         undoTimer.current = null;
         setUndoItem(null);
@@ -269,6 +482,98 @@ export default function PaymentScreen() {
     }, [items.length]);
 
     const openProduct = (id: string) => router.push(`/product/${id}`);
+
+    const openAddressSheet = useCallback(() => {
+        if (!user?.id) {
+            Alert.alert("Cần đăng nhập", "Vui lòng đăng nhập để quản lý địa chỉ giao hàng.");
+            router.push("/login");
+            return;
+        }
+        setAddressSheetMode("list");
+        addressSheet.openSheet();
+    }, [addressSheet, user?.id]);
+
+    const handleSelectAddress = useCallback(
+        async (addr: AddressItem) => {
+            setSelectedAddressId(addr.id);
+            addressSheet.closeSheet();
+            setAddressSheetMode("list");
+            if (addr.detail) {
+                try {
+                    await updateUser({ address: composeAddressLine(addr) });
+                } catch (error) {
+                    console.warn("Không thể cập nhật địa chỉ người dùng:", error);
+                }
+            }
+        },
+        [addressSheet, updateUser]
+    );
+
+    const handleSaveAddress = useCallback(async () => {
+        if (!user?.id) {
+            Alert.alert("Cần đăng nhập", "Vui lòng đăng nhập để lưu địa chỉ giao hàng.");
+            router.push("/login");
+            return;
+        }
+
+        const detail = newAddressForm.detail.trim();
+        if (!detail) {
+            Alert.alert("Thiếu thông tin", "Vui lòng nhập địa chỉ chi tiết.");
+            return;
+        }
+
+        setSavingAddress(true);
+        try {
+            const addressesRef = collection(db, "users", user.id, "addresses");
+            const payload = {
+                label: newAddressForm.label.trim(),
+                detail,
+                note: newAddressForm.note.trim(),
+                contactName: newAddressForm.contactName.trim(),
+                phone: newAddressForm.phone.trim(),
+                isDefault: newAddressForm.isDefault || addresses.length === 0,
+                createdAt: serverTimestamp(),
+            };
+
+            const docRef = await addDoc(addressesRef, payload);
+
+            if (payload.isDefault && addresses.length > 0) {
+                const batch = writeBatch(db);
+                addresses.forEach((addr) => {
+                    if (addr.id !== docRef.id) {
+                        batch.update(doc(addressesRef, addr.id), { isDefault: false });
+                    }
+                });
+                await batch.commit();
+            }
+
+            const savedAddress: AddressItem = {
+                id: docRef.id,
+                label: payload.label,
+                detail: payload.detail,
+                note: payload.note,
+                contactName: payload.contactName,
+                phone: payload.phone,
+                isDefault: payload.isDefault,
+            };
+
+            setSelectedAddressId(savedAddress.id);
+            try {
+                await updateUser({ address: composeAddressLine(savedAddress) });
+            } catch (error) {
+                console.warn("Không thể cập nhật địa chỉ mặc định:", error);
+            }
+
+            resetNewAddressForm();
+            addressSheet.closeSheet();
+            setAddressSheetMode("list");
+        } catch (error) {
+            console.error("Không thể lưu địa chỉ mới:", error);
+            Alert.alert("Lỗi", "Không thể lưu địa chỉ mới. Vui lòng thử lại.");
+        } finally {
+            setSavingAddress(false);
+        }
+    }, [user?.id, newAddressForm, addresses, db, updateUser, addressSheet, resetNewAddressForm]);
 
     const ProductRowQuick: React.FC<{ p: Product }> = ({ p }) => (
         <View style={styles.addRow}>
@@ -301,10 +606,71 @@ export default function PaymentScreen() {
         </View>
     );
 
-    const handleOrder = () => {
-        clearCart();
-        router.push("/(tabs)");
-    };
+    const handleOrder = useCallback(async () => {
+        if (items.length === 0) return;
+
+        if (!user?.id) {
+            Alert.alert("Cần đăng nhập", "Bạn cần đăng nhập để đặt hàng.");
+            router.push("/login");
+            return;
+        }
+
+        if (!selectedAddress) {
+            Alert.alert("Thiếu địa chỉ", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.");
+            openAddressSheet();
+            return;
+        }
+
+        setPlacingOrder(true);
+        try {
+            const ordersRef = collection(db, "orders");
+            const orderItems = items.map((item) => ({
+                productId: item.id,
+                name: item.name,
+                price: item.price,
+                quantity: item.quantity,
+                img: item.img,
+            }));
+            const itemsCount = orderItems.reduce((sum, it) => sum + it.quantity, 0);
+            const orderCode = `GF${Date.now().toString().slice(-6).toUpperCase()}`;
+
+            await addDoc(ordersRef, {
+                userId: user.id,
+                restaurantId,
+                restaurantName: restaurantInfo?.name ?? "",
+                totalPrice,
+                paymentMethod: payment,
+                items: orderItems,
+                itemsCount,
+                status: "pending",
+                statusText: "Chờ xử lý",
+                deliveryAddress: buildOrderAddress(selectedAddress),
+                contactName: selectedAddress.contactName ?? "",
+                contactPhone: selectedAddress.phone ?? "",
+                createdAt: serverTimestamp(),
+                code: orderCode,
+            });
+
+            try {
+                await updateUser({ address: composeAddressLine(selectedAddress) });
+            } catch (error) {
+                console.warn("Không thể đồng bộ địa chỉ giao hàng:", error);
+            }
+
+            clearCart();
+            Alert.alert("Đặt hàng thành công", "Đơn hàng của bạn đang chờ xử lý.", [
+                {
+                    text: "Theo dõi đơn",
+                    onPress: () => router.replace("/(tabs)/activity"),
+                },
+            ]);
+        } catch (error) {
+            console.error("Không thể đặt đơn:", error);
+            Alert.alert("Lỗi", "Không thể đặt đơn. Vui lòng thử lại.");
+        } finally {
+            setPlacingOrder(false);
+        }
+    }, [items, user?.id, selectedAddress, openAddressSheet, db, restaurantId, restaurantInfo?.name, totalPrice, payment, updateUser, clearCart]);
 
     const total = totalPrice;
 
@@ -327,6 +693,44 @@ export default function PaymentScreen() {
                         </TouchableOpacity>
                         <Text numberOfLines={1} style={styles.headerTitle}>Thanh toán</Text>
                         <View style={{ width: 24 }} />
+                    </View>
+
+                    {/* Địa chỉ giao hàng */}
+                    <View style={styles.card}>
+                        <View style={styles.cardHeader}>
+                            <Text style={styles.cardTitle}>Giao tới</Text>
+                            <TouchableOpacity onPress={openAddressSheet}>
+                                <Text style={styles.linkGreen}>
+                                    {combinedAddresses.length > 0 ? "Thay đổi" : "Thêm mới"}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {addressLoading ? (
+                            <ActivityIndicator color="#00A74F" style={{ marginTop: 8 }} />
+                        ) : selectedAddress ? (
+                            <View style={styles.addressSummary}>
+                                {selectedAddress.label ? (
+                                    <Text style={styles.addressLabel}>{selectedAddress.label}</Text>
+                                ) : null}
+                                <Text style={styles.addressLine}>{selectedAddress.detail}</Text>
+                                {selectedAddress.note ? (
+                                    <Text style={styles.addressNote}>{selectedAddress.note}</Text>
+                                ) : null}
+                                <View style={styles.addressMetaRow}>
+                                    {selectedAddress.contactName ? (
+                                        <Text style={styles.addressMeta}>{selectedAddress.contactName}</Text>
+                                    ) : null}
+                                    {selectedAddress.phone ? (
+                                        <Text style={styles.addressMeta}>{selectedAddress.phone}</Text>
+                                    ) : null}
+                                </View>
+                            </View>
+                        ) : (
+                            <Text style={[styles.muted, { marginTop: 8 }]}>
+                                Bạn chưa có địa chỉ giao hàng. Thêm mới để tiếp tục đặt món.
+                            </Text>
+                        )}
                     </View>
 
                     {/* Tóm tắt đơn hàng */}
@@ -432,26 +836,191 @@ export default function PaymentScreen() {
                         <Text style={styles.footerTotal}>{VND(total)}</Text>
                     </View>
                     <TouchableOpacity
-                        style={[styles.primaryBtn, items.length === 0 && { opacity: 0.5 }]}
+                        style={[styles.primaryBtn, (items.length === 0 || placingOrder) && { opacity: 0.5 }]}
                         onPress={handleOrder}
-                        disabled={items.length === 0}
+                        disabled={items.length === 0 || placingOrder}
                     >
-                        <Text style={styles.primaryTxt}>Đặt đơn</Text>
+                        {placingOrder ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.primaryTxt}>Đặt đơn</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
             </KeyboardAvoidingView>
 
             {/* Overlay */}
-            {(addSheet.open || paySheet.open) && (
+            {(addSheet.open || paySheet.open || addressSheet.open) && (
                 <TouchableOpacity
                     activeOpacity={1}
                     onPress={() => {
                         if (paySheet.open) paySheet.closeSheet();
                         if (addSheet.open) addSheet.closeSheet();
+                        if (addressSheet.open) {
+                            addressSheet.closeSheet();
+                            setAddressSheetMode("list");
+                        }
                     }}
                     style={styles.overlay}
                 />
             )}
+
+            {/* Sheet: Địa chỉ giao hàng */}
+            <Animated.View
+                style={[styles.sheet, { height: addressSheet.snapHeight, transform: [{ translateY: addressSheet.translateY }] }]}
+                {...addressSheet.pan.panHandlers}
+            >
+                <View style={styles.grabber} />
+                <View style={styles.sheetHeader}>
+                    <Text style={styles.sheetTitle}>
+                        {addressSheetMode === "list" ? "Chọn địa chỉ giao hàng" : "Thêm địa chỉ mới"}
+                    </Text>
+                    <TouchableOpacity
+                        onPress={() => {
+                            setAddressSheetMode("list");
+                            addressSheet.closeSheet();
+                        }}
+                    >
+                        <Text style={styles.sheetClose}>Đóng</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {addressSheetMode === "list" ? (
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 12 }}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {addressLoading ? (
+                            <ActivityIndicator color="#00A74F" style={{ marginTop: 12 }} />
+                        ) : combinedAddresses.length === 0 ? (
+                            <View style={styles.emptyAddressBox}>
+                                <Text style={styles.muted}>Bạn chưa lưu địa chỉ nào.</Text>
+                                <TouchableOpacity
+                                    style={styles.secondaryBtn}
+                                    onPress={() => {
+                                        resetNewAddressForm();
+                                        setAddressSheetMode("form");
+                                    }}
+                                >
+                                    <Text style={styles.secondaryBtnTxt}>+ Thêm địa chỉ mới</Text>
+                                </TouchableOpacity>
+                            </View>
+                        ) : (
+                            <>
+                                {combinedAddresses.map((addr) => {
+                                    const active = selectedAddress?.id === addr.id;
+                                    return (
+                                        <TouchableOpacity
+                                            key={addr.id}
+                                            style={[styles.addressItem, active && styles.addressItemActive]}
+                                            onPress={() => handleSelectAddress(addr)}
+                                            activeOpacity={0.85}
+                                        >
+                                            <View style={[styles.radio, active && styles.radioActive]} />
+                                            <View style={{ flex: 1 }}>
+                                                {addr.label ? (
+                                                    <Text style={styles.addressItemLabel}>{addr.label}</Text>
+                                                ) : null}
+                                                <Text style={styles.addressItemDetail}>{addr.detail}</Text>
+                                                {addr.note ? (
+                                                    <Text style={styles.addressItemNote}>{addr.note}</Text>
+                                                ) : null}
+                                                <View style={styles.addressItemMetaRow}>
+                                                    {addr.contactName ? (
+                                                        <Text style={styles.addressItemMeta}>{addr.contactName}</Text>
+                                                    ) : null}
+                                                    {addr.phone ? (
+                                                        <Text style={styles.addressItemMeta}>{addr.phone}</Text>
+                                                    ) : null}
+                                                </View>
+                                                {addr.isDefault ? (
+                                                    <Text style={styles.addressBadge}>Mặc định</Text>
+                                                ) : null}
+                                            </View>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                                <TouchableOpacity
+                                    style={styles.secondaryBtn}
+                                    onPress={() => {
+                                        resetNewAddressForm();
+                                        setAddressSheetMode("form");
+                                    }}
+                                >
+                                    <Text style={styles.secondaryBtnTxt}>+ Thêm địa chỉ mới</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </ScrollView>
+                ) : (
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24, gap: 12 }}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <TextInput
+                            placeholder="Ghi chú địa chỉ (ví dụ: Nhà, Công ty)"
+                            placeholderTextColor="#94A3B8"
+                            value={newAddressForm.label}
+                            onChangeText={(value) => setNewAddressForm((prev) => ({ ...prev, label: value }))}
+                            style={styles.addressInput}
+                        />
+                        <TextInput
+                            placeholder="Địa chỉ chi tiết"
+                            placeholderTextColor="#94A3B8"
+                            value={newAddressForm.detail}
+                            onChangeText={(value) => setNewAddressForm((prev) => ({ ...prev, detail: value }))}
+                            style={[styles.addressInput, { height: 80 }]}
+                            multiline
+                        />
+                        <TextInput
+                            placeholder="Ghi chú giao hàng (không bắt buộc)"
+                            placeholderTextColor="#94A3B8"
+                            value={newAddressForm.note}
+                            onChangeText={(value) => setNewAddressForm((prev) => ({ ...prev, note: value }))}
+                            style={[styles.addressInput, { height: 68 }]}
+                            multiline
+                        />
+                        <TextInput
+                            placeholder="Tên người nhận"
+                            placeholderTextColor="#94A3B8"
+                            value={newAddressForm.contactName}
+                            onChangeText={(value) => setNewAddressForm((prev) => ({ ...prev, contactName: value }))}
+                            style={styles.addressInput}
+                        />
+                        <TextInput
+                            placeholder="Số điện thoại"
+                            placeholderTextColor="#94A3B8"
+                            keyboardType="phone-pad"
+                            value={newAddressForm.phone}
+                            onChangeText={(value) => setNewAddressForm((prev) => ({ ...prev, phone: value }))}
+                            style={styles.addressInput}
+                        />
+                        <View style={styles.defaultRow}>
+                            <Text style={styles.defaultLabel}>Đặt làm địa chỉ mặc định</Text>
+                            <Switch
+                                value={newAddressForm.isDefault || addresses.length === 0}
+                                onValueChange={(value) => setNewAddressForm((prev) => ({ ...prev, isDefault: value }))}
+                                disabled={addresses.length === 0}
+                                trackColor={{ true: "#86EFAC", false: "#CBD5F5" }}
+                                thumbColor={newAddressForm.isDefault || addresses.length === 0 ? "#16A34A" : "#fff"}
+                            />
+                        </View>
+                        <TouchableOpacity
+                            style={[styles.primaryBtn, { marginTop: 4 }, savingAddress && { opacity: 0.6 }]}
+                            onPress={handleSaveAddress}
+                            disabled={savingAddress}
+                        >
+                            {savingAddress ? (
+                                <ActivityIndicator color="#fff" />
+                            ) : (
+                                <Text style={styles.primaryTxt}>Lưu địa chỉ</Text>
+                            )}
+                        </TouchableOpacity>
+                    </ScrollView>
+                )}
+            </Animated.View>
 
             {/* Sheet: Thêm món */}
             <Animated.View
@@ -561,6 +1130,12 @@ const styles = StyleSheet.create({
     cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     cardTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
     linkGreen: { color: "#00A74F", fontWeight: "700" },
+    addressSummary: { marginTop: 12, gap: 6 },
+    addressLabel: { fontSize: 13, fontWeight: "700", color: "#16A34A" },
+    addressLine: { fontSize: 15, fontWeight: "700", color: "#111" },
+    addressNote: { fontSize: 13, color: "#64748B" },
+    addressMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
+    addressMeta: { fontSize: 13, color: "#475569" },
 
     muted: { color: "#64748B" },
     mutedSmall: { color: "#94A3B8", fontSize: 12 },
@@ -654,6 +1229,44 @@ const styles = StyleSheet.create({
     chev: { color: "#94A3B8", fontSize: 16 },
     radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: "#CBD5E1" },
     radioActive: { borderColor: "#16A34A", backgroundColor: "#16A34A" },
+    emptyAddressBox: { alignItems: "center", justifyContent: "center", paddingVertical: 24, gap: 12 },
+    secondaryBtn: {
+        borderWidth: 1,
+        borderColor: "#16A34A",
+        paddingVertical: 10,
+        paddingHorizontal: 18,
+        borderRadius: 999,
+        alignItems: "center",
+    },
+    secondaryBtnTxt: { color: "#16A34A", fontWeight: "700" },
+    addressItem: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        borderWidth: 1,
+        borderColor: "#E2E8F0",
+        borderRadius: 12,
+        padding: 12,
+        backgroundColor: "#fff",
+    },
+    addressItemActive: { borderColor: "#16A34A", backgroundColor: "#F0FFF4" },
+    addressItemLabel: { fontSize: 13, fontWeight: "700", color: "#16A34A" },
+    addressItemDetail: { fontSize: 14, fontWeight: "700", color: "#111" },
+    addressItemNote: { fontSize: 13, color: "#64748B", marginTop: 2 },
+    addressItemMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 },
+    addressItemMeta: { fontSize: 12, color: "#475569" },
+    addressBadge: { marginTop: 8, fontSize: 11, fontWeight: "700", color: "#16A34A" },
+    addressInput: {
+        borderWidth: 1,
+        borderColor: "#E2E8F0",
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        backgroundColor: "#F8FAFC",
+        color: "#111",
+    },
+    defaultRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
+    defaultLabel: { fontSize: 14, color: "#111", fontWeight: "600" },
 
     // Snackbar
     snackbar: {

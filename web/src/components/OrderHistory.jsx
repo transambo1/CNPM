@@ -38,8 +38,9 @@ function OrderHistory() {
                         return {
                             id: doc.id, // Lấy ID của document
                             ...data,    // Lấy tất cả các field khác
+                            status: data.status || "Chờ xử lý",
                             // Chuyển đổi Firestore Timestamp thành Javascript Date object nếu tồn tại
-                            date: data.createdAt?.toDate() 
+                            date: data.createdAt?.toDate()
                         };
                     });
                     setOrders(userOrders);

@@ -72,6 +72,146 @@
   text-transform: uppercase;
 }
 
+.address-loading {
+  margin: 0 0 12px;
+  color: #777;
+  font-style: italic;
+}
+
+.address-book {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.address-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.address-item input {
+  margin-top: 4px;
+}
+
+.address-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.address-item-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.address-item-value {
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.address-item.active {
+  border-color: #ff7a00;
+  background: #fff5eb;
+  box-shadow: 0 4px 12px rgba(255, 122, 0, 0.12);
+}
+
+.address-empty {
+  margin: 0 0 12px;
+  color: #666;
+  font-size: 0.95rem;
+}
+
+.address-error {
+  color: #d93025;
+  margin: 4px 0 10px;
+  font-size: 0.9rem;
+}
+
+.add-address-btn {
+  margin-top: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: 1px dashed #ff7a00;
+  background: rgba(255, 122, 0, 0.08);
+  color: #ff7a00;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-address-btn:hover {
+  background: rgba(255, 122, 0, 0.16);
+}
+
+.new-address-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #fff8f2;
+  border: 1px dashed #ffb88c;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 6px;
+}
+
+.new-address-form input,
+.new-address-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.new-address-form textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.new-address-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.new-address-actions button {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  background: linear-gradient(90deg, #ff7a00, #ff5400);
+  color: white;
+  transition: opacity 0.2s ease;
+}
+
+.new-address-actions button:hover {
+  opacity: 0.9;
+}
+
+.new-address-actions button.secondary {
+  background: #f0f0f0;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.address-input-label {
+  display: block;
+  font-weight: 600;
+  margin: 16px 0 6px;
+  color: #444;
+}
+
 .store-name {
   font-size: 1.2rem;
   font-weight: 700;
@@ -181,7 +321,8 @@
 
 .checkout-form input[type="text"],
 .checkout-form input[type="tel"],
-.checkout-form input[type="email"] {
+.checkout-form input[type="email"],
+.checkout-form textarea {
   width: 100%;
   padding: 12px 15px;
   border: 1px solid #ccc;
