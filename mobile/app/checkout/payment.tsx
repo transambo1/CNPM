@@ -656,20 +656,31 @@ export default function PaymentScreen() {
             return;
         }
 
+        const normalizeCoordinate = (value: number | null | undefined) =>
+            typeof value === "number" && Number.isFinite(value) ? value : null;
+
+        const latitude = normalizeCoordinate(selectedAddress.latitude);
+        const longitude = normalizeCoordinate(selectedAddress.longitude);
+
+        if (latitude === null || longitude === null) {
+            Alert.alert(
+                "Thiếu tọa độ",
+                "Địa chỉ này chưa có thông tin tọa độ. Vui lòng chọn địa chỉ khác hoặc cập nhật lại địa chỉ."
+            );
+            openAddressSheet();
+            return;
+        }
+
         setPlacingOrder(true);
         try {
             const ordersRef = collection(db, "orders");
             const orderItems = items.map((item) => ({
                 id: item.id,
-                productId: item.id,
                 name: item.name,
                 price: item.price,
                 quantity: item.quantity,
-                img: item.img,
                 restaurantId: item.restaurantId,
             }));
-            const itemsCount = orderItems.reduce((sum, it) => sum + it.quantity, 0);
-            const orderCode = `GF${Date.now().toString().slice(-6).toUpperCase()}`;
 
             const addressDetail = sanitizeAddressDetail(selectedAddress.detail);
             const customerName = (selectedAddress.contactName || "").trim()
@@ -677,63 +688,26 @@ export default function PaymentScreen() {
                 || user?.username
                 || "Khách hàng";
             const customerPhone = (selectedAddress.phone || "").trim() || user?.phonenumber || "";
-            const customerNote = (selectedAddress.note || "").trim();
-
-            const total = totalPrice;
-            const restaurantLatitude = restaurantInfo?.latitude ?? null;
-            const restaurantLongitude = restaurantInfo?.longitude ?? null;
-            const orderPayload: Record<string, any> = {
-                userId: user.id,
-                customerId: user.id,
-                customerName,
-                customerPhone,
-                customerEmail: user?.username ?? null,
+            const total = Number(totalPrice) || 0;
+            const normalizedName = customerName.trim() || "Khách hàng";
+            const orderPayload = {
+                userId: user?.id ?? "unknown_user",
                 restaurantId,
                 restaurantName: restaurantInfo?.name ?? activeRestaurantName ?? "",
-                restaurantAddress: restaurantInfo?.address ?? "",
-                restaurantLocation:
-                    restaurantLatitude !== null || restaurantLongitude !== null
-                        ? { latitude: restaurantLatitude, longitude: restaurantLongitude }
-                        : undefined,
-                total,
-                totalPrice: total,
-                paymentMethod: payment,
-                items: orderItems,
-                itemsCount,
-                status: "Chờ xử lý",
-                statusCode: "pending",
-                statusText: "Đặt đơn thành công. Đơn hàng đang chờ nhà hàng xác nhận.",
-                deliveryAddress: addressDetail,
-                deliveryNote: customerNote,
-                contactName: customerName,
-                contactPhone: customerPhone,
                 customer: {
-                    id: user.id,
-                    name: customerName,
+                    name: normalizedName,
                     phone: customerPhone,
+                    email: user?.username ?? "",
                     address: addressDetail,
-                    note: customerNote,
-                    latitude: selectedAddress.latitude ?? null,
-                    longitude: selectedAddress.longitude ?? null,
-                    email: user?.username ?? null,
-                    username: user?.username ?? null,
+                    latitude,
+                    longitude,
                 },
+                items: orderItems,
+                total,
+                status: "Chờ xử lý",
                 createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                code: orderCode,
                 droneId: null,
-                restaurant: {
-                    id: restaurantId ?? null,
-                    name: restaurantInfo?.name ?? activeRestaurantName ?? "",
-                    address: restaurantInfo?.address ?? "",
-                    latitude: restaurantLatitude,
-                    longitude: restaurantLongitude,
-                },
             };
-
-            if (!orderPayload.restaurantLocation) {
-                delete orderPayload.restaurantLocation;
-            }
 
             const docRef = await addDoc(ordersRef, orderPayload);
 
@@ -759,7 +733,6 @@ export default function PaymentScreen() {
         restaurantInfo,
         activeRestaurantName,
         totalPrice,
-        payment,
         clearCart,
         activeRestaurantId,
     ]);
