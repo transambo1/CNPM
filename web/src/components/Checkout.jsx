@@ -259,6 +259,21 @@ export default function Checkout({ cart, setCart }) {
         return; // Dừng hàm, KHÔNG cho đặt hàng
       }
 
+      if (
+        customerCoords.lat === undefined ||
+        customerCoords.lat === null ||
+        Number.isNaN(customerCoords.lat) ||
+        customerCoords.lng === undefined ||
+        customerCoords.lng === null ||
+        Number.isNaN(customerCoords.lng)
+      ) {
+        alert(
+          "❌ Lỗi địa chỉ!\nĐịa chỉ chưa có đủ thông tin vị trí (latitude/longitude). Vui lòng nhập địa chỉ cụ thể hơn."
+        );
+        setIsProcessing(false);
+        return;
+      }
+
       // 3. Nếu tọa độ OK, mới tiếp tục tạo đơn hàng
       const newOrder = {
         userId: currentUser.uid || "unknown_user",
@@ -269,10 +284,10 @@ export default function Checkout({ cart, setCart }) {
           phone: form.phone,
           email: form.email,
           address: trimmedAddress,
-          latitude: customerCoords.lat, // Chắc chắn có dữ liệu
-          longitude: customerCoords.lng // Chắc chắn có dữ liệu
+          latitude: customerCoords.lat,
+          longitude: customerCoords.lng
         },
-        items: cart.map(item => ({
+        items: cart.map((item) => ({
           id: item.id,
           name: item.name,
           price: item.price,
