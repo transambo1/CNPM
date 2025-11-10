@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
@@ -14,6 +15,9 @@ import { useCart } from '../../libs/CartContext';
 
 const GREEN = '#00A74F';
 const BORDER = '#EEF1F1';
+
+const formatCurrency = (value: number) =>
+  (Number(value) || 0).toLocaleString('vi-VN', { minimumFractionDigits: 0 }) + 'đ';
 
 type CartListItemProps = {
   id: string;
@@ -65,9 +69,53 @@ const CartItemRow = ({ item }: { item: CartListItemProps }) => {
 
 export default function CartScreen() {
   const router = useRouter();
-  const { items, totalItems, totalPrice } = useCart();
+  const {
+    items,
+    totalPrice,
+    activeItemCount,
+    cartSummaries,
+    activeRestaurantId,
+    activeRestaurantName,
+    selectCart,
+  } = useCart();
+
+  const hasItems = items.length > 0;
 
   const renderItem = ({ item }: { item: CartListItemProps }) => <CartItemRow item={item} />;
+
+  const cartTabs = useMemo(() => {
+    if (cartSummaries.length === 0) return null;
+
+    return (
+      <View style={styles.tabSection}>
+        <Text style={styles.tabLabel}>Giỏ hàng của bạn</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 6, gap: 12 }}
+        >
+          {cartSummaries.map((cart) => {
+            const isActive = cart.restaurantId === activeRestaurantId;
+            return (
+              <TouchableOpacity
+                key={cart.restaurantId}
+                onPress={() => selectCart(cart.restaurantId)}
+                style={[styles.tabChip, isActive && styles.tabChipActive]}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.tabChipTitle, isActive && styles.tabChipTitleActive]} numberOfLines={1}>
+                  {cart.restaurantName || 'Nhà hàng khác'}
+                </Text>
+                <Text style={[styles.tabChipSub, isActive && styles.tabChipSubActive]}>
+                  {cart.itemCount} món • {formatCurrency(cart.totalPrice)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  }, [cartSummaries, activeRestaurantId, selectCart]);
 
   const handleCheckout = () => {
     router.push({
@@ -90,7 +138,7 @@ export default function CartScreen() {
         <View style={{ width: 34 }} />
       </View>
 
-      {items.length === 0 ? (
+      {!hasItems ? (
         <View style={styles.emptyContainer}>
           <Ionicons name="cart-outline" size={72} color="#ccc" />
           <Text style={styles.emptyTitle}>Giỏ hàng trống</Text>
@@ -106,24 +154,36 @@ export default function CartScreen() {
         </View>
       ) : (
         <>
+          {cartTabs}
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle} numberOfLines={1}>
+              {activeRestaurantName || 'Nhà hàng'}
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              {activeItemCount} món • {formatCurrency(totalPrice)}
+            </Text>
+          </View>
+
           <FlatList
             data={items}
             keyExtractor={(item) => item.id}
             renderItem={renderItem}
             contentContainerStyle={{ padding: 16, paddingBottom: 140 }}
             showsVerticalScrollIndicator={false}
+            ListFooterComponent={<View style={{ height: 12 }} />}
           />
 
           <View style={styles.footer}>
             <View>
               <Text style={styles.footerLabel}>Tổng cộng</Text>
-              <Text style={styles.footerTotal}>{totalPrice.toLocaleString('vi-VN')}đ</Text>
-              <Text style={styles.footerSub}>{totalItems} món trong giỏ</Text>
+              <Text style={styles.footerTotal}>{formatCurrency(totalPrice)}</Text>
+              <Text style={styles.footerSub}>{activeItemCount} món trong giỏ</Text>
             </View>
             <TouchableOpacity
-              style={[styles.checkoutButton, items.length === 0 && { opacity: 0.5 }]}
+              style={[styles.checkoutButton, !hasItems && { opacity: 0.5 }]}
               onPress={handleCheckout}
-              disabled={items.length === 0}
+              disabled={!hasItems}
             >
               <Text style={styles.checkoutText}>Thanh toán</Text>
               <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 6 }} />
@@ -162,6 +222,62 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#111',
+  },
+  tabSection: {
+    paddingTop: 12,
+  },
+  tabLabel: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
+  tabChip: {
+    borderWidth: 1,
+    borderColor: BORDER,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    minWidth: 180,
+    backgroundColor: '#fff',
+  },
+  tabChipActive: {
+    backgroundColor: '#E6F7EF',
+    borderColor: '#9EE0BF',
+  },
+  tabChipTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  tabChipTitleActive: {
+    color: '#047857',
+  },
+  tabChipSub: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  tabChipSubActive: {
+    color: '#047857',
+  },
+  sectionHeader: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
+    backgroundColor: '#fff',
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 2,
   },
   cartRow: {
     flexDirection: 'row',

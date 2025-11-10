@@ -217,9 +217,17 @@ const SwipeableCartRow: React.FC<SwipeItemProps> = ({ p, onDelete }) => {
 
 // ===== Main Screen =====
 export default function PaymentScreen() {
-    const { items, totalPrice, addToCart, clearCart, removeFromCart } = useCart();
+    const {
+        items,
+        totalPrice,
+        addToCart,
+        clearCart,
+        removeFromCart,
+        activeRestaurantId,
+        activeRestaurantName,
+    } = useCart();
     const { user, updateUser } = useAuth();
-    const restaurantId = items[0]?.restaurantId ?? null;
+    const restaurantId = activeRestaurantId ?? items[0]?.restaurantId ?? null;
 
     const db = useMemo(() => getFirestore(app), []);
     const defaultContactName = useMemo(() => {
@@ -252,7 +260,7 @@ export default function PaymentScreen() {
 
     // Undo snackbar
     const [undoItem, setUndoItem] = useState<null | {
-        id: string; name: string; img: string; price: number; quantity: number; restaurantId: string;
+        id: string; name: string; img: string; price: number; quantity: number; restaurantId: string; restaurantName?: string;
     }>(null);
     const undoTimer = useRef<NodeJS.Timeout | null>(null);
 
@@ -442,14 +450,19 @@ export default function PaymentScreen() {
 
     // Xoá item + set undo
     const hardDelete = useCallback((id: string) => {
-        const it = items.find(x => x.id === id);
+        const it = items.find((x) => x.id === id);
         if (!it) return;
 
-        removeFromCart(id); // dùng đúng CartContext của bạn
+        removeFromCart(id);
 
         setUndoItem({
-            id: it.id, name: it.name, img: it.img, price: it.price,
-            quantity: it.quantity, restaurantId: it.restaurantId,
+            id: it.id,
+            name: it.name,
+            img: it.img,
+            price: it.price,
+            quantity: it.quantity,
+            restaurantId: it.restaurantId,
+            restaurantName: it.restaurantName,
         });
         if (undoTimer.current) clearTimeout(undoTimer.current);
         undoTimer.current = setTimeout(() => {
@@ -461,13 +474,17 @@ export default function PaymentScreen() {
     // Undo
     const undoDelete = useCallback(() => {
         if (!undoItem) return;
-        addToCart({
+        const result = addToCart({
             id: undoItem.id,
             name: undoItem.name,
             img: undoItem.img,
             price: undoItem.price,
             restaurantId: undoItem.restaurantId,
-        }, undoItem.quantity || 1);
+            restaurantName: undoItem.restaurantName,
+        }, undoItem.quantity || 1, { restaurantName: undoItem.restaurantName, allowCreateNewCart: true });
+        if (result.status !== "added") {
+            return;
+        }
         if (undoTimer.current) clearTimeout(undoTimer.current);
         undoTimer.current = null;
         setUndoItem(null);
@@ -591,15 +608,22 @@ export default function PaymentScreen() {
 
             <TouchableOpacity
                 style={styles.plusBtn}
-                onPress={() =>
-                    addToCart({
+                onPress={() => {
+                    const result = addToCart({
                         id: p.id,
                         name: p.name,
                         img: p.img,
                         price: p.price,
                         restaurantId: p.restaurantId,
-                    })
-                }
+                        restaurantName: restaurantInfo?.name,
+                    }, 1, { restaurantName: restaurantInfo?.name, allowCreateNewCart: true });
+                    if (result.status === "conflict") {
+                        Alert.alert(
+                            "Không thể thêm món",
+                            "Bạn đang xem giỏ hàng của nhà hàng khác. Hãy chuyển sang giỏ phù hợp để tiếp tục."
+                        );
+                    }
+                }}
             >
                 <Text style={styles.plusTxt}>＋</Text>
             </TouchableOpacity>
@@ -634,10 +658,10 @@ export default function PaymentScreen() {
             const itemsCount = orderItems.reduce((sum, it) => sum + it.quantity, 0);
             const orderCode = `GF${Date.now().toString().slice(-6).toUpperCase()}`;
 
-            await addDoc(ordersRef, {
+            const docRef = await addDoc(ordersRef, {
                 userId: user.id,
                 restaurantId,
-                restaurantName: restaurantInfo?.name ?? "",
+                restaurantName: restaurantInfo?.name ?? activeRestaurantName ?? "",
                 totalPrice,
                 paymentMethod: payment,
                 items: orderItems,
@@ -657,20 +681,29 @@ export default function PaymentScreen() {
                 console.warn("Không thể đồng bộ địa chỉ giao hàng:", error);
             }
 
-            clearCart();
-            Alert.alert("Đặt hàng thành công", "Đơn hàng của bạn đang chờ xử lý.", [
-                {
-                    text: "Theo dõi đơn",
-                    onPress: () => router.replace("/(tabs)/activity"),
-                },
-            ]);
+            clearCart(activeRestaurantId ?? undefined);
+            router.replace(`/order/${docRef.id}` as never);
         } catch (error) {
             console.error("Không thể đặt đơn:", error);
             Alert.alert("Lỗi", "Không thể đặt đơn. Vui lòng thử lại.");
         } finally {
             setPlacingOrder(false);
         }
-    }, [items, user?.id, selectedAddress, openAddressSheet, db, restaurantId, restaurantInfo?.name, totalPrice, payment, updateUser, clearCart]);
+    }, [
+        items,
+        user?.id,
+        selectedAddress,
+        openAddressSheet,
+        db,
+        restaurantId,
+        restaurantInfo?.name,
+        activeRestaurantName,
+        totalPrice,
+        payment,
+        updateUser,
+        clearCart,
+        activeRestaurantId,
+    ]);
 
     const total = totalPrice;
 
