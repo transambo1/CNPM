@@ -36,6 +36,7 @@ import {
     doc,
     writeBatch,
     getDoc,
+    updateDoc,
 } from "firebase/firestore";
 
 // ===== Types & Utils =====
@@ -100,6 +101,47 @@ const sanitizeAddressDetail = (input: string) => {
         }
     }
     return raw;
+};
+
+type Coordinates = {
+    latitude: number;
+    longitude: number;
+};
+
+const fetchCoordinatesForAddress = async (rawAddress: string): Promise<Coordinates | null> => {
+    const address = rawAddress.trim();
+    if (!address) return null;
+
+    try {
+        const query = `${address}, Ho Chi Minh City, Vietnam`;
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=vn`;
+        const response = await fetch(url, {
+            headers: {
+                Accept: "application/json",
+                "User-Agent": "CNPM-Mobile/1.0 (+https://github.com/transambo1)",
+            },
+        });
+
+        if (!response.ok) {
+            console.warn("Geocode request failed:", response.status, response.statusText);
+            return null;
+        }
+
+        const data = await response.json();
+        if (Array.isArray(data) && data.length > 0) {
+            const latitude = Number.parseFloat(data[0].lat);
+            const longitude = Number.parseFloat(data[0].lon);
+
+            if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+                return { latitude, longitude };
+            }
+        }
+
+        return null;
+    } catch (error) {
+        console.warn("Geocode error:", error);
+        return null;
+    }
 };
 
 const screenH = Dimensions.get("window").height;
@@ -558,6 +600,7 @@ export default function PaymentScreen() {
         setSavingAddress(true);
         try {
             const addressesRef = collection(db, "users", user.id, "addresses");
+            const coords = await fetchCoordinatesForAddress(detail);
             const payload = {
                 label: newAddressForm.label.trim(),
                 detail,
@@ -566,6 +609,8 @@ export default function PaymentScreen() {
                 phone: newAddressForm.phone.trim(),
                 isDefault: newAddressForm.isDefault || addresses.length === 0,
                 createdAt: serverTimestamp(),
+                latitude: coords?.latitude ?? null,
+                longitude: coords?.longitude ?? null,
             };
 
             const docRef = await addDoc(addressesRef, payload);
@@ -588,6 +633,8 @@ export default function PaymentScreen() {
                 contactName: payload.contactName,
                 phone: payload.phone,
                 isDefault: payload.isDefault,
+                latitude: payload.latitude,
+                longitude: payload.longitude,
             };
 
             setSelectedAddressId(savedAddress.id);
@@ -656,86 +703,132 @@ export default function PaymentScreen() {
             return;
         }
 
+        const addressDetail = sanitizeAddressDetail(selectedAddress.detail);
+        if (!addressDetail) {
+            Alert.alert("Thiếu địa chỉ", "Địa chỉ giao hàng không hợp lệ. Vui lòng cập nhật lại.");
+            openAddressSheet();
+            return;
+        }
+
+        const normalizedAddress = addressDetail.trim();
+        const customerName = (selectedAddress.contactName || "").trim()
+            || [user?.lastname, user?.firstname].filter(Boolean).join(" ").trim()
+            || user?.username
+            || "Khách hàng";
+        const customerPhone = (selectedAddress.phone || "").trim() || user?.phonenumber || "";
+
+        const normalizeCoordinate = (value: number | null | undefined) =>
+            typeof value === "number" && Number.isFinite(value) ? value : null;
+
+        let latitude = normalizeCoordinate(selectedAddress.latitude);
+        let longitude = normalizeCoordinate(selectedAddress.longitude);
+
         setPlacingOrder(true);
         try {
+            if (latitude === null || longitude === null) {
+                const fetched = await fetchCoordinatesForAddress(normalizedAddress);
+                if (!fetched) {
+                    Alert.alert(
+                        "Thiếu tọa độ",
+                        "Không thể xác định tọa độ cho địa chỉ này. Vui lòng cập nhật địa chỉ cụ thể hơn trước khi đặt hàng."
+                    );
+                    openAddressSheet();
+                    return;
+                }
+
+                const fetchedLat = Number(fetched.latitude);
+                const fetchedLng = Number(fetched.longitude);
+
+                if (!Number.isFinite(fetchedLat) || !Number.isFinite(fetchedLng)) {
+                    Alert.alert(
+                        "Thiếu tọa độ",
+                        "Không thể xác định tọa độ cho địa chỉ này. Vui lòng cập nhật địa chỉ cụ thể hơn trước khi đặt hàng."
+                    );
+                    openAddressSheet();
+                    return;
+                }
+
+                latitude = fetchedLat;
+                longitude = fetchedLng;
+
+                if (
+                    user?.id &&
+                    selectedAddress.id &&
+                    !selectedAddress.fromProfile
+                ) {
+                    try {
+                        await updateDoc(
+                            doc(db, "users", user.id, "addresses", selectedAddress.id),
+                            {
+                                latitude,
+                                longitude,
+                            }
+                        );
+                    } catch (error) {
+                        console.warn("Không thể cập nhật tọa độ cho địa chỉ:", error);
+                    }
+                } else if (user?.id && selectedAddress.fromProfile) {
+                    try {
+                        await updateDoc(doc(db, "users", user.id), {
+                            address: normalizedAddress,
+                            latitude,
+                            longitude,
+                        });
+                    } catch (error) {
+                        console.warn("Không thể cập nhật tọa độ hồ sơ:", error);
+                    }
+                }
+            }
+
+            if (
+                latitude === null ||
+                longitude === null ||
+                !Number.isFinite(latitude) ||
+                !Number.isFinite(longitude)
+            ) {
+                Alert.alert(
+                    "Thiếu tọa độ",
+                    "Địa chỉ này chưa có thông tin tọa độ. Vui lòng chọn địa chỉ khác hoặc cập nhật lại địa chỉ."
+                );
+                openAddressSheet();
+                return;
+            }
+
+            const latValue = Number(latitude);
+            const lngValue = Number(longitude);
+
             const ordersRef = collection(db, "orders");
             const orderItems = items.map((item) => ({
                 id: item.id,
-                productId: item.id,
                 name: item.name,
                 price: item.price,
                 quantity: item.quantity,
-                img: item.img,
                 restaurantId: item.restaurantId,
             }));
-            const itemsCount = orderItems.reduce((sum, it) => sum + it.quantity, 0);
-            const orderCode = `GF${Date.now().toString().slice(-6).toUpperCase()}`;
 
-            const addressDetail = sanitizeAddressDetail(selectedAddress.detail);
-            const customerName = (selectedAddress.contactName || "").trim()
-                || [user?.lastname, user?.firstname].filter(Boolean).join(" ").trim()
-                || user?.username
-                || "Khách hàng";
-            const customerPhone = (selectedAddress.phone || "").trim() || user?.phonenumber || "";
-            const customerNote = (selectedAddress.note || "").trim();
-
-            const total = totalPrice;
-            const restaurantLatitude = restaurantInfo?.latitude ?? null;
-            const restaurantLongitude = restaurantInfo?.longitude ?? null;
-            const orderPayload: Record<string, any> = {
-                userId: user.id,
-                customerId: user.id,
-                customerName,
-                customerPhone,
-                customerEmail: user?.username ?? null,
+            const total = Number(totalPrice) || 0;
+            const normalizedName = customerName.trim() || "Khách hàng";
+            const customerEmail = user?.email ?? "";
+            const newOrder = {
+                userId: user?.id ?? "unknown_user",
                 restaurantId,
                 restaurantName: restaurantInfo?.name ?? activeRestaurantName ?? "",
-                restaurantAddress: restaurantInfo?.address ?? "",
-                restaurantLocation:
-                    restaurantLatitude !== null || restaurantLongitude !== null
-                        ? { latitude: restaurantLatitude, longitude: restaurantLongitude }
-                        : undefined,
-                total,
-                totalPrice: total,
-                paymentMethod: payment,
-                items: orderItems,
-                itemsCount,
-                status: "Chờ xử lý",
-                statusCode: "pending",
-                statusText: "Đặt đơn thành công. Đơn hàng đang chờ nhà hàng xác nhận.",
-                deliveryAddress: addressDetail,
-                deliveryNote: customerNote,
-                contactName: customerName,
-                contactPhone: customerPhone,
                 customer: {
-                    id: user.id,
-                    name: customerName,
+                    name: normalizedName,
                     phone: customerPhone,
-                    address: addressDetail,
-                    note: customerNote,
-                    latitude: selectedAddress.latitude ?? null,
-                    longitude: selectedAddress.longitude ?? null,
-                    email: user?.username ?? null,
-                    username: user?.username ?? null,
+                    email: customerEmail,
+                    address: normalizedAddress,
+                    latitude: latValue,
+                    longitude: lngValue,
                 },
+                items: orderItems,
+                total,
+                status: "Chờ xử lý",
                 createdAt: serverTimestamp(),
-                updatedAt: serverTimestamp(),
-                code: orderCode,
                 droneId: null,
-                restaurant: {
-                    id: restaurantId ?? null,
-                    name: restaurantInfo?.name ?? activeRestaurantName ?? "",
-                    address: restaurantInfo?.address ?? "",
-                    latitude: restaurantLatitude,
-                    longitude: restaurantLongitude,
-                },
             };
 
-            if (!orderPayload.restaurantLocation) {
-                delete orderPayload.restaurantLocation;
-            }
-
-            const docRef = await addDoc(ordersRef, orderPayload);
+            const docRef = await addDoc(ordersRef, newOrder);
 
             clearCart(activeRestaurantId ?? undefined);
             router.replace(`/order/${docRef.id}` as never);
@@ -752,6 +845,7 @@ export default function PaymentScreen() {
         user?.lastname,
         user?.phonenumber,
         user?.username,
+        user?.email,
         selectedAddress,
         openAddressSheet,
         db,
@@ -759,7 +853,6 @@ export default function PaymentScreen() {
         restaurantInfo,
         activeRestaurantName,
         totalPrice,
-        payment,
         clearCart,
         activeRestaurantId,
     ]);
