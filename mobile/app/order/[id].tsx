@@ -7,15 +7,21 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Dimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+// eslint-disable-next-line import/no-unresolved
+import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import {
   doc,
   getFirestore,
   onSnapshot,
   Timestamp,
+  updateDoc,
+  serverTimestamp,
 } from 'firebase/firestore';
 
 import { app } from '../../libs/firebase';
@@ -31,17 +37,45 @@ type OrderItem = {
 type OrderDetail = {
   id: string;
   status: string;
+  statusCode?: string;
   statusText?: string;
   code?: string;
   totalPrice: number;
   paymentMethod?: string;
   createdAt?: Date;
   restaurantName?: string;
+  restaurantAddress?: string;
+  restaurantLocation?: { latitude: number | null; longitude: number | null };
   deliveryAddress?: string;
+  deliveryNote?: string;
   contactName?: string;
   contactPhone?: string;
+  customer?: {
+    name?: string;
+    phone?: string;
+    address?: string;
+    note?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+  };
+  droneId?: string | null;
   items: OrderItem[];
 };
+
+type DroneInfo = {
+  id: string;
+  name?: string;
+  status?: string;
+  battery?: number;
+  latitude?: number | null;
+  longitude?: number | null;
+  speed?: number | null;
+};
+
+type LatLng = { latitude: number; longitude: number };
+
+const DEFAULT_DRONE_SPEED_KMH = 35;
+const MAP_HEIGHT = Math.min(340, Dimensions.get('window').width * 0.9);
 
 const formatCurrency = (value: number) =>
   (Number(value) || 0).toLocaleString('vi-VN', { minimumFractionDigits: 0 }) + 'đ';
@@ -56,6 +90,77 @@ const formatDateTime = (date?: Date) => {
     .padStart(2, '0')}/${date.getFullYear()}`;
 };
 
+const toNumberOrNull = (value: any): number | null => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const buildCoordinate = (latitude?: number | null, longitude?: number | null): LatLng | null => {
+  const lat = toNumberOrNull(latitude);
+  const lon = toNumberOrNull(longitude);
+  if (lat === null || lon === null) return null;
+  return { latitude: lat, longitude: lon };
+};
+
+const computeRegion = (points: LatLng[]): Region | null => {
+  if (!points.length) return null;
+  const lats = points.map((p) => p.latitude);
+  const lons = points.map((p) => p.longitude);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLon = Math.min(...lons);
+  const maxLon = Math.max(...lons);
+
+  const latitudeDelta = Math.max((maxLat - minLat) * 1.6, 0.01);
+  const longitudeDelta = Math.max((maxLon - minLon) * 1.6, 0.01);
+
+  return {
+    latitude: (minLat + maxLat) / 2,
+    longitude: (minLon + maxLon) / 2,
+    latitudeDelta,
+    longitudeDelta,
+  };
+};
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const haversineDistanceKm = (a: LatLng, b: LatLng): number => {
+  const earthRadiusKm = 6371;
+  const dLat = toRadians(b.latitude - a.latitude);
+  const dLon = toRadians(b.longitude - a.longitude);
+  const lat1 = toRadians(a.latitude);
+  const lat2 = toRadians(b.latitude);
+
+  const sinDLat = Math.sin(dLat / 2);
+  const sinDLon = Math.sin(dLon / 2);
+
+  const h = sinDLat * sinDLat + sinDLon * sinDLon * Math.cos(lat1) * Math.cos(lat2);
+  const c = 2 * Math.atan2(Math.sqrt(h), Math.sqrt(Math.max(0, 1 - h)));
+  return earthRadiusKm * c;
+};
+
+const formatDistance = (km?: number | null) => {
+  if (km === null || km === undefined || Number.isNaN(km)) return '';
+  if (km < 0.1) return '< 100m';
+  return `${km.toFixed(1)} km`;
+};
+
+const formatEtaMinutes = (minutes?: number | null) => {
+  if (minutes === null || minutes === undefined || Number.isNaN(minutes)) return '';
+  if (minutes < 1) return 'Gần tới nơi';
+  if (minutes < 60) return `${Math.round(minutes)} phút`; 
+  const hours = Math.floor(minutes / 60);
+  const mins = Math.round(minutes % 60);
+  if (hours >= 1) {
+    return `${hours}h${mins.toString().padStart(2, '0')}`;
+  }
+  return `${Math.round(minutes)} phút`;
+};
+
 const STATUS_META: Record<
   string,
   { label: string; description: string; color: string; icon: keyof typeof Ionicons.glyphMap }
@@ -67,26 +172,38 @@ const STATUS_META: Record<
     icon: 'time-outline',
   },
   confirmed: {
-    label: 'Đang chuẩn bị',
-    description: 'Bếp đang chế biến món ăn.',
+    label: 'Nhà hàng xác nhận',
+    description: 'Bếp đang chuẩn bị món ăn của bạn.',
     color: '#3B82F6',
     icon: 'restaurant-outline',
   },
+  drone_assigned: {
+    label: 'Drone chuẩn bị cất cánh',
+    description: 'Drone đang được điều phối để giao đơn.',
+    color: '#6366F1',
+    icon: 'airplane-outline',
+  },
   delivering: {
-    label: 'Đang giao',
-    description: 'Tài xế đang trên đường tới bạn.',
+    label: 'Drone đang giao',
+    description: 'Drone đang trên đường bay tới địa chỉ của bạn.',
     color: '#00A74F',
-    icon: 'bicycle-outline',
+    icon: 'rocket-outline',
+  },
+  arrived: {
+    label: 'Drone đã đến nơi',
+    description: 'Kiểm tra và xác nhận đã nhận món ăn.',
+    color: '#10B981',
+    icon: 'location-outline',
   },
   completed: {
     label: 'Đã giao',
     description: 'Chúc bạn ngon miệng! Đừng quên đánh giá món ăn nhé.',
-    color: '#10B981',
+    color: '#059669',
     icon: 'checkmark-circle-outline',
   },
   cancelled: {
     label: 'Đã huỷ',
-    description: 'Đơn hàng đã được huỷ. Nếu đây là nhầm lẫn, bạn có thể đặt lại đơn.',
+    description: 'Đơn hàng đã bị huỷ. Nếu đây là nhầm lẫn, bạn có thể đặt lại đơn.',
     color: '#EF4444',
     icon: 'close-circle-outline',
   },
@@ -96,7 +213,7 @@ const ORDER_STEPS: { key: string; title: string; subtitle: string }[] = [
   {
     key: 'pending',
     title: 'Đặt đơn thành công',
-    subtitle: 'Grab đã nhận thông tin đơn hàng của bạn.',
+    subtitle: 'Grab đã ghi nhận đơn hàng của bạn và chờ nhà hàng xác nhận.',
   },
   {
     key: 'confirmed',
@@ -104,23 +221,70 @@ const ORDER_STEPS: { key: string; title: string; subtitle: string }[] = [
     subtitle: 'Nhà hàng đang chuẩn bị món ăn.',
   },
   {
+    key: 'drone_assigned',
+    title: 'Drone sẵn sàng',
+    subtitle: 'Drone được điều phối để giao đơn của bạn.',
+  },
+  {
     key: 'delivering',
-    title: 'Tài xế đang giao',
-    subtitle: 'Đơn hàng đang được giao tới bạn.',
+    title: 'Drone đang giao',
+    subtitle: 'Theo dõi hành trình bay của drone theo thời gian thực.',
+  },
+  {
+    key: 'arrived',
+    title: 'Drone đã tới nơi',
+    subtitle: 'Kiểm tra món ăn trước khi xác nhận đã nhận.',
   },
   {
     key: 'completed',
     title: 'Hoàn tất đơn hàng',
-    subtitle: 'Bạn đã nhận được món ăn.',
+    subtitle: 'Bạn đã nhận được món ăn. Hãy chia sẻ cảm nhận nhé!',
   },
 ];
 
-const normalizeStatus = (status?: string) => {
+const normalizeStatus = (status?: string, statusCode?: string) => {
+  const code = (statusCode ?? '').toLowerCase();
+  switch (code) {
+    case 'pending':
+    case 'processing':
+    case 'waiting':
+      return 'pending';
+    case 'confirmed':
+    case 'accepted':
+    case 'preparing':
+      return 'confirmed';
+    case 'assigned':
+    case 'drone_assigned':
+      return 'drone_assigned';
+    case 'delivering':
+    case 'in_transit':
+      return 'delivering';
+    case 'arrived':
+      return 'arrived';
+    case 'completed':
+    case 'done':
+    case 'delivered':
+      return 'completed';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      break;
+  }
+
   if (!status) return 'pending';
   const lower = status.toLowerCase();
-  if (lower === 'delivered' || lower === 'done') return 'completed';
-  if (lower === 'processing') return 'confirmed';
-  return lower;
+  if (lower.includes('hủy') || lower.includes('huỷ') || lower.includes('cancel')) return 'cancelled';
+  if (lower.includes('đến nơi') || lower.includes('tới nơi') || lower.includes('arriv')) return 'arrived';
+  if (lower.includes('đã giao') || lower.includes('delivered') || lower.includes('completed')) return 'completed';
+  if (lower.includes('đang giao') || lower.includes('giao bằng drone') || lower.includes('delivering'))
+    return 'delivering';
+  if (lower.includes('drone') && lower.includes('điều phối')) return 'drone_assigned';
+  if (lower.includes('xác nhận') || lower.includes('chuẩn bị') || lower.includes('confirmed'))
+    return 'confirmed';
+  if (lower.includes('pending') || lower.includes('chờ') || lower.includes('xử lý') || lower.includes('xử lí'))
+    return 'pending';
+  return 'pending';
 };
 
 export default function OrderTrackingScreen() {
@@ -128,6 +292,10 @@ export default function OrderTrackingScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [order, setOrder] = useState<OrderDetail | null>(null);
+  const [drone, setDrone] = useState<DroneInfo | null>(null);
+  const [mapRegion, setMapRegion] = useState<Region | null>(null);
+  const [droneDistanceKm, setDroneDistanceKm] = useState<number | null>(null);
+  const [droneEtaMinutes, setDroneEtaMinutes] = useState<number | null>(null);
   const db = useMemo(() => getFirestore(app), []);
 
   useEffect(() => {
@@ -160,18 +328,55 @@ export default function OrderTrackingScreen() {
             }))
           : [];
 
+        const customerRaw = data.customer ?? {};
+        const restaurantLocationRaw = data.restaurantLocation ?? data.restaurant?.location ?? {};
+        const restaurantCoord = buildCoordinate(
+          restaurantLocationRaw.latitude ?? data.restaurant?.latitude ?? data.restaurantLat,
+          restaurantLocationRaw.longitude ?? data.restaurant?.longitude ?? data.restaurantLon
+        );
+
+        const customerCoord = buildCoordinate(
+          customerRaw.latitude ?? data.customerLatitude ?? data.latitude,
+          customerRaw.longitude ?? data.customerLongitude ?? data.longitude
+        );
+
+        const restaurantName =
+          data.restaurantName ?? data.storeName ?? data.restaurant?.name ?? 'GrabFood';
+        const restaurantAddress = data.restaurantAddress ?? data.restaurant?.address ?? '';
+        const deliveryAddress =
+          data.deliveryAddress ?? customerRaw.address ?? data.address ?? restaurantAddress;
+        const deliveryNote = data.deliveryNote ?? customerRaw.note ?? data.note ?? '';
+
+        const customerName = customerRaw.name ?? data.contactName ?? data.customerName ?? '';
+        const customerPhone = customerRaw.phone ?? data.contactPhone ?? data.customerPhone ?? '';
+
         setOrder({
           id: snapshot.id,
           status: data.status ?? 'pending',
-          statusText: data.statusText,
+          statusCode: data.statusCode ?? data.stage ?? data.status_code ?? undefined,
+          statusText: data.statusText ?? data.status_text,
           code: data.code,
           totalPrice: Number(data.totalPrice ?? data.total ?? 0),
           paymentMethod: data.paymentMethod ?? 'Tiền mặt',
           createdAt,
-          restaurantName: data.restaurantName ?? data.storeName,
-          deliveryAddress: data.deliveryAddress ?? data.address,
-          contactName: data.contactName ?? data.customerName,
-          contactPhone: data.contactPhone ?? data.customerPhone,
+          restaurantName,
+          restaurantAddress,
+          restaurantLocation: restaurantCoord
+            ? { latitude: restaurantCoord.latitude, longitude: restaurantCoord.longitude }
+            : undefined,
+          deliveryAddress,
+          deliveryNote,
+          contactName: data.contactName ?? customerName,
+          contactPhone: data.contactPhone ?? customerPhone,
+          customer: {
+            name: customerName,
+            phone: customerPhone,
+            address: deliveryAddress,
+            note: deliveryNote,
+            latitude: customerCoord?.latitude ?? null,
+            longitude: customerCoord?.longitude ?? null,
+          },
+          droneId: data.droneId ? String(data.droneId) : data.drone?.id ? String(data.drone.id) : null,
           items,
         });
         setLoading(false);
@@ -186,14 +391,100 @@ export default function OrderTrackingScreen() {
     return () => unsub();
   }, [db, id]);
 
-  const normalizedStatus = normalizeStatus(order?.status);
+  useEffect(() => {
+    if (!order?.droneId) {
+      setDrone(null);
+      return;
+    }
+
+    const droneRef = doc(db, 'drones', String(order.droneId));
+    const unsub = onSnapshot(
+      droneRef,
+      (snapshot) => {
+        if (!snapshot.exists()) {
+          setDrone(null);
+          return;
+        }
+        const data = snapshot.data() as any;
+        setDrone({
+          id: snapshot.id,
+          name: data.name,
+          status: data.status,
+          battery: typeof data.battery === 'number' ? data.battery : Number(data.battery ?? 0),
+          latitude: toNumberOrNull(data.latitude),
+          longitude: toNumberOrNull(data.longitude),
+          speed: toNumberOrNull(data.speed),
+        });
+      },
+      (error) => {
+        console.warn('Không thể theo dõi drone:', error);
+        setDrone(null);
+      }
+    );
+
+    return () => unsub();
+  }, [db, order?.droneId]);
+
+  useEffect(() => {
+    const points: LatLng[] = [];
+    const restaurantPoint = buildCoordinate(
+      order?.restaurantLocation?.latitude,
+      order?.restaurantLocation?.longitude
+    );
+    const customerPoint = buildCoordinate(order?.customer?.latitude, order?.customer?.longitude);
+    const dronePoint = buildCoordinate(drone?.latitude, drone?.longitude);
+
+    if (restaurantPoint) points.push(restaurantPoint);
+    if (customerPoint) points.push(customerPoint);
+    if (dronePoint) points.push(dronePoint);
+
+    if (points.length > 0) {
+      setMapRegion(computeRegion(points));
+    } else {
+      setMapRegion(null);
+    }
+
+    if (customerPoint && dronePoint) {
+      const distance = haversineDistanceKm(dronePoint, customerPoint);
+      setDroneDistanceKm(distance);
+      const speed = drone?.speed && drone.speed > 1 ? drone.speed : DEFAULT_DRONE_SPEED_KMH;
+      if (speed && speed > 0.5) {
+        setDroneEtaMinutes((distance / speed) * 60);
+      } else {
+        setDroneEtaMinutes(null);
+      }
+    } else {
+      setDroneDistanceKm(null);
+      setDroneEtaMinutes(null);
+    }
+  }, [order, drone]);
+
+  const normalizedStatus = normalizeStatus(order?.status, order?.statusCode);
   const statusMeta = STATUS_META[normalizedStatus] ?? STATUS_META.pending;
   const isCancelled = normalizedStatus === 'cancelled';
   const isCompleted = normalizedStatus === 'completed' && !isCancelled;
-  const stepIndex = Math.max(
-    0,
-    ORDER_STEPS.findIndex((step) => step.key === (isCancelled ? 'pending' : normalizedStatus))
+  const isArrived = normalizedStatus === 'arrived';
+  const stepKey = isCancelled ? 'pending' : normalizedStatus;
+  const stepIndex = Math.max(0, ORDER_STEPS.findIndex((step) => step.key === stepKey));
+
+  const restaurantPoint = useMemo(
+    () => buildCoordinate(order?.restaurantLocation?.latitude, order?.restaurantLocation?.longitude),
+    [order?.restaurantLocation?.latitude, order?.restaurantLocation?.longitude]
   );
+  const customerPoint = useMemo(
+    () => buildCoordinate(order?.customer?.latitude, order?.customer?.longitude),
+    [order?.customer?.latitude, order?.customer?.longitude]
+  );
+  const dronePoint = useMemo(
+    () => buildCoordinate(drone?.latitude, drone?.longitude),
+    [drone?.latitude, drone?.longitude]
+  );
+
+  const distanceLabel = formatDistance(droneDistanceKm);
+  const etaLabel = formatEtaMinutes(droneEtaMinutes);
+  const closeToCustomer = droneDistanceKm !== null && droneDistanceKm <= 0.15;
+  const shouldShowConfirm =
+    !isCancelled && !isCompleted && (isArrived || (normalizedStatus === 'delivering' && closeToCustomer));
 
   const renderTimeline = () => (
     <View style={styles.timeline}>
@@ -230,6 +521,35 @@ export default function OrderTrackingScreen() {
       })}
     </View>
   );
+
+  const handleConfirmDelivered = async () => {
+    if (!order) return;
+    try {
+      await updateDoc(doc(db, 'orders', order.id), {
+        status: 'Đã giao',
+        statusCode: 'completed',
+        statusText: 'Khách đã xác nhận đã nhận món ăn.',
+        completedAt: serverTimestamp(),
+      });
+
+      if (order.droneId) {
+        try {
+          await updateDoc(doc(db, 'drones', String(order.droneId)), {
+            status: 'Rảnh',
+            currentOrderId: null,
+            destination: null,
+          });
+        } catch (droneError) {
+          console.warn('Không thể cập nhật trạng thái drone:', droneError);
+        }
+      }
+
+      Alert.alert('Đã xác nhận', 'Cảm ơn bạn! Drone sẽ quay về trạm.');
+    } catch (error) {
+      console.warn('Không thể xác nhận đã nhận hàng:', error);
+      Alert.alert('Lỗi', 'Không thể xác nhận đã nhận đơn. Vui lòng thử lại sau.');
+    }
+  };
 
   if (loading) {
     return (
@@ -292,6 +612,109 @@ export default function OrderTrackingScreen() {
 
         {!isCancelled ? renderTimeline() : null}
 
+        {mapRegion && (restaurantPoint || customerPoint) ? (
+          <View style={[styles.card, styles.mapCard]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
+              <View style={styles.mapHeaderRight}>
+                {drone?.name ? (
+                  <View style={styles.mapBadge}>
+                    <Ionicons name="airplane-outline" size={12} color="#2563EB" />
+                    <Text style={styles.mapBadgeText}>{drone.name}</Text>
+                  </View>
+                ) : null}
+                {typeof drone?.battery === 'number' ? (
+                  <View style={styles.mapBadge}>
+                    <Ionicons name="battery-half-outline" size={12} color="#16A34A" />
+                    <Text style={styles.mapBadgeText}>{Math.round(drone.battery)}%</Text>
+                  </View>
+                ) : null}
+              </View>
+            </View>
+            <View style={styles.mapContainer}>
+              <MapView
+                provider={PROVIDER_GOOGLE}
+                style={styles.mapView}
+                initialRegion={mapRegion}
+                region={mapRegion}
+                scrollEnabled={false}
+                zoomEnabled={false}
+                rotateEnabled={false}
+                pitchEnabled={false}
+              >
+                {restaurantPoint ? (
+                  <Marker
+                    coordinate={restaurantPoint}
+                    title={order.restaurantName || 'Nhà hàng'}
+                    description={order.restaurantAddress}
+                    pinColor="#047857"
+                  />
+                ) : null}
+                {customerPoint ? (
+                  <Marker
+                    coordinate={customerPoint}
+                    title={order.customer?.name || 'Khách hàng'}
+                    description={order.deliveryAddress}
+                    pinColor="#EF4444"
+                  />
+                ) : null}
+                {dronePoint ? (
+                  <Marker
+                    coordinate={dronePoint}
+                    title={drone?.name || 'Drone'}
+                    description={drone?.status}
+                    pinColor="#0EA5E9"
+                  />
+                ) : null}
+                {restaurantPoint && customerPoint ? (
+                  <Polyline
+                    coordinates={[restaurantPoint, customerPoint]}
+                    strokeColor="#CBD5F5"
+                    strokeWidth={3}
+                    lineDashPattern={[6, 4]}
+                  />
+                ) : null}
+                {dronePoint && customerPoint ? (
+                  <Polyline
+                    coordinates={[dronePoint, customerPoint]}
+                    strokeColor="#22C55E"
+                    strokeWidth={4}
+                  />
+                ) : null}
+              </MapView>
+            </View>
+            <View style={styles.mapInfoRow}>
+              <View style={styles.mapInfoItem}>
+                <Ionicons name="navigate-outline" size={16} color="#0EA5E9" />
+                <Text style={styles.mapInfoText}>
+                  {distanceLabel ? `Còn ${distanceLabel}` : 'Đang cập nhật vị trí drone'}
+                </Text>
+              </View>
+              <View style={styles.mapInfoItem}>
+                <Ionicons name="time-outline" size={16} color="#0EA5E9" />
+                <Text style={styles.mapInfoText}>
+                  {etaLabel ? `ETA ${etaLabel}` : 'Đang ước tính thời gian'}
+                </Text>
+              </View>
+              {drone?.status ? (
+                <View style={styles.mapInfoItem}>
+                  <Ionicons name="radio-outline" size={16} color="#0EA5E9" />
+                  <Text style={styles.mapInfoText}>{String(drone.status)}</Text>
+                </View>
+              ) : null}
+            </View>
+          </View>
+        ) : normalizedStatus === 'delivering' || normalizedStatus === 'drone_assigned' ? (
+          <View style={[styles.card, styles.mapCard, styles.mapPlaceholderCard]}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
+            </View>
+            <Text style={styles.placeholderText}>
+              Đang chờ cập nhật vị trí drone. Vui lòng giữ kết nối internet ổn định.
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Chi tiết món</Text>
@@ -325,10 +748,22 @@ export default function OrderTrackingScreen() {
               <Text style={styles.infoText}>{order.restaurantName}</Text>
             </View>
           ) : null}
+          {order.restaurantAddress ? (
+            <View style={styles.infoRow}>
+              <Ionicons name="map-outline" size={20} color="#475569" />
+              <Text style={styles.infoText}>{order.restaurantAddress}</Text>
+            </View>
+          ) : null}
           {order.deliveryAddress ? (
             <View style={styles.infoRow}>
               <Ionicons name="location-outline" size={20} color="#475569" />
               <Text style={styles.infoText}>{order.deliveryAddress}</Text>
+            </View>
+          ) : null}
+          {order.deliveryNote ? (
+            <View style={styles.infoRow}>
+              <Ionicons name="clipboard-outline" size={20} color="#475569" />
+              <Text style={styles.infoText}>{order.deliveryNote}</Text>
             </View>
           ) : null}
           <View style={styles.infoRow}>
@@ -344,7 +779,27 @@ export default function OrderTrackingScreen() {
               </Text>
             </View>
           ) : null}
+          {order.droneId ? (
+            <View style={styles.infoRow}>
+              <Ionicons name="airplane-outline" size={20} color="#475569" />
+              <Text style={styles.infoText}>
+                Drone #{order.droneId}
+                {drone?.status ? ` • ${String(drone.status)}` : ''}
+              </Text>
+            </View>
+          ) : null}
         </View>
+
+        {shouldShowConfirm ? (
+          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmDelivered} activeOpacity={0.9}>
+            <Ionicons name="checkmark-done" size={22} color="#fff" />
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
+              <Text style={styles.confirmBtnHint}>Xác nhận để hoàn tất đơn và giải phóng drone</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color="#fff" />
+          </TouchableOpacity>
+        ) : null}
 
         {isCompleted ? (
           <View style={styles.successCard}>
@@ -502,6 +957,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     gap: 18,
   },
+  mapCard: {
+    paddingBottom: 18,
+  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -515,6 +973,61 @@ const styles = StyleSheet.create({
   cardMeta: {
     fontSize: 14,
     color: '#6B7280',
+  },
+  mapHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  mapContainer: {
+    height: MAP_HEIGHT,
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  mapView: {
+    flex: 1,
+  },
+  mapBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#E0F2FE',
+  },
+  mapBadgeText: {
+    marginLeft: 4,
+    color: '#1D4ED8',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  mapInfoRow: {
+    marginTop: 14,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  mapInfoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: '#EFF6FF',
+  },
+  mapInfoText: {
+    marginLeft: 6,
+    color: '#1D4ED8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  mapPlaceholderCard: {
+    paddingBottom: 18,
+  },
+  placeholderText: {
+    marginTop: 12,
+    color: '#64748B',
+    fontSize: 13,
   },
   itemRow: {
     flexDirection: 'row',
@@ -560,6 +1073,31 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: '#1F2937',
+  },
+  confirmBtn: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 18,
+    backgroundColor: '#16A34A',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    gap: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  confirmBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  confirmBtnHint: {
+    color: '#DCFCE7',
+    fontSize: 12,
+    marginTop: 2,
   },
   successCard: {
     marginHorizontal: 16,

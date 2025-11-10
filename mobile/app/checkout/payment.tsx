@@ -62,6 +62,8 @@ type AddressItem = {
     phone?: string;
     isDefault?: boolean;
     fromProfile?: boolean;
+    latitude?: number | null;
+    longitude?: number | null;
 };
 
 type NewAddressForm = {
@@ -73,24 +75,31 @@ type NewAddressForm = {
     isDefault: boolean;
 };
 
-const composeAddressLine = (addr: AddressItem) => {
-    const parts = [addr.label?.trim(), addr.detail.trim()].filter(Boolean);
-    const base = parts.join(" • ");
-    if (addr.note) {
-        return `${base} (${addr.note.trim()})`;
+const sanitizeAddressDetail = (input: string) => {
+    const raw = (input || "").trim();
+    if (!raw) return "";
+    const separators = ["|", "•", "-", "–"];
+    for (const sep of separators) {
+        if (raw.includes(sep)) {
+            const unique: string[] = [];
+            raw
+                .split(sep)
+                .map((segment) => segment.trim())
+                .filter(Boolean)
+                .forEach((segment) => {
+                    if (!unique.some((item) => item.toLowerCase() === segment.toLowerCase())) {
+                        unique.push(segment);
+                    }
+                });
+            if (unique.length === 1) {
+                return unique[0];
+            }
+            if (unique.length > 1) {
+                return unique.join(", ");
+            }
+        }
     }
-    return base;
-};
-
-const buildOrderAddress = (addr: AddressItem) => {
-    const segments = [composeAddressLine(addr)];
-    if (addr.contactName) {
-        segments.push(`Người nhận: ${addr.contactName}`);
-    }
-    if (addr.phone) {
-        segments.push(`SĐT: ${addr.phone}`);
-    }
-    return segments.filter(Boolean).join(" | ");
+    return raw;
 };
 
 const screenH = Dimensions.get("window").height;
@@ -226,7 +235,7 @@ export default function PaymentScreen() {
         activeRestaurantId,
         activeRestaurantName,
     } = useCart();
-    const { user, updateUser } = useAuth();
+    const { user } = useAuth();
     const restaurantId = activeRestaurantId ?? items[0]?.restaurantId ?? null;
 
     const db = useMemo(() => getFirestore(app), []);
@@ -241,7 +250,10 @@ export default function PaymentScreen() {
     const [search, setSearch] = useState("");
 
     const [payment, setPayment] = useState<PaymentMethod>("momo");
-    const [restaurantInfo, setRestaurantInfo] = useState<{ name: string; address?: string } | null>(null);
+    const [restaurantInfo, setRestaurantInfo] = useState<
+        { name: string; address?: string; latitude?: number | null; longitude?: number | null }
+        | null
+    >(null);
 
     const [addresses, setAddresses] = useState<AddressItem[]>([]);
     const [addressLoading, setAddressLoading] = useState(false);
@@ -271,10 +283,12 @@ export default function PaymentScreen() {
 
     const profileAddress = useMemo<AddressItem | null>(() => {
         if (!user?.address) return null;
+        const detail = sanitizeAddressDetail(user.address);
+        if (!detail) return null;
         return {
             id: "__profile",
             label: "Địa chỉ hiện tại",
-            detail: user.address,
+            detail,
             contactName: defaultContactName,
             phone: defaultPhone,
             isDefault: addresses.length === 0,
@@ -358,7 +372,8 @@ export default function PaymentScreen() {
                 const mapped: AddressItem[] = snapshot.docs
                     .map((docSnap) => {
                         const data = docSnap.data() as any;
-                        const detail = (data.detail ?? data.address ?? "").toString().trim();
+                        const detailRaw = (data.detail ?? data.address ?? "").toString().trim();
+                        const detail = sanitizeAddressDetail(detailRaw);
                         if (!detail) return null;
                         return {
                             id: docSnap.id,
@@ -368,6 +383,8 @@ export default function PaymentScreen() {
                             contactName: data.contactName ?? data.recipient ?? "",
                             phone: data.phone ?? data.phoneNumber ?? "",
                             isDefault: Boolean(data.isDefault),
+                            latitude: typeof data.latitude === "number" ? data.latitude : null,
+                            longitude: typeof data.longitude === "number" ? data.longitude : null,
                         } as AddressItem;
                     })
                     .filter((addr): addr is AddressItem => Boolean(addr));
@@ -397,7 +414,12 @@ export default function PaymentScreen() {
                 const snap = await getDoc(ref);
                 if (snap.exists()) {
                     const data = snap.data() as any;
-                    setRestaurantInfo({ name: data.name ?? data.title ?? "GrabFood", address: data.address });
+                    setRestaurantInfo({
+                        name: data.name ?? data.title ?? "GrabFood",
+                        address: data.address,
+                        latitude: typeof data.latitude === "number" ? data.latitude : null,
+                        longitude: typeof data.longitude === "number" ? data.longitude : null,
+                    });
                 } else {
                     setRestaurantInfo(null);
                 }
@@ -511,19 +533,12 @@ export default function PaymentScreen() {
     }, [addressSheet, user?.id]);
 
     const handleSelectAddress = useCallback(
-        async (addr: AddressItem) => {
+        (addr: AddressItem) => {
             setSelectedAddressId(addr.id);
             addressSheet.closeSheet();
             setAddressSheetMode("list");
-            if (addr.detail) {
-                try {
-                    await updateUser({ address: composeAddressLine(addr) });
-                } catch (error) {
-                    console.warn("Không thể cập nhật địa chỉ người dùng:", error);
-                }
-            }
         },
-        [addressSheet, updateUser]
+        [addressSheet]
     );
 
     const handleSaveAddress = useCallback(async () => {
@@ -533,11 +548,12 @@ export default function PaymentScreen() {
             return;
         }
 
-        const detail = newAddressForm.detail.trim();
-        if (!detail) {
+        const detailInput = newAddressForm.detail.trim();
+        if (!detailInput) {
             Alert.alert("Thiếu thông tin", "Vui lòng nhập địa chỉ chi tiết.");
             return;
         }
+        const detail = sanitizeAddressDetail(detailInput);
 
         setSavingAddress(true);
         try {
@@ -575,11 +591,6 @@ export default function PaymentScreen() {
             };
 
             setSelectedAddressId(savedAddress.id);
-            try {
-                await updateUser({ address: composeAddressLine(savedAddress) });
-            } catch (error) {
-                console.warn("Không thể cập nhật địa chỉ mặc định:", error);
-            }
 
             resetNewAddressForm();
             addressSheet.closeSheet();
@@ -590,7 +601,7 @@ export default function PaymentScreen() {
         } finally {
             setSavingAddress(false);
         }
-    }, [user?.id, newAddressForm, addresses, db, updateUser, addressSheet, resetNewAddressForm]);
+    }, [user?.id, newAddressForm, addresses, db, addressSheet, resetNewAddressForm]);
 
     const ProductRowQuick: React.FC<{ p: Product }> = ({ p }) => (
         <View style={styles.addRow}>
@@ -658,28 +669,63 @@ export default function PaymentScreen() {
             const itemsCount = orderItems.reduce((sum, it) => sum + it.quantity, 0);
             const orderCode = `GF${Date.now().toString().slice(-6).toUpperCase()}`;
 
-            const docRef = await addDoc(ordersRef, {
+            const addressDetail = sanitizeAddressDetail(selectedAddress.detail);
+            const customerName = (selectedAddress.contactName || "").trim()
+                || [user?.lastname, user?.firstname].filter(Boolean).join(" ").trim()
+                || user?.username
+                || "Khách hàng";
+            const customerPhone = (selectedAddress.phone || "").trim() || user?.phonenumber || "";
+            const customerNote = (selectedAddress.note || "").trim();
+
+            const orderPayload: Record<string, any> = {
                 userId: user.id,
                 restaurantId,
                 restaurantName: restaurantInfo?.name ?? activeRestaurantName ?? "",
+                restaurantAddress: restaurantInfo?.address ?? "",
                 totalPrice,
                 paymentMethod: payment,
                 items: orderItems,
                 itemsCount,
-                status: "pending",
-                statusText: "Chờ xử lý",
-                deliveryAddress: buildOrderAddress(selectedAddress),
-                contactName: selectedAddress.contactName ?? "",
-                contactPhone: selectedAddress.phone ?? "",
+                status: "Chờ xác nhận",
+                statusCode: "pending",
+                statusText: "Đơn hàng đang chờ nhà hàng xác nhận.",
+                deliveryAddress: addressDetail,
+                deliveryNote: customerNote,
+                contactName: customerName,
+                contactPhone: customerPhone,
+                customer: {
+                    name: customerName,
+                    phone: customerPhone,
+                    address: addressDetail,
+                    note: customerNote,
+                    latitude: selectedAddress.latitude ?? null,
+                    longitude: selectedAddress.longitude ?? null,
+                },
                 createdAt: serverTimestamp(),
                 code: orderCode,
-            });
+                droneId: null,
+            };
 
-            try {
-                await updateUser({ address: composeAddressLine(selectedAddress) });
-            } catch (error) {
-                console.warn("Không thể đồng bộ địa chỉ giao hàng:", error);
+            if (restaurantInfo?.latitude || restaurantInfo?.longitude) {
+                orderPayload.restaurantLocation = {
+                    latitude: restaurantInfo?.latitude ?? null,
+                    longitude: restaurantInfo?.longitude ?? null,
+                };
             }
+
+            if (restaurantInfo?.address) {
+                orderPayload.restaurantAddress = restaurantInfo.address;
+            }
+
+            orderPayload.restaurant = {
+                id: restaurantId ?? null,
+                name: restaurantInfo?.name ?? activeRestaurantName ?? "",
+                address: restaurantInfo?.address ?? "",
+                latitude: restaurantInfo?.latitude ?? null,
+                longitude: restaurantInfo?.longitude ?? null,
+            };
+
+            const docRef = await addDoc(ordersRef, orderPayload);
 
             clearCart(activeRestaurantId ?? undefined);
             router.replace(`/order/${docRef.id}` as never);
@@ -692,15 +738,18 @@ export default function PaymentScreen() {
     }, [
         items,
         user?.id,
+        user?.firstname,
+        user?.lastname,
+        user?.phonenumber,
+        user?.username,
         selectedAddress,
         openAddressSheet,
         db,
         restaurantId,
-        restaurantInfo?.name,
+        restaurantInfo,
         activeRestaurantName,
         totalPrice,
         payment,
-        updateUser,
         clearCart,
         activeRestaurantId,
     ]);
