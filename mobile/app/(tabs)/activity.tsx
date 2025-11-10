@@ -23,7 +23,7 @@ import { app } from '../../libs/firebase';
 import { useRouter } from 'expo-router';
 
 const STATUS_META: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  pending: { label: 'Chờ xác nhận', color: '#F59E0B', icon: 'time-outline' },
+  pending: { label: 'Đặt đơn thành công', color: '#F59E0B', icon: 'time-outline' },
   confirmed: { label: 'Nhà hàng xác nhận', color: '#3B82F6', icon: 'restaurant-outline' },
   drone_assigned: { label: 'Drone sẵn sàng', color: '#6366F1', icon: 'airplane-outline' },
   delivering: { label: 'Đang giao', color: '#00A74F', icon: 'rocket-outline' },

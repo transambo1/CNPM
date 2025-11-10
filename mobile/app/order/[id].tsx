@@ -166,14 +166,14 @@ const STATUS_META: Record<
   { label: string; description: string; color: string; icon: keyof typeof Ionicons.glyphMap }
 > = {
   pending: {
-    label: 'Chờ xác nhận',
-    description: 'Nhà hàng đang tiếp nhận đơn hàng của bạn.',
+    label: 'Đặt đơn thành công',
+    description: 'Grab đã ghi nhận đơn và chờ nhà hàng xác nhận.',
     color: '#F59E0B',
     icon: 'time-outline',
   },
   confirmed: {
     label: 'Nhà hàng xác nhận',
-    description: 'Bếp đang chuẩn bị món ăn của bạn.',
+    description: 'Nhà hàng đã xác nhận và drone đang được chuẩn bị để giao.',
     color: '#3B82F6',
     icon: 'restaurant-outline',
   },
@@ -218,27 +218,7 @@ const ORDER_STEPS: { key: string; title: string; subtitle: string }[] = [
   {
     key: 'confirmed',
     title: 'Nhà hàng xác nhận',
-    subtitle: 'Nhà hàng đang chuẩn bị món ăn.',
-  },
-  {
-    key: 'drone_assigned',
-    title: 'Drone sẵn sàng',
-    subtitle: 'Drone được điều phối để giao đơn của bạn.',
-  },
-  {
-    key: 'delivering',
-    title: 'Drone đang giao',
-    subtitle: 'Theo dõi hành trình bay của drone theo thời gian thực.',
-  },
-  {
-    key: 'arrived',
-    title: 'Drone đã tới nơi',
-    subtitle: 'Kiểm tra món ăn trước khi xác nhận đã nhận.',
-  },
-  {
-    key: 'completed',
-    title: 'Hoàn tất đơn hàng',
-    subtitle: 'Bạn đã nhận được món ăn. Hãy chia sẻ cảm nhận nhé!',
+    subtitle: 'Món ăn sẵn sàng để drone giao tới bạn.',
   },
 ];
 
@@ -466,7 +446,11 @@ export default function OrderTrackingScreen() {
   const isCancelled = normalizedStatus === 'cancelled';
   const isCompleted = normalizedStatus === 'completed' && !isCancelled;
   const isArrived = normalizedStatus === 'arrived';
-  const stepKey = isCancelled ? 'pending' : normalizedStatus;
+  const stepKey = isCancelled
+    ? 'pending'
+    : normalizedStatus === 'pending'
+    ? 'pending'
+    : 'confirmed';
   const stepIndex = Math.max(0, ORDER_STEPS.findIndex((step) => step.key === stepKey));
 
   const restaurantPoint = useMemo(
@@ -487,6 +471,9 @@ export default function OrderTrackingScreen() {
   const closeToCustomer = droneDistanceKm !== null && droneDistanceKm <= 0.15;
   const shouldShowConfirm =
     !isCancelled && !isCompleted && (isArrived || (normalizedStatus === 'delivering' && closeToCustomer));
+  const mapEnabledStatuses = ['confirmed', 'drone_assigned', 'delivering', 'arrived', 'completed'];
+  const shouldShowMap =
+    mapRegion && !isCancelled && mapEnabledStatuses.includes(normalizedStatus) && (restaurantPoint || customerPoint);
 
   const renderTimeline = () => (
     <View style={styles.timeline}>
@@ -614,7 +601,7 @@ export default function OrderTrackingScreen() {
 
         {!isCancelled ? renderTimeline() : null}
 
-        {mapRegion && (restaurantPoint || customerPoint) ? (
+        {shouldShowMap ? (
           <View style={[styles.card, styles.mapCard]}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
@@ -706,13 +693,15 @@ export default function OrderTrackingScreen() {
               ) : null}
             </View>
           </View>
-        ) : normalizedStatus === 'delivering' || normalizedStatus === 'drone_assigned' ? (
+        ) : !isCancelled && mapEnabledStatuses.includes(normalizedStatus) && normalizedStatus !== 'completed' ? (
           <View style={[styles.card, styles.mapCard, styles.mapPlaceholderCard]}>
             <View style={styles.cardHeader}>
               <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
             </View>
             <Text style={styles.placeholderText}>
-              Đang chờ cập nhật vị trí drone. Vui lòng giữ kết nối internet ổn định.
+              {normalizedStatus === 'confirmed'
+                ? 'Nhà hàng đã xác nhận. Drone sẽ sớm khởi hành, vui lòng chờ trong giây lát.'
+                : 'Đang chờ cập nhật vị trí drone. Vui lòng giữ kết nối internet ổn định.'}
             </Text>
           </View>
         ) : null}
