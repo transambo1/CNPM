@@ -5,6 +5,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +20,7 @@ import {
 
 import { useAuth } from '../../libs/AuthContext';
 import { app } from '../../libs/firebase';
+import { useRouter } from 'expo-router';
 
 const STATUS_META: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
   pending: { label: 'Chờ xử lý', color: '#F59E0B', icon: 'time-outline' },
@@ -54,6 +56,7 @@ type OrderItem = {
 
 export default function OrderHistoryScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,8 +128,15 @@ export default function OrderHistoryScreen() {
     );
   };
 
+  const handleOpenOrder = useCallback(
+    (orderId: string) => {
+      router.push(`/order/${orderId}` as never);
+    },
+    [router]
+  );
+
   const renderOrder = ({ item }: { item: OrderItem }) => (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => handleOpenOrder(item.id)}>
       <View style={styles.cardHeader}>
         <Text style={styles.codeText}>{item.code}</Text>
         {renderStatus(item.status)}
@@ -156,10 +166,10 @@ export default function OrderHistoryScreen() {
         ) : null}
       </View>
       <View style={styles.cardFooter}>
-        <Text style={styles.footerHint}>Chi tiết đơn hàng sẽ xuất hiện tại đây sớm thôi</Text>
+        <Text style={styles.footerHint}>Nhấn để xem chi tiết và theo dõi đơn</Text>
         <Ionicons name="chevron-forward" size={18} color="#00A74F" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
