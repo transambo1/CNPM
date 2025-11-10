@@ -660,11 +660,13 @@ export default function PaymentScreen() {
         try {
             const ordersRef = collection(db, "orders");
             const orderItems = items.map((item) => ({
+                id: item.id,
                 productId: item.id,
                 name: item.name,
                 price: item.price,
                 quantity: item.quantity,
                 img: item.img,
+                restaurantId: item.restaurantId,
             }));
             const itemsCount = orderItems.reduce((sum, it) => sum + it.quantity, 0);
             const orderCode = `GF${Date.now().toString().slice(-6).toUpperCase()}`;
@@ -677,12 +679,24 @@ export default function PaymentScreen() {
             const customerPhone = (selectedAddress.phone || "").trim() || user?.phonenumber || "";
             const customerNote = (selectedAddress.note || "").trim();
 
+            const total = totalPrice;
+            const restaurantLatitude = restaurantInfo?.latitude ?? null;
+            const restaurantLongitude = restaurantInfo?.longitude ?? null;
             const orderPayload: Record<string, any> = {
                 userId: user.id,
+                customerId: user.id,
+                customerName,
+                customerPhone,
+                customerEmail: user?.username ?? null,
                 restaurantId,
                 restaurantName: restaurantInfo?.name ?? activeRestaurantName ?? "",
                 restaurantAddress: restaurantInfo?.address ?? "",
-                totalPrice,
+                restaurantLocation:
+                    restaurantLatitude !== null || restaurantLongitude !== null
+                        ? { latitude: restaurantLatitude, longitude: restaurantLongitude }
+                        : undefined,
+                total,
+                totalPrice: total,
                 paymentMethod: payment,
                 items: orderItems,
                 itemsCount,
@@ -694,36 +708,32 @@ export default function PaymentScreen() {
                 contactName: customerName,
                 contactPhone: customerPhone,
                 customer: {
+                    id: user.id,
                     name: customerName,
                     phone: customerPhone,
                     address: addressDetail,
                     note: customerNote,
                     latitude: selectedAddress.latitude ?? null,
                     longitude: selectedAddress.longitude ?? null,
+                    email: user?.username ?? null,
+                    username: user?.username ?? null,
                 },
                 createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
                 code: orderCode,
                 droneId: null,
+                restaurant: {
+                    id: restaurantId ?? null,
+                    name: restaurantInfo?.name ?? activeRestaurantName ?? "",
+                    address: restaurantInfo?.address ?? "",
+                    latitude: restaurantLatitude,
+                    longitude: restaurantLongitude,
+                },
             };
 
-            if (restaurantInfo?.latitude || restaurantInfo?.longitude) {
-                orderPayload.restaurantLocation = {
-                    latitude: restaurantInfo?.latitude ?? null,
-                    longitude: restaurantInfo?.longitude ?? null,
-                };
+            if (!orderPayload.restaurantLocation) {
+                delete orderPayload.restaurantLocation;
             }
-
-            if (restaurantInfo?.address) {
-                orderPayload.restaurantAddress = restaurantInfo.address;
-            }
-
-            orderPayload.restaurant = {
-                id: restaurantId ?? null,
-                name: restaurantInfo?.name ?? activeRestaurantName ?? "",
-                address: restaurantInfo?.address ?? "",
-                latitude: restaurantInfo?.latitude ?? null,
-                longitude: restaurantInfo?.longitude ?? null,
-            };
 
             const docRef = await addDoc(ordersRef, orderPayload);
 

@@ -349,6 +349,7 @@ export default function OrderTrackingScreen() {
 
         const customerName = customerRaw.name ?? data.contactName ?? data.customerName ?? '';
         const customerPhone = customerRaw.phone ?? data.contactPhone ?? data.customerPhone ?? '';
+        const customerEmail = customerRaw.email ?? data.customerEmail ?? customerRaw.username ?? '';
 
         setOrder({
           id: snapshot.id,
@@ -371,6 +372,7 @@ export default function OrderTrackingScreen() {
           customer: {
             name: customerName,
             phone: customerPhone,
+            email: customerEmail,
             address: deliveryAddress,
             note: deliveryNote,
             latitude: customerCoord?.latitude ?? null,
