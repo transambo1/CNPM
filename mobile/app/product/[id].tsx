@@ -30,6 +30,7 @@ type Product = {
   reviews?: number;
   ingredients?: string[];
   restaurantId: string;
+  restaurantName?: string;
   calories?: number;
   prepTime?: number;
 };
@@ -52,6 +53,21 @@ export default function DetailProduct() {
 
       if (snap.exists()) {
         const d = snap.data() as any;
+        let restaurantName: string | undefined = d.restaurantName;
+        const restaurantId = d.restaurantId as string | undefined;
+
+        if (!restaurantName && restaurantId) {
+          try {
+            const restaurantDoc = await getDoc(doc(db, 'restaurants', restaurantId));
+            if (restaurantDoc.exists()) {
+              const restaurantData = restaurantDoc.data() as any;
+              restaurantName = restaurantData.name ?? restaurantName;
+            }
+          } catch (error) {
+            console.warn('Không thể tải tên nhà hàng:', error);
+          }
+        }
+
         setProduct({
           id: snap.id,
           name: d.name,
@@ -61,7 +77,8 @@ export default function DetailProduct() {
           rating: d.rating,
           reviews: d.reviews,
           ingredients: d.ingredients ?? [],
-          restaurantId: d.restaurantId,
+          restaurantId: restaurantId ?? '',
+          restaurantName,
           calories: d.calories,
           prepTime: d.prepTime ?? d.eta,
         });
@@ -102,14 +119,50 @@ export default function DetailProduct() {
 
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart({
+    const result = addToCart({
       id: product.id,
       name: product.name,
       price: product.price,
       img: product.img,
       restaurantId: product.restaurantId,
-    }, quantity);
-    Alert.alert('Đã thêm vào giỏ', `${product.name} x${quantity}`);
+      restaurantName: product.restaurantName,
+    }, quantity, { restaurantName: product.restaurantName });
+
+    if (result.status === 'conflict') {
+      const currentName = result.activeRestaurantName || 'nhà hàng khác';
+      const nextName = result.restaurantName || 'nhà hàng này';
+      Alert.alert(
+        'Tạo giỏ hàng mới?',
+        `Bạn đang có giỏ hàng từ ${currentName}. Bạn có muốn tạo giỏ mới cho ${nextName} không?`,
+        [
+          { text: 'Huỷ', style: 'cancel' },
+          {
+            text: 'Tạo giỏ mới',
+            style: 'default',
+            onPress: () => {
+              const retry = addToCart({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                img: product.img,
+                restaurantId: product.restaurantId,
+                restaurantName: product.restaurantName,
+              }, quantity, { restaurantName: product.restaurantName, allowCreateNewCart: true });
+              if (retry.status === 'added') {
+                Alert.alert('Đã thêm vào giỏ', `${product.name} x${quantity}`);
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (result.status === 'added') {
+      Alert.alert('Đã thêm vào giỏ', `${product.name} x${quantity}`);
+    } else if (result.status === 'error') {
+      Alert.alert('Không thể thêm vào giỏ', result.message);
+    }
   };
 
 
