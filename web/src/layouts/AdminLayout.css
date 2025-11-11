@@ -12,7 +12,6 @@
 }
 
 /* ===== Sidebar ===== */
-/* Đổi tên class từ .sidebar thành .admin-sidebar */
 .admin-sidebar {
     width: 300px;
     background: linear-gradient(180deg, #1e2a47, #2c3e75);
@@ -55,7 +54,6 @@
     transform: translateX(3px);
 }
 
-/* Sử dụng NavLink sẽ tự thêm class 'active' */
 .admin-sidebar nav a.active {
     background: #fff;
     color: #2c3e75;
@@ -64,20 +62,26 @@
 }
 
 /* ===== Nội dung chính ===== */
-/* Đổi tên class từ .content thành .admin-content */
 .admin-content {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: #f9fafc;
+    position: relative;
 }
 
-/* ===== Main content area (bên trong .admin-content) ===== */
-/* Nhắm mục tiêu thẻ <main> bên trong .admin-content */
+/* Main content scroll */
 .admin-content main {
     flex: 1;
     padding: 25px 35px;
     overflow-y: auto;
+    overflow-x: hidden; /* tránh che modal */
+}
+
+/* ===== Fix Modal AntD bị che ===== */
+.ant-modal-root {
+    position: relative;
+    z-index: 9999 !important;
 }
 
 /* ===== Responsive ===== */
@@ -96,6 +100,4 @@
     .admin-sidebar nav {
         flex-direction: row;
     }
-
-
 }

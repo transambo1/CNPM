@@ -248,3 +248,147 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ===================== */
+/* ✅ POPUP QR THANH TOÁN */
+/* ===================== */
+.qr-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.qr-popup-content {
+  width: 380px;
+  background: #fff;
+  padding: 25px;
+  border-radius: 14px;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: popupZoom 0.25s ease-in-out;
+}
+
+.qr-popup-content h2 {
+  margin-top: 0;
+  font-size: 1.3rem;
+  color: #333;
+  font-weight: 700;
+}
+
+.qr-image {
+  width: 230px;
+  height: 230px;
+  margin: 15px auto;
+  border-radius: 8px;
+  border: 2px solid #eee;
+  padding: 6px;
+  background: #fff;
+}
+
+.qr-note {
+  font-size: 0.95rem;
+  color: #444;
+  margin-top: 8px;
+}
+
+.qr-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 18px;
+  gap: 12px;
+}
+
+.qr-buttons button {
+  flex: 1;
+  padding: 12px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  font-size: 0.95rem;
+  transition: 0.2s;
+}
+
+.btn-cancel {
+  background: #ddd;
+  color: #333;
+}
+
+.btn-cancel:hover {
+  background: #cfcfcf;
+}
+
+.btn-confirm {
+  background: #28a745;
+  color: #fff;
+}
+
+.btn-confirm:hover {
+  background: #1e8e3b;
+}
+
+/* ====================== */
+/* 🎉 POPUP SUCCESS ĐẶT HÀNG */
+/* ====================== */
+.success-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+.success-popup-content {
+  width: 380px;
+  background: #fff;
+  padding: 25px;
+  border-radius: 14px;
+  text-align: center;
+  animation: popupZoom 0.25s ease-in-out;
+}
+
+.success-popup-content h2 {
+  margin-top: 0;
+  font-size: 1.4rem;
+  color: #28a745;
+  font-weight: 700;
+}
+
+.success-popup-content p {
+  font-size: 1rem;
+  color: #444;
+  margin-top: 10px;
+}
+
+/* ====================== */
+/* ✨ ANIMATION */
+/* ====================== */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popupZoom {
+  from {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}

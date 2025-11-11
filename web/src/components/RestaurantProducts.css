@@ -277,7 +277,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
-  width: 160px; /* đủ gọn để ít chiếm hàng */
+  width: 150px  !important;/* đủ gọn để ít chiếm hàng */
 }
 
 .filter-item label {
@@ -317,4 +317,112 @@
 
 .btn.reset:hover {
   background: #f8f9fb;
+}
+
+
+/* ==== MODAL OVERLAY ==== */
+.rsp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* ==== FORM MODAL ==== */
+.rsp-modal {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 25px 30px;
+  width: 90%;
+  max-width: 520px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.25s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rsp-modal h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #1f2937;
+  text-align: center;
+}
+
+.rsp-form input,
+.rsp-form textarea,
+.rsp-form select {
+  width: 100%;
+  margin-bottom: 10px;
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.rsp-form input:focus,
+.rsp-form textarea:focus,
+.rsp-form select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+.rsp-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.rsp-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.rsp-btn-save,
+.rsp-btn-cancel {
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.rsp-btn-save {
+  background-color: #2563eb;
+  color: white;
+}
+
+.rsp-btn-save:hover {
+  background-color: #1d4ed8;
+}
+
+.rsp-btn-cancel {
+  background-color: #9ca3af;
+  color: white;
+}
+
+.rsp-btn-cancel:hover {
+  background-color: #6b7280;
 }
