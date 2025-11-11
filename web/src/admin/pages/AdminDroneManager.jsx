@@ -100,16 +100,39 @@ export default function AdminDroneManager() {
   // 🔹 Cập nhật drone
   const handleUpdate = async () => {
     try {
-      const ref = doc(db, "drones", editingDrone.id);
-      await updateDoc(ref, {
-        name: form.name,
+      if (!editingDrone) return;
+
+      const droneRef = doc(db, "drones", editingDrone.id);
+
+      // Cập nhật cơ bản
+      await updateDoc(droneRef, {
+        name: form.name.trim(),
         status: form.status,
         battery: Number(form.battery),
         restaurantId: form.restaurantId,
         restaurantName: form.restaurantName || getRestaurantName(form.restaurantId),
       });
-      message.success("✏️ Cập nhật thành công!");
+
+      // ✅ Nếu chuyển từ "Đang giao" → "Rảnh"
+      if (editingDrone.status === "Đang giao" && form.status === "Rảnh") {
+        if (editingDrone.currentOrderId) {
+          const orderRef = doc(db, "orders", editingDrone.currentOrderId);
+          await updateDoc(orderRef, {
+            status: "Đã giao",
+            statusText: "Đơn hàng đã được giao thành công 🎉",
+            deliveredAt: new Date().toISOString(),
+            droneId: null,
+          });
+          console.log("✅ Đơn hàng", editingDrone.currentOrderId, "→ Đã giao");
+
+          // Xóa liên kết đơn khỏi drone
+          await updateDoc(droneRef, { currentOrderId: null });
+        }
+      }
+
+      message.success("✏️ Cập nhật drone thành công!");
       setModalVisible(false);
+      setEditingDrone(null);
       fetchAll();
     } catch (err) {
       console.error("🔥 Lỗi cập nhật drone:", err);
@@ -130,7 +153,7 @@ export default function AdminDroneManager() {
     }
   };
 
-  // ✅ Lọc danh sách drone (đã bỏ lọc pin)
+  // ✅ Lọc danh sách drone
   const filteredDrones = drones.filter((d) => {
     const matchName = d.name.toLowerCase().includes(searchText.toLowerCase());
     const matchRestaurant =
@@ -261,7 +284,7 @@ export default function AdminDroneManager() {
           setModalVisible(false);
           setEditingDrone(null);
         }}
-        onOk={editingDrone ? handleUpdate : handleAdd}
+        onOk={handleUpdate}
         okText={editingDrone ? "Cập nhật" : "Thêm"}
         centered
       >

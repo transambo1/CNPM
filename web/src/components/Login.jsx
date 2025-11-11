@@ -4,6 +4,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import "./Login.css";
 import { useAuth } from "../context/AuthContext";
+import { message } from "antd";
 
 function Login() {
   const [phonenumber, setPhonenumber] = useState("");
@@ -12,6 +13,7 @@ function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentUser } = useAuth();
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -35,35 +37,75 @@ function Login() {
       const userDoc = querySnapshot.docs[0];
       const userData = userDoc.data();
 
-      // 🔐 Kiểm tra mật khẩu
-    if ((userData.password || "").trim() !== password.trim()) {
-  setError("Sai mật khẩu");
-  return;
-}
+      // 🔒 Kiểm tra mật khẩu
+      if ((userData.password || "").trim() !== password.trim()) {
+        setError("Sai mật khẩu");
+        return;
+      }
 
-     localStorage.setItem("currentUser", JSON.stringify(userData));
+      // 🚫 Kiểm tra bị khóa
+      if (userData.status === "banned") {
+        message.error("🚫 Tài khoản của bạn đã bị chặn. Vui lòng liên hệ quản trị viên!", 3);
+        setError("Tài khoản của bạn đã bị chặn!");
+        return;
+      }
 
-// 🔹 Cập nhật AuthContext
-setCurrentUser(userData);
+      // ✅ Bổ sung uid và các thông tin cần thiết để AuthContext hoạt động
+      const fullUserData = {
+        ...userData,
+        uid: userDoc.id, // 🔥 rất quan trọng: AuthContext cần uid để restore user
+      };
 
-// Redirect theo role
-switch (userData.role) {
-  case "admin":
-    navigate("/admin"); // AdminLayout
-    break;
-  case "restaurant":
-    navigate("/restaurantadmin"); // RestaurantLayout
-    break;
-  case "customer":
-  default:
-    navigate("/"); // UserLayout
-    break;
-}
-  } catch (err) {
-    console.error("Login Error:", err);
-    setError("Đã có lỗi xảy ra khi đăng nhập.");
-  }
-};
+      // ✅ Lưu vào localStorage và context
+      localStorage.setItem("currentUser", JSON.stringify(fullUserData));
+      setCurrentUser(fullUserData);
+
+      // ✅ Merge cart guest → user cart
+      try {
+        const guestKey = "cart_guest";
+        const userKey = `cart_${encodeURIComponent(
+          fullUserData.uid || fullUserData.phonenumber
+        )}`;
+
+        const guestCart = JSON.parse(localStorage.getItem(guestKey) || "[]");
+        const userCart = JSON.parse(localStorage.getItem(userKey) || "[]");
+
+        if (guestCart.length > 0) {
+          console.log("🧩 Merge guest cart vào user cart...");
+          const merged = [...userCart];
+          guestCart.forEach((g) => {
+            const exist = merged.find((i) => i.id === g.id);
+            if (exist) exist.quantity += g.quantity || 1;
+            else merged.push(g);
+          });
+
+          localStorage.setItem(userKey, JSON.stringify(merged));
+          localStorage.removeItem(guestKey); // Xóa cart guest
+        }
+      } catch (err) {
+        console.error("⚠️ Lỗi merge cart:", err);
+      }
+
+      // ✅ Điều hướng theo vai trò
+      switch (fullUserData.role) {
+        case "admin":
+          navigate("/admin");
+          break;
+        case "restaurant":
+          navigate("/restaurantadmin");
+          break;
+        case "customer":
+        default:
+          navigate("/");
+          break;
+      }
+
+      message.success(`Chào mừng, ${fullUserData.firstname || "người dùng"} 👋`, 2);
+    } catch (err) {
+      console.error("Login Error:", err);
+      setError("Đã có lỗi xảy ra khi đăng nhập.");
+    }
+  };
 
   return (
     <div className="login-page">
