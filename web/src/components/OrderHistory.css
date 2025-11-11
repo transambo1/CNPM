@@ -107,17 +107,12 @@
   color: #fff;
 }
 
-/* Track Button – P-B Layout */
-.track-btn {
-  background: #000;
-  color: #f6c90e;
-  border: none;
-  padding: 6px 14px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: 0.25s ease;
+.status-tag.đang-xử-lý,
+.status-tag.chờ-xử-lí,
+.status-tag.chờ-xử-lý {
+  background-color: #ff5116;
+  /* cam */
+  color: white;
 }
 
 .track-btn:hover {

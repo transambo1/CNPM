@@ -18,6 +18,7 @@ export default function RootLayout() {
           <Stack.Screen name="restaurant/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="cart/index" options={{ headerShown: false }} />
+          <Stack.Screen name="order/[id]" options={{ headerShown: false }} />
 
           {/* Auth stack (optional but recommended) */}
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />

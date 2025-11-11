@@ -5,6 +5,7 @@ import {
   StyleSheet,
   FlatList,
   RefreshControl,
+  TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,13 +20,58 @@ import {
 
 import { useAuth } from '../../libs/AuthContext';
 import { app } from '../../libs/firebase';
+import { useRouter } from 'expo-router';
 
 const STATUS_META: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
-  pending: { label: 'Đang xử lý', color: '#F59E0B', icon: 'time-outline' },
-  confirmed: { label: 'Đã xác nhận', color: '#3B82F6', icon: 'checkmark-done-outline' },
-  delivering: { label: 'Đang giao', color: '#00A74F', icon: 'bicycle-outline' },
-  completed: { label: 'Hoàn tất', color: '#10B981', icon: 'checkmark-circle-outline' },
+  pending: { label: 'Đặt đơn thành công', color: '#F59E0B', icon: 'time-outline' },
+  confirmed: { label: 'Nhà hàng xác nhận', color: '#3B82F6', icon: 'restaurant-outline' },
+  drone_assigned: { label: 'Drone sẵn sàng', color: '#6366F1', icon: 'airplane-outline' },
+  delivering: { label: 'Đang giao', color: '#00A74F', icon: 'rocket-outline' },
+  arrived: { label: 'Drone đã tới nơi', color: '#10B981', icon: 'location-outline' },
+  completed: { label: 'Hoàn tất', color: '#059669', icon: 'checkmark-circle-outline' },
   cancelled: { label: 'Đã hủy', color: '#EF4444', icon: 'close-circle-outline' },
+};
+
+const normalizeStatus = (status?: string, statusCode?: string) => {
+  const code = (statusCode ?? '').toLowerCase();
+  switch (code) {
+    case 'pending':
+    case 'processing':
+    case 'waiting':
+      return 'pending';
+    case 'confirmed':
+    case 'accepted':
+    case 'preparing':
+      return 'confirmed';
+    case 'drone_assigned':
+    case 'assigned':
+      return 'drone_assigned';
+    case 'delivering':
+    case 'in_transit':
+      return 'delivering';
+    case 'arrived':
+      return 'arrived';
+    case 'completed':
+    case 'delivered':
+    case 'done':
+      return 'completed';
+    case 'cancelled':
+    case 'canceled':
+      return 'cancelled';
+    default:
+      break;
+  }
+
+  if (!status) return 'pending';
+  const lower = status.toLowerCase();
+  if (lower.includes('hủy') || lower.includes('huỷ') || lower.includes('cancel')) return 'cancelled';
+  if (lower.includes('đến nơi') || lower.includes('tới nơi')) return 'arrived';
+  if (lower.includes('đã giao') || lower.includes('completed') || lower.includes('delivered')) return 'completed';
+  if (lower.includes('đang giao') || lower.includes('delivering')) return 'delivering';
+  if (lower.includes('drone') && lower.includes('điều phối')) return 'drone_assigned';
+  if (lower.includes('xác nhận') || lower.includes('chuẩn bị')) return 'confirmed';
+  if (lower.includes('chờ') || lower.includes('xử lý') || lower.includes('pending')) return 'pending';
+  return 'pending';
 };
 
 const formatCurrency = (value: number) =>
@@ -44,6 +90,7 @@ type OrderItem = {
   id: string;
   code: string;
   status: string;
+  statusCode?: string;
   total: number;
   items: number;
   createdAt: Date;
@@ -54,6 +101,7 @@ type OrderItem = {
 
 export default function OrderHistoryScreen() {
   const { user } = useAuth();
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -84,6 +132,7 @@ export default function OrderHistoryScreen() {
           id: docSnap.id,
           code: data.code ?? `ĐH-${docSnap.id.slice(-6).toUpperCase()}`,
           status: data.status ?? 'pending',
+          statusCode: data.statusCode ?? data.stage ?? data.status_code,
           total: Number(data.totalPrice ?? data.total ?? 0),
           items: Array.isArray(data.items)
             ? data.items.reduce((sum: number, item: any) => sum + (Number(item.quantity ?? 1) || 1), 0)
@@ -115,21 +164,29 @@ export default function OrderHistoryScreen() {
     setRefreshing(false);
   }, [fetchOrders]);
 
-  const renderStatus = (status: string) => {
-    const meta = STATUS_META[status] ?? STATUS_META.pending;
+  const renderStatus = (status: string, statusCode?: string) => {
+    const key = normalizeStatus(status, statusCode);
+    const meta = STATUS_META[key] ?? STATUS_META.pending;
     return (
-      <View style={[styles.statusPill, { backgroundColor: `${meta.color}20` }]}> 
+      <View style={[styles.statusPill, { backgroundColor: `${meta.color}20` }]}>
         <Ionicons name={meta.icon} size={14} color={meta.color} style={{ marginRight: 4 }} />
         <Text style={[styles.statusText, { color: meta.color }]}>{meta.label}</Text>
       </View>
     );
   };
 
+  const handleOpenOrder = useCallback(
+    (orderId: string) => {
+      router.push(`/order/${orderId}` as never);
+    },
+    [router]
+  );
+
   const renderOrder = ({ item }: { item: OrderItem }) => (
-    <View style={styles.card}>
+    <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => handleOpenOrder(item.id)}>
       <View style={styles.cardHeader}>
         <Text style={styles.codeText}>{item.code}</Text>
-        {renderStatus(item.status)}
+        {renderStatus(item.status, item.statusCode)}
       </View>
       <View style={styles.cardBody}>
         <View style={styles.rowBetween}>
@@ -156,10 +213,10 @@ export default function OrderHistoryScreen() {
         ) : null}
       </View>
       <View style={styles.cardFooter}>
-        <Text style={styles.footerHint}>Chi tiết đơn hàng sẽ xuất hiện tại đây sớm thôi</Text>
+        <Text style={styles.footerHint}>Nhấn để xem chi tiết và theo dõi đơn</Text>
         <Ionicons name="chevron-forward" size={18} color="#00A74F" />
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
