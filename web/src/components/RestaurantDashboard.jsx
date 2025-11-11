@@ -200,74 +200,13 @@ export default function RestaurantDashboard() {
         return <span className="badge done">Đã giao</span>;
       }
     }
-    if (
-      s === "confirmed" ||
-      s.includes("xử lý") ||
-      s.includes("processing") ||
-      (s.includes("chờ") && s.includes("xử"))
-    ) {
+    if (s === "confirmed" || s.includes("xử lý") || s.includes("processing")) {
       return <span className="badge pending">Đang xử lý</span>;
     }
     return <span className="badge other">{status}</span>;
   };
 
   if (loading) return <p>⏳ Đang tải dữ liệu...</p>;
-  // 🚁 AUTO MOVE DRONE TỪ NHÀ HÀNG → KHÁCH HÀNG (One-way) MỚI MỚI
-  async function startDroneAutoMove(order, drone) {
-    if (!order?.customer || !order?.restaurantLocation) {
-      console.log("❌ Thiếu tọa độ nhà hàng hoặc khách hàng");
-      return;
-    }
-
-    const start = {
-      latitude: Number(order.restaurantLocation.latitude),
-      longitude: Number(order.restaurantLocation.longitude),
-    };
-
-    const end = {
-      latitude: Number(order.customer.latitude),
-      longitude: Number(order.customer.longitude),
-    };
-
-    console.log("🏁 Start:", start);
-    console.log("🎯 Destination:", end);
-
-    const steps = 8; // chia làm 8 waypoint cho mượt
-    const waypoints = [];
-
-    for (let i = 1; i <= steps; i++) {
-      waypoints.push({
-        latitude: start.latitude + ((end.latitude - start.latitude) * i) / steps,
-        longitude: start.longitude + ((end.longitude - start.longitude) * i) / steps,
-      });
-    }
-
-    for (let i = 0; i < waypoints.length; i++) {
-      const wp = waypoints[i];
-
-      await updateDoc(doc(db, "drones", drone.id), {
-        latitude: wp.latitude,
-        longitude: wp.longitude,
-        status: "Đang giao",
-      });
-
-      console.log(`📍 Drone moved to waypoint ${i + 1}/${steps}`, wp);
-
-      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2s mỗi bước
-    }
-
-    // ✅ Đến nơi
-    console.log("✅ Drone đến nhà khách!");
-
-    await updateDoc(doc(db, "orders", order.id), {
-      status: "Đã đến nơi",
-      statusCode: "arrived",
-    });
-
-    await updateDoc(doc(db, "drones", drone.id), {
-      status: "Chờ khách nhận",
-    });
-  }
 
   return (
     <div className="restaurant-dashboard">
@@ -283,7 +222,7 @@ export default function RestaurantDashboard() {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="all">Tất cả</option>
-            <option value="processing">Đang/Chờ xử lý</option>
+            <option value="processing">Đang xử lý</option>
             <option value="delivering">Đang giao</option>
             <option value="delivered">Đã giao</option>
             <option value="other">Chờ xác nhận</option>
@@ -333,8 +272,7 @@ export default function RestaurantDashboard() {
       </div>
 
       <div className="table-meta">
-        <span>Hiển thị: <b>{filteredOrders.length}</b> / {orders.length} đơn</span>
-
+        <span>Hiển thị: <b>{paginatedOrders.length}</b> / {filteredOrders.length} đơn</span>
       </div>
 
       <table className="orders-table">
