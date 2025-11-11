@@ -37,14 +37,7 @@ export default function RestaurantLayout() {
             📊 Tổng quan
           </Link>
 
-          <Link
-            to="/restaurantadmin/orders"
-            className={`restaurant-link ${
-              location.pathname.includes("/orders") ? "active" : ""
-            }`}
-          >
-            🧾 Đơn hàng
-          </Link>
+      
 
           <Link
             to="/restaurantadmin/products"

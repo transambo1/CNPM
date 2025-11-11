@@ -1,83 +1,65 @@
-// src/context/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-import { auth, db } from "../firebase";
+import { db } from "../firebase";
 import { doc, getDoc } from "firebase/firestore";
+import { message } from "antd";
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(
-    JSON.parse(localStorage.getItem("currentUser")) || null
-  );
+  const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("🔥 Firebase Auth State:", user);
+    const checkUser = async () => {
+      console.log("🟡 [Auth] Bắt đầu kiểm tra user...");
+      try {
+        const stored = JSON.parse(localStorage.getItem("currentUser"));
+        if (stored && stored.uid) {
+          // ✅ Hiển thị tạm user local để tránh flicker
+          setCurrentUser(stored);
 
-      if (user) {
-        try {
-          const userRef = doc(db, "users", user.uid);
-          const snap = await getDoc(userRef);
+          console.log("📦 [Auth] Có user trong local:", stored.email || stored.phoneNumber);
 
-          let dbUser = {};
+          const snap = await getDoc(doc(db, "users", stored.uid));
           if (snap.exists()) {
-            dbUser = snap.data();
+            const dbUser = snap.data();
+            console.log("🔥 [Auth] Lấy user từ Firestore:", dbUser.role);
+            if (dbUser.status === "banned") {
+              message.error("🚫 Tài khoản bị chặn!");
+              localStorage.removeItem("currentUser");
+              setCurrentUser(null);
+              setTimeout(() => (window.location.href = "/login"), 2000);
+              return;
+            }
+            setCurrentUser({ ...stored, ...dbUser });
           } else {
-            console.warn("⚠️ Không tìm thấy user trong Firestore, dùng default role");
+            console.warn("⚠️ [Auth] Không tìm thấy user trong Firestore, giữ local user.");
+            setCurrentUser(stored);
           }
-
-          // ✅ Gộp dữ liệu Firebase Auth + Firestore
-          const formattedUser = {
-            uid: user.uid,
-            email: user.email,
-            name: dbUser.name || user.displayName || "Người dùng",
-            role: dbUser.role || "customer", // 🔥 Mặc định customer
-            restaurantId: dbUser.restaurantId || null, // 🔥 Nếu là nhà hàng
-            phone: dbUser.phone || dbUser.phonenumber || "",
-            ...dbUser, // merge thêm nếu có extra fields
-          };
-
-          setCurrentUser(formattedUser);
-          localStorage.setItem("currentUser", JSON.stringify(formattedUser));
-        } catch (err) {
-          console.error("🔥 Error fetching user data:", err);
+        } else {
+          console.log("⚪ [Auth] Không có user trong localStorage.");
+          setCurrentUser(null);
         }
-
+      } catch (err) {
+        console.error("🔥 [Auth] Lỗi kiểm tra user:", err);
+      } finally {
+        console.log("🟢 [Auth] Hoàn tất khởi tạo AuthContext");
         setLoading(false);
-        return;
       }
-
-      // ❗ Khi user = null (logout hoặc reload)
-      const stored = localStorage.getItem("currentUser");
-
-      if (stored) {
-        console.warn("⚠️ Firebase auth null — dùng dữ liệu localStorage");
-        setCurrentUser(JSON.parse(stored));
-      } else {
-        setCurrentUser(null);
-      }
-
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
+    };
+    checkUser();
   }, []);
 
-  const logout = async () => {
-    try {
-      await signOut(auth);
-    } catch (e) {
-      console.warn("⚠️ signOut error (ignored):", e);
-    }
-    setCurrentUser(null);
+  const logout = () => {
+    console.log("🚪 [Auth] Đăng xuất");
     localStorage.removeItem("currentUser");
+    setCurrentUser(null);
+    window.location.href = "/login";
   };
 
   return (
-    <AuthContext.Provider value={{ currentUser, setCurrentUser, logout }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ currentUser, setCurrentUser, logout, loading }}>
+      {loading ? <p>⏳ Đang xác thực người dùng...</p> : children}
     </AuthContext.Provider>
   );
 }
