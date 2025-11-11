@@ -338,6 +338,7 @@ export default function PaymentScreen() {
         };
     }, [user?.address, defaultContactName, defaultPhone, addresses.length]);
 
+
     const combinedAddresses = useMemo(() => {
         const list = [...addresses];
         if (profileAddress) {
@@ -595,12 +596,25 @@ export default function PaymentScreen() {
             Alert.alert("Thiếu thông tin", "Vui lòng nhập địa chỉ chi tiết.");
             return;
         }
+
         const detail = sanitizeAddressDetail(detailInput);
 
         setSavingAddress(true);
         try {
-            const addressesRef = collection(db, "users", user.id, "addresses");
+            // ✅ M1: Fetch tọa độ ngay khi lưu địa chỉ
             const coords = await fetchCoordinatesForAddress(detail);
+
+            if (!coords || !coords.latitude || !coords.longitude) {
+                Alert.alert(
+                    "Không tìm thấy vị trí",
+                    "Vui lòng nhập địa chỉ rõ hơn (VD: '28 An Dương Vương, Phường 9, Quận 5')."
+                );
+                setSavingAddress(false);
+                return;
+            }
+
+            const addressesRef = collection(db, "users", user.id, "addresses");
+
             const payload = {
                 label: newAddressForm.label.trim(),
                 detail,
@@ -608,13 +622,14 @@ export default function PaymentScreen() {
                 contactName: newAddressForm.contactName.trim(),
                 phone: newAddressForm.phone.trim(),
                 isDefault: newAddressForm.isDefault || addresses.length === 0,
+                latitude: coords.latitude,
+                longitude: coords.longitude,
                 createdAt: serverTimestamp(),
-                latitude: coords?.latitude ?? null,
-                longitude: coords?.longitude ?? null,
             };
 
             const docRef = await addDoc(addressesRef, payload);
 
+            // ❗ Nếu là default -> remove default ở các address khác
             if (payload.isDefault && addresses.length > 0) {
                 const batch = writeBatch(db);
                 addresses.forEach((addr) => {
@@ -625,20 +640,7 @@ export default function PaymentScreen() {
                 await batch.commit();
             }
 
-            const savedAddress: AddressItem = {
-                id: docRef.id,
-                label: payload.label,
-                detail: payload.detail,
-                note: payload.note,
-                contactName: payload.contactName,
-                phone: payload.phone,
-                isDefault: payload.isDefault,
-                latitude: payload.latitude,
-                longitude: payload.longitude,
-            };
-
-            setSelectedAddressId(savedAddress.id);
-
+            setSelectedAddressId(docRef.id);
             resetNewAddressForm();
             addressSheet.closeSheet();
             setAddressSheetMode("list");
@@ -649,6 +651,7 @@ export default function PaymentScreen() {
             setSavingAddress(false);
         }
     }, [user?.id, newAddressForm, addresses, db, addressSheet, resetNewAddressForm]);
+
 
     const ProductRowQuick: React.FC<{ p: Product }> = ({ p }) => (
         <View style={styles.addRow}>

@@ -17,7 +17,7 @@ export default function RestaurantDashboard() {
   // --- FILTER STATE ---
   const [statusFilter, setStatusFilter] = useState("all"); // all | processing | delivering | delivered | other
   const [droneFilter, setDroneFilter] = useState("all");   // all | droneId
-  const [timeFilter, setTimeFilter]   = useState("all");   // all | 24h | 3d | 7d
+  const [timeFilter, setTimeFilter] = useState("all");   // all | 24h | 3d | 7d
 
   const fetchAll = useCallback(async () => {
     try {
@@ -71,8 +71,8 @@ export default function RestaurantDashboard() {
       if (!ms) return false;
 
       if (timeFilter === "24h") return ms >= now - 24 * 60 * 60 * 1000;
-      if (timeFilter === "3d")  return ms >= now - 3  * 24 * 60 * 60 * 1000;
-      if (timeFilter === "7d")  return ms >= now - 7  * 24 * 60 * 60 * 1000;
+      if (timeFilter === "3d") return ms >= now - 3 * 24 * 60 * 60 * 1000;
+      if (timeFilter === "7d") return ms >= now - 7 * 24 * 60 * 60 * 1000;
       return true;
     };
 
@@ -199,6 +199,62 @@ export default function RestaurantDashboard() {
   };
 
   if (loading) return <p>⏳ Đang tải dữ liệu...</p>;
+  // 🚁 AUTO MOVE DRONE TỪ NHÀ HÀNG → KHÁCH HÀNG (One-way) MỚI MỚI
+  async function startDroneAutoMove(order, drone) {
+    if (!order?.customer || !order?.restaurantLocation) {
+      console.log("❌ Thiếu tọa độ nhà hàng hoặc khách hàng");
+      return;
+    }
+
+    const start = {
+      latitude: Number(order.restaurantLocation.latitude),
+      longitude: Number(order.restaurantLocation.longitude),
+    };
+
+    const end = {
+      latitude: Number(order.customer.latitude),
+      longitude: Number(order.customer.longitude),
+    };
+
+    console.log("🏁 Start:", start);
+    console.log("🎯 Destination:", end);
+
+    const steps = 8; // chia làm 8 waypoint cho mượt
+    const waypoints = [];
+
+    for (let i = 1; i <= steps; i++) {
+      waypoints.push({
+        latitude: start.latitude + ((end.latitude - start.latitude) * i) / steps,
+        longitude: start.longitude + ((end.longitude - start.longitude) * i) / steps,
+      });
+    }
+
+    for (let i = 0; i < waypoints.length; i++) {
+      const wp = waypoints[i];
+
+      await updateDoc(doc(db, "drones", drone.id), {
+        latitude: wp.latitude,
+        longitude: wp.longitude,
+        status: "Đang giao",
+      });
+
+      console.log(`📍 Drone moved to waypoint ${i + 1}/${steps}`, wp);
+
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // 2s mỗi bước
+    }
+
+    // ✅ Đến nơi
+    console.log("✅ Drone đến nhà khách!");
+
+    await updateDoc(doc(db, "orders", order.id), {
+      status: "Đã đến nơi",
+      statusCode: "arrived",
+    });
+
+    await updateDoc(doc(db, "drones", drone.id), {
+      status: "Chờ khách nhận",
+    });
+  }
 
   return (
     <div className="restaurant-dashboard">
@@ -266,7 +322,7 @@ export default function RestaurantDashboard() {
 
       <div className="table-meta">
         <span>Hiển thị: <b>{filteredOrders.length}</b> / {orders.length} đơn</span>
-   
+
       </div>
 
       <table className="orders-table">
