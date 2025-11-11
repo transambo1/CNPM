@@ -74,7 +74,6 @@ export default function RestaurantOrders() {
   const renderStatus = (status) => {
     switch (status) {
       case "Chờ xác nhận":
-      case "Chờ xử lý":
         return <span className="rso-status rso-wait">🟡 {status}</span>;
       case "Đang giao":
         return <span className="rso-status rso-shipping">🔵 {status}</span>;
@@ -95,7 +94,6 @@ export default function RestaurantOrders() {
           <label>Trạng thái</label>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">Tất cả</option>
-            <option value="Chờ xử lý">Chờ xử lý</option>
             <option value="Chờ xác nhận">Chờ xác nhận</option>
             <option value="Đang giao">Đang giao</option>
             <option value="Đã giao">Đã giao</option>

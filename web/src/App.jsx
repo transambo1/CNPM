@@ -87,26 +87,11 @@ function App() {
     } catch {}
   }, [cart, currentUser]);
 
-  const handleAdd = (product, quantity = 1) => {
-    const safeQty = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 1;
+  const handleAdd = (product) => {
     setCart((prev) => {
       const existing = prev.find((p) => p.id === product.id);
-      if (existing) {
-        return prev.map((p) =>
-          p.id === product.id
-            ? { ...p, quantity: p.quantity + safeQty }
-            : p
-        );
-      }
-      return [
-        ...prev,
-        {
-          ...product,
-          quantity: safeQty,
-          restaurantName: product.restaurantName,
-          restaurantId: product.restaurantId,
-        },
-      ];
+      if (existing) return prev.map(p => p.id === product.id ? { ...p, quantity: p.quantity + 1 } : p);
+      return [...prev, { ...product, quantity: 1, restaurantName: product.restaurantName, restaurantId: product.restaurantId }];
     });
   };
 

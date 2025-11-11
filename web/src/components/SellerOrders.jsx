@@ -10,14 +10,10 @@ function SellerOrders() {
     const fetchOrders = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "orders"));
-        const data = querySnapshot.docs.map((doc) => {
-          const payload = doc.data();
-          return {
-            id: doc.id,
-            ...payload,
-            status: payload.status || "Chờ xử lý",
-          };
-        });
+        const data = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
         setOrders(data);
       } catch (err) {
         console.error("❌ Lỗi lấy đơn hàng:", err);
@@ -44,22 +40,6 @@ function SellerOrders() {
     } catch (err) {
       console.error("❌ Lỗi cập nhật trạng thái:", err);
     }
-  };
-
-  const formatOrderDate = (order) => {
-    if (order?.createdAt?.toDate) {
-      return order.createdAt.toDate().toLocaleString("vi-VN");
-    }
-    if (order?.createdAt?.seconds) {
-      return new Date(order.createdAt.seconds * 1000).toLocaleString("vi-VN");
-    }
-    if (order?.date?.seconds) {
-      return new Date(order.date.seconds * 1000).toLocaleString("vi-VN");
-    }
-    if (order?.date) {
-      return new Date(order.date).toLocaleString("vi-VN");
-    }
-    return "—";
   };
 
   return (
@@ -93,18 +73,16 @@ function SellerOrders() {
                   ))}
                 </td>
                 <td>{order.total?.toLocaleString()}₫</td>
-                <td>{formatOrderDate(order)}</td>
+                <td>{new Date(order.date?.seconds * 1000).toLocaleString()}</td>
                 <td>{order.customer?.address}</td>
                 <td>
                   <select
                     value={order.status}
                     onChange={(e) => updateStatus(order.id, e.target.value)}
                   >
-                    <option value="Chờ xử lý">Chờ xử lý</option>
                     <option value="Đang xử lý">Đang xử lý</option>
                     <option value="Đã xử lý">Đã xử lý</option>
                     <option value="Đang giao">Đang giao</option>
-                    <option value="Đang giao bằng drone">Đang giao bằng drone</option>
                     <option value="Đã giao">Đã giao</option>
                   </select>
                 </td>

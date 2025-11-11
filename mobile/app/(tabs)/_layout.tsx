@@ -61,7 +61,12 @@ export default function ProtectedLayout() {
       />
 
       {/* Tab 2: Thanh toán (ẩn khỏi tab bar, chỉ dùng để điều hướng từ giỏ hàng) */}
-
+      <Tabs.Screen
+        name="payment"
+        options={{
+          tabBarButton: () => null,
+        }}
+      />
 
       {/* Tab 3: Lịch sử đơn hàng */}
       <Tabs.Screen

@@ -59,7 +59,7 @@ function RestaurantDetail({ onAdd }) {
       ...product,
       restaurantId: restaurant.id,
       restaurantName: restaurant.name,
-    }, 1);
+    });
   };
 
   if (loading) return <p className="loading">⏳ Đang tải dữ liệu...</p>;
