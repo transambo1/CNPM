@@ -61,7 +61,11 @@ export default function RestaurantOrders() {
     // 3️⃣ Time Filter (giống file 1)
     result = result.filter(inTimeRange);
 
-    return result;
+    return result.sort((a, b) => {
+  const tA = toMillis(a.createdAt) ?? 0;
+  const tB = toMillis(b.createdAt) ?? 0;
+  return tB - tA; // mới → cũ
+});
   }, [orders, statusFilter, droneFilter, timeFilter]);
 
   const handleViewDetail = (orderId) =>
@@ -82,7 +86,7 @@ export default function RestaurantOrders() {
 
   return (
     <div className="rso-container">
-      <h2 className="rso-title">📦 Danh sách đơn hàng</h2>
+      <h2 className="rso-title">Danh sách đơn hàng</h2>
 
       {/* 🔥 FILTER UI giống file 1 */}
       <div className="filter-bar">

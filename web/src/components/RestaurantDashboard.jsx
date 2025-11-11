@@ -15,9 +15,13 @@ export default function RestaurantDashboard() {
   const [selectedDrone, setSelectedDrone] = useState({});
 
   // --- FILTER STATE ---
-  const [statusFilter, setStatusFilter] = useState("all"); // all | processing | delivering | delivered | other
-  const [droneFilter, setDroneFilter] = useState("all");   // all | droneId
-  const [timeFilter, setTimeFilter]   = useState("all");   // all | 24h | 3d | 7d
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [droneFilter, setDroneFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
+
+  // --- PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 7;
 
   const fetchAll = useCallback(async () => {
     try {
@@ -52,16 +56,13 @@ export default function RestaurantDashboard() {
   // --- Utils: chuẩn hóa createdAt ---
   const toMillis = (createdAt) => {
     if (!createdAt) return null;
-    // Firestore Timestamp
     if (createdAt.seconds) return createdAt.seconds * 1000;
-    // JS Date
     if (createdAt instanceof Date) return createdAt.getTime();
-    // string/number
     const t = new Date(createdAt).getTime();
     return Number.isFinite(t) ? t : null;
   };
 
-  // --- SOFT FILTER (client-side) ---
+  // --- SOFT FILTERS ---
   const filteredOrders = useMemo(() => {
     const now = Date.now();
 
@@ -69,27 +70,22 @@ export default function RestaurantDashboard() {
       if (timeFilter === "all") return true;
       const ms = toMillis(o.createdAt);
       if (!ms) return false;
-
       if (timeFilter === "24h") return ms >= now - 24 * 60 * 60 * 1000;
-      if (timeFilter === "3d")  return ms >= now - 3  * 24 * 60 * 60 * 1000;
-      if (timeFilter === "7d")  return ms >= now - 7  * 24 * 60 * 60 * 1000;
+      if (timeFilter === "3d") return ms >= now - 3 * 24 * 60 * 60 * 1000;
+      if (timeFilter === "7d") return ms >= now - 7 * 24 * 60 * 60 * 1000;
       return true;
     };
 
     const normalizeStatus = (s = "") => s.toLowerCase();
-
     const matchStatus = (o) => {
       if (statusFilter === "all") return true;
       const s = normalizeStatus(o.status || "");
-      if (statusFilter === "processing") {
+      if (statusFilter === "processing")
         return s.includes("xử lý") || s.includes("processing") || s === "confirmed";
-      }
-      if (statusFilter === "delivering") {
+      if (statusFilter === "delivering")
         return s.includes("đang giao") || s.includes("delivering");
-      }
-      if (statusFilter === "delivered") {
+      if (statusFilter === "delivered")
         return s.includes("đã giao") || s.includes("delivered");
-      }
       if (statusFilter === "other") {
         const isProc = s.includes("xử lý") || s.includes("processing") || s === "confirmed";
         const isDeliv = s.includes("đang giao") || s.includes("delivering");
@@ -108,10 +104,27 @@ export default function RestaurantDashboard() {
     return orders
       .filter(inTimeRange)
       .filter(matchStatus)
-      .filter(matchDrone);
+      .filter(matchDrone)
+      .sort((a, b) => {
+        const tA = toMillis(a.createdAt) ?? 0;
+        const tB = toMillis(b.createdAt) ?? 0;
+        return tB - tA;
+      });
   }, [orders, statusFilter, droneFilter, timeFilter]);
 
-  // === Gán drone cho đơn hàng ===
+  // ✅ Reset page khi lọc
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, droneFilter, timeFilter]);
+
+  // --- PAGINATION DATA ---
+  const totalPages = Math.ceil(filteredOrders.length / pageSize);
+  const paginatedOrders = filteredOrders.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  // === GÁN DRONE ===
   const handleAssignDrone = async (orderId) => {
     const droneId = selectedDrone[orderId];
     if (!droneId) {
@@ -147,7 +160,7 @@ export default function RestaurantDashboard() {
     }
   };
 
-  // === Đánh dấu đơn đã giao ===
+  // === MARK DELIVERED ===
   const handleMarkDelivered = async (orderId) => {
     try {
       const order = orders.find((o) => String(o.id) === String(orderId));
@@ -197,7 +210,7 @@ export default function RestaurantDashboard() {
 
   return (
     <div className="restaurant-dashboard">
-      <h2>📦 Quản lý Đơn Hàng</h2>
+      <h2> Quản lý Đơn Hàng</h2>
 
       {/* FILTER BAR */}
       <div className="filter-bar">
@@ -246,7 +259,6 @@ export default function RestaurantDashboard() {
           </select>
         </div>
 
-        {/* Nút xóa lọc nhanh (tuỳ chọn) */}
         <button
           className="btn reset"
           onClick={() => {
@@ -260,8 +272,7 @@ export default function RestaurantDashboard() {
       </div>
 
       <div className="table-meta">
-        <span>Hiển thị: <b>{filteredOrders.length}</b> / {orders.length} đơn</span>
-   
+        <span>Hiển thị: <b>{paginatedOrders.length}</b> / {filteredOrders.length} đơn</span>
       </div>
 
       <table className="orders-table">
@@ -278,7 +289,7 @@ export default function RestaurantDashboard() {
           </tr>
         </thead>
         <tbody>
-          {filteredOrders.map((order) => {
+          {paginatedOrders.map((order) => {
             const oStatus = order.status || "";
             const assignedDrone = order.droneId ? findDroneById(order.droneId) : null;
             const createdAtMs = toMillis(order.createdAt);
@@ -292,10 +303,9 @@ export default function RestaurantDashboard() {
                   <div className="small">{order.customer?.phone}</div>
                 </td>
                 <td>{order.customer?.address}</td>
-                <td>{order.items?.[0]?.restaurant}</td>
+                <td>{order.restaurantName || order.items?.[0]?.restaurant || "—"}</td>
                 <td>{createdAtTxt}</td>
                 <td>{formatStatusBadge(oStatus)}</td>
-
                 <td>
                   {oStatus === "Đã giao" ? (
                     <div>{assignedDrone ? <strong>{assignedDrone.name}</strong> : <span>—</span>}</div>
@@ -325,16 +335,11 @@ export default function RestaurantDashboard() {
                     </select>
                   )}
                 </td>
-
                 <td>
                   {oStatus === "Đã giao" ? (
-                    <button className="btn disabled" disabled>
-                      Đã xử lí
-                    </button>
+                    <button className="btn disabled" disabled>Đã xử lí</button>
                   ) : oStatus === "Đang giao" ? (
-                    <button className="btn done" onClick={() => handleMarkDelivered(order.id)}>
-                      Đánh dấu đã giao
-                    </button>
+                    <span>Đang giao</span>
                   ) : (
                     <button
                       className="btn primary"
@@ -350,6 +355,37 @@ export default function RestaurantDashboard() {
           })}
         </tbody>
       </table>
+
+      {totalPages > 1 && (
+  <div className="orders-pagination">
+    <button
+      className="orders-page-btn"
+      onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+      disabled={currentPage === 1}
+    >
+      ← Prev
+    </button>
+
+    {[...Array(totalPages)].map((_, i) => (
+      <button
+        key={i}
+        className={`orders-page-btn ${currentPage === i + 1 ? "active" : ""}`}
+        onClick={() => setCurrentPage(i + 1)}
+      >
+        {i + 1}
+      </button>
+    ))}
+
+    <button
+      className="orders-page-btn"
+      onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+      disabled={currentPage === totalPages}
+    >
+      Next →
+    </button>
+  </div>
+)}
+
     </div>
   );
 }

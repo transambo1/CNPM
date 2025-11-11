@@ -18,25 +18,47 @@ export function AuthProvider({ children }) {
 
       if (user) {
         try {
-          const snap = await getDoc(doc(db, "users", user.uid));
-          const dbUser = snap.exists() ? snap.data() : {};
+          const userRef = doc(db, "users", user.uid);
+          const snap = await getDoc(userRef);
 
+          let dbUser = {};
+          if (snap.exists()) {
+            dbUser = snap.data();
+          } else {
+            console.warn("⚠️ Không tìm thấy user trong Firestore, dùng default role");
+          }
+
+          // ✅ Gộp dữ liệu Firebase Auth + Firestore
           const formattedUser = {
             uid: user.uid,
             email: user.email,
-            ...dbUser,
+            name: dbUser.name || user.displayName || "Người dùng",
+            role: dbUser.role || "customer", // 🔥 Mặc định customer
+            restaurantId: dbUser.restaurantId || null, // 🔥 Nếu là nhà hàng
+            phone: dbUser.phone || dbUser.phonenumber || "",
+            ...dbUser, // merge thêm nếu có extra fields
           };
 
           setCurrentUser(formattedUser);
-
-          // ✅ Chỉ save khi có user
           localStorage.setItem("currentUser", JSON.stringify(formattedUser));
         } catch (err) {
           console.error("🔥 Error fetching user data:", err);
         }
+
+        setLoading(false);
+        return;
       }
 
-      // ❌ Không remove localStorage khi user null — tránh mất user khi F5
+      // ❗ Khi user = null (logout hoặc reload)
+      const stored = localStorage.getItem("currentUser");
+
+      if (stored) {
+        console.warn("⚠️ Firebase auth null — dùng dữ liệu localStorage");
+        setCurrentUser(JSON.parse(stored));
+      } else {
+        setCurrentUser(null);
+      }
+
       setLoading(false);
     });
 
@@ -44,9 +66,13 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (e) {
+      console.warn("⚠️ signOut error (ignored):", e);
+    }
     setCurrentUser(null);
-    localStorage.removeItem("currentUser"); // ✔ chỉ xóa khi thật sự logout
+    localStorage.removeItem("currentUser");
   };
 
   return (

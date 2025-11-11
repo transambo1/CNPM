@@ -55,3 +55,76 @@ h1 {
 .delete-btn:hover {
     background-color: #b91c1c;
 }
+/* ==== CỘT TRẠNG THÁI ==== */
+.status-select {
+  display: inline-block;
+}
+
+.status-select .ant-select-selector {
+  border-radius: 8px !important; /* bo góc nhẹ hơn */
+  border: none !important;
+  padding: 0 10px !important;
+  height: 32px !important;
+  line-height: 32px !important;
+  text-align: center;
+  color: #fff !important;
+  font-weight: 500;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Nền theo trạng thái */
+.status-active .ant-select-selector {
+  background-color: #16a34a !important; /* xanh lá */
+}
+
+.status-banned .ant-select-selector {
+  background-color: #dc2626 !important; /* đỏ */
+}
+
+/* Hover nhẹ sáng hơn */
+.status-select .ant-select-selector:hover {
+  filter: brightness(1.1);
+  cursor: pointer;
+}
+
+/* Mũi tên trắng và nhỏ gọn */
+.status-select .ant-select-arrow {
+  color: #ffffff !important;
+  font-size: 10px !important;
+}
+
+/* Dropdown gọn và đẹp */
+.status-select .ant-select-dropdown {
+  border-radius: 6px;
+  padding: 4px 0;
+}
+
+/* Canh giữa nội dung option */
+.status-select .ant-select-item-option-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Hiệu ứng mượt khi đổi trạng thái */
+.status-select .ant-select-selector {
+  transition: background-color 0.3s ease, filter 0.2s ease;
+}
+/* Trạng thái ACTIVE */
+.status-active .ant-select-selector {
+  background-color: #16a34a !important;
+  color: #fff !important;
+  font-weight: 600;
+  border: 1px solid #0f5132 !important; /* viền đậm */
+}
+
+/* Trạng thái BANNED */
+.status-banned .ant-select-selector {
+  background-color: #dc2626 !important;
+  color: #fff !important;
+  font-weight: 600;
+  border: 1px solid #7f1d1d !important; /* viền đậm */
+}

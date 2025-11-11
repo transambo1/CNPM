@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase"; // ✅ import Firestore từ file bạn đã setup
+import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext"; // ✅ thêm dòng này
 import "./DroneList.css";
 
 export default function DroneList() {
+  const { currentUser } = useAuth(); // ✅ lấy user đang đăng nhập
   const [drones, setDrones] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Hàm lấy dữ liệu từ Firestore
   const fetchAll = async () => {
     try {
       const [dronesSnap, ordersSnap] = await Promise.all([
@@ -26,7 +27,16 @@ export default function DroneList() {
         ...doc.data(),
       }));
 
-      setDrones(dronesData);
+      // ✅ Nếu là admin → xem tất cả
+      // ✅ Nếu là restaurant → chỉ thấy drone thuộc nhà hàng mình
+      const filteredDrones =
+        currentUser?.role === "admin"
+          ? dronesData
+          : dronesData.filter(
+              (d) => d.restaurantId === currentUser?.restaurantId
+            );
+
+      setDrones(filteredDrones);
       setOrders(ordersData);
     } catch (err) {
       console.error("❌ Lỗi lấy dữ liệu Firestore:", err);
@@ -37,29 +47,35 @@ export default function DroneList() {
 
   useEffect(() => {
     fetchAll();
-    const interval = setInterval(fetchAll, 5000); // cập nhật mỗi 5s
+    const interval = setInterval(fetchAll, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [currentUser]);
 
-  // 🔹 Hiển thị trạng thái drone
   const renderStatus = (d) => {
-    if (d.currentOrderId) return <span className="drone-status busy">🔵 Đang giao</span>;
-    if (d.status === "Rảnh") return <span className="drone-status idle">🟢 Rảnh</span>;
-    if (d.status === "Bảo trì") return <span className="drone-status maintenance">🔴 Bảo trì</span>;
+    if (d.currentOrderId)
+      return <span className="drone-status busy">🔵 Đang giao</span>;
+    if (d.status === "Rảnh")
+      return <span className="drone-status idle">🟢 Rảnh</span>;
+    if (d.status === "Bảo trì")
+      return <span className="drone-status maintenance">🔴 Bảo trì</span>;
     return <span className="drone-status">{d.status || "Không rõ"}</span>;
   };
 
-  // 🔹 Tìm đơn hàng theo ID
   const findOrder = (orderId) => orders.find((o) => o.id === orderId);
 
   if (loading) return <p className="drone-loading">⏳ Đang tải danh sách drone...</p>;
 
   return (
     <div className="drone-container">
-      <h2 className="drone-title">🚁 Danh sách Drone (Firestore)</h2>
+      <h2 className="drone-title">
+        🚁 Danh sách Drone{" "}
+        {currentUser?.role === "admin"
+          ? "(Tất cả)"
+          : ``}
+      </h2>
 
       {drones.length === 0 ? (
-        <p className="drone-empty">Không có drone.</p>
+        <p className="drone-empty">Không có drone nào thuộc nhà hàng của bạn.</p>
       ) : (
         <table className="drone-table">
           <thead>
@@ -69,7 +85,6 @@ export default function DroneList() {
               <th>Trạng thái</th>
               <th>Pin</th>
               <th>Đang giao đơn</th>
-              <th>Nhà hàng</th>
               <th>Đích đến</th>
             </tr>
           </thead>
@@ -85,13 +100,13 @@ export default function DroneList() {
                   <td>
                     {order ? (
                       <div>
-                        <strong>#{order.id}</strong> — {order.customer?.name || "Khách không rõ"}
+                        <strong>#{order.id}</strong> —{" "}
+                        {order.customer?.name || "Khách không rõ"}
                       </div>
                     ) : (
                       "—"
                     )}
                   </td>
-                  <td>{d.restaurantName || "—"}</td>
                   <td>{d.destination || "—"}</td>
                 </tr>
               );
