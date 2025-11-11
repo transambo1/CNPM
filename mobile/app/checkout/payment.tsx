@@ -186,6 +186,159 @@ export default function PaymentScreen() {
     // BottomSheets
     const addSheet = useBottomSheet(false);
     const paySheet = useBottomSheet(false, Math.min(420, screenH * 0.6));
+    const addressSheet = useBottomSheet(false, Math.min(520, screenH * 0.82));
+
+    const profileAddress = useMemo<AddressItem | null>(() => {
+        if (!user?.address) return null;
+        const detail = sanitizeAddressDetail(user.address);
+        if (!detail) return null;
+        return {
+            id: "__profile",
+            label: "Địa chỉ hiện tại",
+            detail,
+            contactName: defaultContactName,
+            phone: defaultPhone,
+            isDefault: addresses.length === 0,
+            fromProfile: true,
+        };
+    }, [user?.address, defaultContactName, defaultPhone, addresses.length]);
+
+
+    const combinedAddresses = useMemo(() => {
+        const list = [...addresses];
+        if (profileAddress) {
+            list.unshift(profileAddress);
+        }
+        return list;
+    }, [addresses, profileAddress]);
+
+    const selectedAddress = useMemo(() => {
+        if (!selectedAddressId) {
+            return combinedAddresses[0] ?? null;
+        }
+        return (
+            combinedAddresses.find((addr) => addr.id === selectedAddressId) ??
+            combinedAddresses[0] ??
+            null
+        );
+    }, [combinedAddresses, selectedAddressId]);
+
+    useEffect(() => {
+        if (combinedAddresses.length === 0) {
+            setSelectedAddressId(null);
+            return;
+        }
+        const hasCurrent = combinedAddresses.some((addr) => addr.id === selectedAddressId);
+        if (!hasCurrent) {
+            const defaultAddr = combinedAddresses.find((addr) => addr.isDefault) ?? combinedAddresses[0];
+            if (defaultAddr) {
+                setSelectedAddressId(defaultAddr.id);
+            }
+        }
+    }, [combinedAddresses, selectedAddressId]);
+
+    useEffect(() => {
+        setNewAddressForm((prev) => ({
+            ...prev,
+            contactName: prev.contactName || defaultContactName,
+            phone: prev.phone || defaultPhone,
+        }));
+    }, [defaultContactName, defaultPhone]);
+
+    useEffect(() => {
+        if (!addressSheet.open) {
+            setAddressSheetMode("list");
+        }
+    }, [addressSheet.open]);
+
+    const resetNewAddressForm = useCallback(() => {
+        setNewAddressForm({
+            label: "",
+            detail: "",
+            note: "",
+            contactName: defaultContactName,
+            phone: defaultPhone,
+            isDefault: addresses.length === 0,
+        });
+    }, [addresses.length, defaultContactName, defaultPhone]);
+
+    useEffect(() => {
+        if (!user?.id) {
+            setAddresses([]);
+            setAddressLoading(false);
+            setSelectedAddressId(null);
+            return;
+        }
+
+        setAddressLoading(true);
+        const addressesRef = collection(db, "users", user.id, "addresses");
+        const q = query(addressesRef, orderBy("createdAt", "desc"));
+
+        const unsubscribe = onSnapshot(
+            q,
+            (snapshot) => {
+                const mapped: AddressItem[] = snapshot.docs
+                    .map((docSnap) => {
+                        const data = docSnap.data() as any;
+                        const detailRaw = (data.detail ?? data.address ?? "").toString().trim();
+                        const detail = sanitizeAddressDetail(detailRaw);
+                        if (!detail) return null;
+                        return {
+                            id: docSnap.id,
+                            label: data.label ?? data.title ?? "",
+                            detail,
+                            note: data.note ?? "",
+                            contactName: data.contactName ?? data.recipient ?? "",
+                            phone: data.phone ?? data.phoneNumber ?? "",
+                            isDefault: Boolean(data.isDefault),
+                            latitude: typeof data.latitude === "number" ? data.latitude : null,
+                            longitude: typeof data.longitude === "number" ? data.longitude : null,
+                        } as AddressItem;
+                    })
+                    .filter((addr): addr is AddressItem => Boolean(addr));
+
+                setAddresses(mapped);
+                setAddressLoading(false);
+            },
+            (error) => {
+                console.warn("Không thể tải địa chỉ:", error);
+                setAddresses([]);
+                setAddressLoading(false);
+            }
+        );
+
+        return () => unsubscribe();
+    }, [db, user?.id]);
+
+    useEffect(() => {
+        if (!restaurantId) {
+            setRestaurantInfo(null);
+            return;
+        }
+
+        const fetchRestaurant = async () => {
+            try {
+                const ref = doc(db, "restaurants", restaurantId);
+                const snap = await getDoc(ref);
+                if (snap.exists()) {
+                    const data = snap.data() as any;
+                    setRestaurantInfo({
+                        name: data.name ?? data.title ?? "GrabFood",
+                        address: data.address,
+                        latitude: typeof data.latitude === "number" ? data.latitude : null,
+                        longitude: typeof data.longitude === "number" ? data.longitude : null,
+                    });
+                } else {
+                    setRestaurantInfo(null);
+                }
+            } catch (error) {
+                console.warn("Không thể tải thông tin nhà hàng:", error);
+                setRestaurantInfo(null);
+            }
+        };
+
+        fetchRestaurant();
+    }, [db, restaurantId]);
 
     // Filtered menu
     const filteredMenu = useMemo(() => {
@@ -269,6 +422,94 @@ export default function PaymentScreen() {
     }, [items.length]);
 
     const openProduct = (id: string) => router.push(`/product/${id}`);
+
+    const openAddressSheet = useCallback(() => {
+        if (!user?.id) {
+            Alert.alert("Cần đăng nhập", "Vui lòng đăng nhập để quản lý địa chỉ giao hàng.");
+            router.push("/login");
+            return;
+        }
+        setAddressSheetMode("list");
+        addressSheet.openSheet();
+    }, [addressSheet, user?.id]);
+
+    const handleSelectAddress = useCallback(
+        (addr: AddressItem) => {
+            setSelectedAddressId(addr.id);
+            addressSheet.closeSheet();
+            setAddressSheetMode("list");
+        },
+        [addressSheet]
+    );
+
+    const handleSaveAddress = useCallback(async () => {
+        if (!user?.id) {
+            Alert.alert("Cần đăng nhập", "Vui lòng đăng nhập để lưu địa chỉ giao hàng.");
+            router.push("/login");
+            return;
+        }
+
+        const detailInput = newAddressForm.detail.trim();
+        if (!detailInput) {
+            Alert.alert("Thiếu thông tin", "Vui lòng nhập địa chỉ chi tiết.");
+            return;
+        }
+
+        const detail = sanitizeAddressDetail(detailInput);
+
+        setSavingAddress(true);
+        try {
+            // ✅ M1: Fetch tọa độ ngay khi lưu địa chỉ
+            const coords = await fetchCoordinatesForAddress(detail);
+
+            if (!coords || !coords.latitude || !coords.longitude) {
+                Alert.alert(
+                    "Không tìm thấy vị trí",
+                    "Vui lòng nhập địa chỉ rõ hơn (VD: '28 An Dương Vương, Phường 9, Quận 5')."
+                );
+                setSavingAddress(false);
+                return;
+            }
+
+            const addressesRef = collection(db, "users", user.id, "addresses");
+
+            const payload = {
+                label: newAddressForm.label.trim(),
+                detail,
+                note: newAddressForm.note.trim(),
+                contactName: newAddressForm.contactName.trim(),
+                phone: newAddressForm.phone.trim(),
+                isDefault: newAddressForm.isDefault || addresses.length === 0,
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                createdAt: serverTimestamp(),
+            };
+
+            const docRef = await addDoc(addressesRef, payload);
+
+            // ❗ Nếu là default -> remove default ở các address khác
+            if (payload.isDefault && addresses.length > 0) {
+                const batch = writeBatch(db);
+                addresses.forEach((addr) => {
+                    if (addr.id !== docRef.id) {
+                        batch.update(doc(addressesRef, addr.id), { isDefault: false });
+                    }
+                });
+                await batch.commit();
+            }
+
+            setSelectedAddressId(docRef.id);
+            resetNewAddressForm();
+            addressSheet.closeSheet();
+            setAddressSheetMode("list");
+        } catch (error) {
+            console.error("Không thể lưu địa chỉ mới:", error);
+            Alert.alert("Lỗi", "Không thể lưu địa chỉ mới. Vui lòng thử lại.");
+        } finally {
+            setSavingAddress(false);
+        }
+    }, [user?.id, newAddressForm, addresses, db, addressSheet, resetNewAddressForm]);
+
 
     const ProductRowQuick: React.FC<{ p: Product }> = ({ p }) => (
         <View style={styles.addRow}>
