@@ -8,22 +8,20 @@ import {
   doc,
 } from "firebase/firestore";
 import { db } from "../firebase";
+import { useAuth } from "../context/AuthContext"; // ✅ Dùng AuthContext
 import "./RestaurantProducts.css";
 
 export default function RestaurantProducts() {
+  const { currentUser } = useAuth(); // ✅ user hiện tại
   const [products, setProducts] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filter state
-  const [restaurantFilter, setRestaurantFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
-
   const [editingProduct, setEditingProduct] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState(null);
 
-  // 📦 Lấy danh sách sản phẩm
+  // ✅ Lấy sản phẩm
   const fetchProducts = async () => {
     try {
       const snap = await getDocs(collection(db, "products"));
@@ -31,7 +29,14 @@ export default function RestaurantProducts() {
         id: doc.id,
         ...doc.data(),
       }));
-      setProducts(data);
+
+      // ✅ lọc theo nhà hàng nếu không phải admin
+      const filteredData =
+        currentUser?.role === "admin"
+          ? data
+          : data.filter((p) => p.restaurantId === currentUser?.restaurantId);
+
+      setProducts(filteredData);
     } catch (err) {
       console.error("❌ Lỗi lấy sản phẩm:", err);
     } finally {
@@ -39,8 +44,9 @@ export default function RestaurantProducts() {
     }
   };
 
-  // 🏪 Lấy danh sách nhà hàng
+  // ✅ Lấy danh sách nhà hàng (chỉ admin cần)
   const fetchRestaurants = async () => {
+    if (currentUser?.role !== "admin") return;
     try {
       const snap = await getDocs(collection(db, "restaurants"));
       const data = snap.docs.map((doc) => ({
@@ -56,24 +62,20 @@ export default function RestaurantProducts() {
   useEffect(() => {
     fetchProducts();
     fetchRestaurants();
-  }, []);
+  }, [currentUser]);
 
-  // 🧠 Unique category list từ sản phẩm
+  // 🧠 Lấy danh mục duy nhất
   const categories = useMemo(() => {
     const unique = [...new Set(products.map((p) => p.category))];
     return unique.filter(Boolean);
   }, [products]);
 
-  // 🔍 Filter products realtime
+  // 🔍 Lọc theo danh mục
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
-      const matchRestaurant =
-        restaurantFilter === "all" || p.restaurantId === restaurantFilter;
-      const matchCategory =
-        categoryFilter === "all" || p.category === categoryFilter;
-      return matchRestaurant && matchCategory;
+      return categoryFilter === "all" || p.category === categoryFilter;
     });
-  }, [products, restaurantFilter, categoryFilter]);
+  }, [products, categoryFilter]);
 
   // 🗑️ Xóa sản phẩm
   const handleDelete = async (id) => {
@@ -87,7 +89,7 @@ export default function RestaurantProducts() {
     }
   };
 
-  // 💾 Lưu sản phẩm (thêm hoặc sửa)
+  // 💾 Thêm / sửa sản phẩm
   const handleSave = async (e) => {
     e.preventDefault();
 
@@ -97,7 +99,10 @@ export default function RestaurantProducts() {
       img: e.target.img.value,
       category: e.target.category.value,
       description: e.target.description.value,
-      restaurantId: e.target.restaurantId.value,
+      restaurantId:
+        currentUser?.role === "admin"
+          ? e.target.restaurantId.value
+          : currentUser?.restaurantId, // ✅ nếu là nhà hàng thì tự gán
     };
 
     try {
@@ -119,15 +124,10 @@ export default function RestaurantProducts() {
 
   if (loading) return <p className="rsp-loading">⏳ Đang tải sản phẩm...</p>;
 
-  const getRestaurantName = (id) => {
-    const r = restaurants.find((res) => res.id === id);
-    return r ? r.name : "Không xác định";
-  };
-
   return (
     <div className="rsp-container">
       <div className="rsp-header">
-        <h2>🍽️ Tất cả sản phẩm</h2>
+        <h2>🍽️ Quản lý sản phẩm</h2>
         <button
           className="rsp-btn-add"
           onClick={() => {
@@ -139,42 +139,30 @@ export default function RestaurantProducts() {
         </button>
       </div>
 
-     {/* 🔥 FILTER BAR */}
-<div className="filter-bar">
-  <div className="filter-item">
-    <label>Nhà hàng</label>
-    <select value={restaurantFilter} onChange={(e) => setRestaurantFilter(e.target.value)}>
-      <option value="all">Tất cả</option>
-      {restaurants.map((r) => (
-        <option key={r.id} value={r.id}>{r.name}</option>
-      ))}
-    </select>
-  </div>
+      {/* 🔥 FILTER BAR */}
+      <div className="filter-bar">
+        <div className="filter-item">
+          <label>Danh mục</label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            {categories.map((c, i) => (
+              <option key={i} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
 
-  <div className="filter-item">
-    <label>Danh mục</label>
-    <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
-      <option value="all">Tất cả</option>
-      {categories.map((c, i) => (
-        <option key={i} value={c}>{c}</option>
-      ))}
-    </select>
-  </div>
-
-  <button
-    className="btn reset"
-    onClick={() => {
-      setRestaurantFilter("all");
-      setCategoryFilter("all");
-    }}
-  >
-    Xóa lọc
-  </button>
-</div>
-
+    
+      </div>
 
       <div className="table-meta">
-        <span>Hiển thị: <b>{filteredProducts.length}</b> / {products.length} sản phẩm</span>
+        <span>
+          Hiển thị: <b>{filteredProducts.length}</b> / {products.length} sản phẩm
+        </span>
       </div>
 
       {filteredProducts.length === 0 ? (
@@ -183,27 +171,30 @@ export default function RestaurantProducts() {
         <table className="rsp-table">
           <thead>
             <tr>
-              <th>Hình ảnh</th>
+              <th>Hình</th>
               <th>Tên sản phẩm</th>
-              <th>Nhà hàng</th>
               <th>Danh mục</th>
               <th>Giá</th>
+              {currentUser?.role === "admin" && <th>Nhà hàng</th>}
               <th>Hành động</th>
             </tr>
           </thead>
           <tbody>
             {filteredProducts.map((p) => (
-              <tr key={p.id} className="rsp-row" onClick={() => setSelectedProduct(p)}>
-                <td><img src={p.img} alt={p.name} className="rsp-img" /></td>
+              <tr key={p.id}>
+                <td>
+                  <img src={p.img} alt={p.name} className="rsp-img" />
+                </td>
                 <td>{p.name}</td>
-                <td>{getRestaurantName(p.restaurantId)}</td>
                 <td>{p.category}</td>
                 <td>{p.price.toLocaleString()}₫</td>
+                {currentUser?.role === "admin" && (
+                  <td>{p.restaurantId || "Không xác định"}</td>
+                )}
                 <td>
                   <button
                     className="rsp-btn-edit"
-                    onClick={(e) => {
-                      e.stopPropagation();
+                    onClick={() => {
                       setEditingProduct(p);
                       setShowForm(true);
                     }}
@@ -212,10 +203,7 @@ export default function RestaurantProducts() {
                   </button>
                   <button
                     className="rsp-btn-delete"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(p.id);
-                    }}
+                    onClick={() => handleDelete(p.id)}
                   >
                     ❌ Xóa
                   </button>
@@ -226,8 +214,98 @@ export default function RestaurantProducts() {
         </table>
       )}
 
-      {/* Form + Modal giữ nguyên bên dưới */}
-      {/* … … … */}
+     {showForm && (
+  <div
+    className="rsp-modal-overlay"
+    onClick={(e) => {
+      if (e.target.classList.contains("rsp-modal-overlay")) {
+        setShowForm(false);
+      }
+    }}
+  >
+    <div className="rsp-modal-content">
+      <button
+        className="rsp-close"
+        onClick={() => setShowForm(false)}
+      >
+        ✖
+      </button>
+
+      <form className="rsp-form" onSubmit={handleSave}>
+        <h3>{editingProduct ? "✏️ Sửa sản phẩm" : "➕ Thêm sản phẩm"}</h3>
+
+        <label>Tên sản phẩm</label>
+        <input
+          name="name"
+          placeholder="Tên sản phẩm"
+          defaultValue={editingProduct?.name || ""}
+          required
+        />
+
+        <label>Giá</label>
+        <input
+          name="price"
+          type="number"
+          placeholder="Giá"
+          defaultValue={editingProduct?.price || ""}
+          required
+        />
+
+        <label>Link ảnh</label>
+        <input
+          name="img"
+          placeholder="Link ảnh"
+          defaultValue={editingProduct?.img || ""}
+        />
+
+        <label>Danh mục</label>
+        <input
+          name="category"
+          placeholder="VD: Món chính, Nước uống..."
+          defaultValue={editingProduct?.category || ""}
+        />
+
+        <label>Mô tả</label>
+        <textarea
+          name="description"
+          placeholder="Mô tả sản phẩm"
+          defaultValue={editingProduct?.description || ""}
+        />
+
+        {currentUser?.role === "admin" && (
+          <>
+            <label>Nhà hàng</label>
+            <select
+              name="restaurantId"
+              defaultValue={editingProduct?.restaurantId || ""}
+            >
+              <option value="">-- Chọn nhà hàng --</option>
+              {restaurants.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
+        <div className="rsp-form-actions">
+          <button type="submit" className="rsp-btn-save">
+            💾 Lưu
+          </button>
+          <button
+            type="button"
+            className="rsp-btn-cancel"
+            onClick={() => setShowForm(false)}
+          >
+            ❌ Hủy
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

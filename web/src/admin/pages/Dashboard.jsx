@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Card, message } from "antd";
-import {
-  collection,
-  getDocs
-} from "firebase/firestore";
-import { db } from "../../firebase"; // 🔥 Sửa đường dẫn tùy vị trí file của bạn
+import { message } from "antd";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../firebase";
 import "./Dashboard.css";
 import {
   LineChart,
@@ -19,96 +16,123 @@ import {
   Legend,
 } from "recharts";
 
-export default function Dashboard() {
-  const [orders, setOrders] = useState([]);
+export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [restaurants, setRestaurants] = useState([]);
   const [stats, setStats] = useState({
-    todayVisits: 3000,
-    monthlyOrders: 0,
-    newReviews: 284,
-    monthlyProfit: 0,
+    totalUsers: 0,
+    totalRestaurants: 0,
+    totalOrders: 0,
+    totalRevenue: 0,
   });
   const [chartData, setChartData] = useState([]);
+  const [restaurantMap, setRestaurantMap] = useState({});
 
   useEffect(() => {
-    const loadOrders = async () => {
+    const loadData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "orders"));
-        const data = querySnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const [orderSnap, userSnap, restSnap] = await Promise.all([
+          getDocs(collection(db, "orders")),
+          getDocs(collection(db, "users")),
+          getDocs(collection(db, "restaurants")),
+        ]);
 
-        // ✅ Lọc đơn đã xử lý hoặc đã giao
-        const validOrders = data.filter(
-          (o) => o.status === "Đã xử lý" || o.status === "Đã giao"
+        const orderData = orderSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const userData = userSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const restData = restSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+        setOrders(orderData);
+        setUsers(userData);
+        setRestaurants(restData);
+
+        // 🔹 Map id → name để hiển thị tên nhà hàng
+        const restMap = {};
+        restData.forEach((r) => (restMap[r.id] = r.name));
+        setRestaurantMap(restMap);
+
+        // ✅ Thống kê tổng quan
+        const doneOrders = orderData.filter((o) =>
+          (o.status || "").toLowerCase().includes("đã giao")
         );
+        const totalRevenue = doneOrders.reduce((sum, o) => sum + (o.total || 0), 0);
 
-        setOrders(data);
-        const monthlyOrders = validOrders.length;
-        const totalProfit = validOrders.reduce(
-          (sum, o) => sum + (o.total || 0),
-          0
-        );
-
-        setStats((prev) => ({
-          ...prev,
-          monthlyOrders,
-          monthlyProfit: totalProfit,
-        }));
+        setStats({
+          totalUsers: userData.length,
+          totalRestaurants: restData.length,
+          totalOrders: orderData.length,
+          totalRevenue,
+        });
 
         // ✅ Gom nhóm doanh thu theo ngày
         const dailyStats = {};
-        validOrders.forEach((order) => {
-          const date = order.date;
-          if (!dailyStats[date]) {
-            dailyStats[date] = { date, revenue: 0, count: 0 };
+        doneOrders.forEach((o) => {
+          let dateKey = o.date;
+          if (!dateKey && o.createdAt?.seconds) {
+            const d = new Date(o.createdAt.seconds * 1000);
+            dateKey = d.toLocaleDateString("vi-VN");
+          } else if (!dateKey) {
+            dateKey = "Không rõ";
           }
-          dailyStats[date].revenue += order.total || 0;
-          dailyStats[date].count += 1;
+
+          if (!dailyStats[dateKey]) {
+            dailyStats[dateKey] = { date: dateKey, revenue: 0, count: 0 };
+          }
+          dailyStats[dateKey].revenue += o.total || 0;
+          dailyStats[dateKey].count += 1;
         });
 
-        setChartData(Object.values(dailyStats));
+        setChartData(Object.values(dailyStats).sort((a, b) => new Date(a.date) - new Date(b.date)));
       } catch (err) {
-        console.error("❌ Lỗi khi tải dữ liệu từ Firebase:", err);
-        message.error("Không thể tải dữ liệu đơn hàng từ Firebase");
+        console.error("🔥 Lỗi tải dữ liệu Dashboard:", err);
+        message.error("Không thể tải dữ liệu Dashboard");
       } finally {
         setLoading(false);
       }
     };
 
-    loadOrders();
+    loadData();
   }, []);
 
-  if (loading) {
-    return <div className="loading">Đang tải dữ liệu...</div>;
-  }
+  if (loading) return <div className="loading">⏳ Đang tải dữ liệu...</div>;
+
+  // 🔹 Lọc ra các đơn hàng của hôm nay
+  const today = new Date().toLocaleDateString("vi-VN");
+  const todayOrders = orders.filter((o) => {
+    if (o.date) return o.date === today;
+    if (o.createdAt?.seconds) {
+      const d = new Date(o.createdAt.seconds * 1000);
+      return d.toLocaleDateString("vi-VN") === today;
+    }
+    return false;
+  });
 
   return (
     <div className="dashboard">
-      <h1>📊 CHÀO MỪNG QUẢN TRỊ VIÊN MeoChick !!!</h1>
+      <h1>📊 BẢNG QUẢN TRỊ HỆ THỐNG</h1>
 
-      {/* ====== THẺ THỐNG KÊ ====== */}
+      {/* ==== THẺ THỐNG KÊ ==== */}
       <div className="cards">
         <div className="card purple">
-          <h2>{stats.todayVisits}</h2>
-          <p>Lượt truy cập hôm nay</p>
-        </div>
-        <div className="card green">
-          <h2>{stats.monthlyOrders}</h2>
-          <p>Đơn hàng đã xử lý / giao</p>
+          <h2>{stats.totalUsers}</h2>
+          <p>Tổng người dùng</p>
         </div>
         <div className="card orange">
-          <h2>{stats.newReviews}</h2>
-          <p>Đánh giá mới</p>
+          <h2>{stats.totalRestaurants}</h2>
+          <p>Tổng số nhà hàng</p>
+        </div>
+        <div className="card green">
+          <h2>{stats.totalOrders}</h2>
+          <p>Tổng số đơn hàng</p>
         </div>
         <div className="card blue">
-          <h2>{stats.monthlyProfit.toLocaleString()}đ</h2>
-          <p>Doanh thu tháng</p>
+          <h2>{stats.totalRevenue.toLocaleString()}₫</h2>
+          <p>Tổng doanh thu</p>
         </div>
       </div>
 
-      {/* ====== BIỂU ĐỒ ====== */}
+      {/* ==== BIỂU ĐỒ ==== */}
       <div className="charts">
         <div className="chart-container">
           <h3>💰 Doanh thu theo ngày</h3>
@@ -117,15 +141,9 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />
-              <Tooltip formatter={(value) => `${value.toLocaleString()}đ`} />
+              <Tooltip formatter={(v) => `${v.toLocaleString()}₫`} />
               <Legend />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#4f46e5"
-                strokeWidth={3}
-                name="Doanh thu"
-              />
+              <Line type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} name="Doanh thu" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -139,59 +157,60 @@ export default function Dashboard() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar
-                dataKey="count"
-                fill="#10b981"
-                name="Số đơn hàng"
-                barSize={40}
-              />
+              <Bar dataKey="count" fill="#10b981" name="Số đơn hàng" barSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* ====== BẢNG ĐƠN HÀNG ====== */}
+      {/* ==== BẢNG ĐƠN HÀNG HÔM NAY ==== */}
+      <h2 style={{ marginTop: "30px", color: "#2c3e75" }}>📅 Đơn hàng hôm nay</h2>
       <table className="orders-table">
         <thead>
           <tr>
             <th>STT</th>
-            <th>Mã ĐH</th>
-            <th>Người đặt</th>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
             <th>SDT</th>
             <th>Thành tiền</th>
             <th>Ngày</th>
             <th>Nhà hàng</th>
-            <th>Tình trạng</th>
+            <th>Trạng thái</th>
           </tr>
         </thead>
         <tbody>
-          {orders.length > 0 ? (
-            orders.map((order, index) => (
-              <tr key={order.id}>
-                <td>{index + 1}</td>
-                <td>{order.id}</td>
-                <td>{order.customer?.name}</td>
-                <td>{order.customer?.phone}</td>
-                <td>{(order.total ?? 0).toLocaleString()}đ</td>
-                <td>{order.date}</td>
-                <td>{order.items?.[0]?.restaurant || "Không xác định"}</td>
+          {todayOrders.length ? (
+            todayOrders.map((o, i) => (
+              <tr key={o.id}>
+                <td>{i + 1}</td>
+                <td>{o.id}</td>
+                <td>{o.customer?.name || "—"}</td>
+                <td>{o.customer?.phone || "—"}</td>
+                <td>{(o.total || 0).toLocaleString()}₫</td>
+                <td>
+                  {o.date ||
+                    (o.createdAt?.seconds
+                      ? new Date(o.createdAt.seconds * 1000).toLocaleDateString("vi-VN")
+                      : "—")}
+                </td>
+                <td>{restaurantMap[o.restaurantId] || o.items?.[0]?.restaurant || "Không rõ"}</td>
                 <td
                   className={
-                    order.status === "Đã giao"
+                    o.status?.includes("Đã giao")
                       ? "done"
-                      : order.status === "Đang giao bằng drone"
+                      : o.status?.includes("Đang")
                       ? "processing"
                       : "pending"
                   }
                 >
-                  {order.status}
+                  {o.status || "—"}
                 </td>
               </tr>
             ))
           ) : (
             <tr>
               <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
-                Không có đơn hàng nào.
+                Hôm nay chưa có đơn hàng nào.
               </td>
             </tr>
           )}

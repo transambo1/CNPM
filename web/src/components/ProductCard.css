@@ -1,4 +1,4 @@
-/* ✅ src/components/ProductCard.css (đã tối ưu độ rộng và màu sắc) */
+/* ✅ src/components/ProductCard.css (final spacing fix) */
 
 .prd-card {
   background-color: #ffffff;
@@ -15,7 +15,7 @@
 }
 
 .prd-card:hover {
-  transform: translateY(-8px);
+  transform: translateY(-6px);
   box-shadow: 0 12px 28px rgba(18, 24, 35, 0.15);
 }
 
@@ -25,7 +25,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
   flex-grow: 1;
   width: 100%;
 }
@@ -36,82 +35,67 @@
   object-fit: cover;
 }
 
+/* ✅ FIX SPACING HOÀN HẢO */
 .prd-info {
-  padding: 12px 8px;
-  /* Giảm padding ngang */
-  text-align: center;
-  flex-grow: 1;
+  padding: 8px 10px 6px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
+  gap: 4px; /* tăng từ 2 → 4 cho dễ nhìn */
   width: 100%;
+}
+
+/* 3 dòng text về cùng style base */
+.prd-name,
+.prd-price,
+.prd-restaurant {
+  margin: 0;
+  line-height: 1.25;
+  text-align: center;
 }
 
 .prd-name {
-  margin: 0 0 6px 0;
-  /* Giảm margin dưới */
-  font-size: 1.4em;
+  font-size: 1.25em;
   font-weight: 700;
-  color: #333;
-  line-height: 1.3;
-  text-align: center;
-  word-break: break-word;
-  width: 100%;
-  max-width: 80%;
-  /* Giảm độ rộng */
+  color: #222;
+  max-width: 95%;
 }
 
 .prd-price {
-  margin: 0 0 6px 0;
-  /* Giảm margin dưới */
-  font-size: 1.2em;
+  font-size: 1.15em;
   font-weight: 700;
-  /* ✅ ĐỔI MÀU CAM */
-  color: #e85d04;
-  line-height: 1.2;
-  text-align: center;
+  color: #ff0000 !important;
 }
 
 .prd-restaurant {
   font-size: 0.9em;
-  color: #777;
-  margin: 0;
-  /* Xóa margin của nhà hàng để nó khít với giá */
+  color: #666;
 }
 
+/* ✅ BUTTON */
 .prd-actions {
   display: flex;
   justify-content: center;
-  /* ✅ Giảm padding dưới thêm */
-  padding: 0 8px 12px 8px;
-  /* Giảm từ 0 10px 10px 10px xuống 0 8px 12px 8px */
-
+  padding: 8px 10px 14px;
 }
 
 .prd-add-btn {
   width: 95%;
-  padding: 12px 0;
+  padding: 11px 0;
   font-size: 1em;
   font-weight: bold;
   border-radius: 8px;
   cursor: pointer;
-  text-align: center;
   border: none;
-  /* ✅ Đổi màu nút thành gradient cam */
   background: linear-gradient(90deg, #ff7a00, #ff5400);
   color: #fff;
-  /* Chữ trắng để nổi bật trên nền cam */
   transition: all 0.2s ease;
   box-shadow: 0 4px 15px rgba(255, 122, 0, 0.3);
-  /* Thêm bóng cho nút */
 }
 
 .prd-add-btn:hover {
-  /* ✅ Đổi màu hover của nút */
   background: linear-gradient(90deg, #ff5400, #ff7a00);
   transform: translateY(-2px);
-  /* Hiệu ứng nhấc nhẹ khi hover */
   box-shadow: 0 6px 20px rgba(255, 122, 0, 0.4);
-  /* Bóng đậm hơn khi hover */
 }

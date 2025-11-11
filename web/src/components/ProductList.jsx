@@ -1,17 +1,19 @@
-// src/components/ProductList.jsx
 import React, { useEffect, useState } from "react";
-import { useParams, useLocation } from "react-router-dom";
-// 1. Import các hàm Firestore cần thiết và instance 'db'
-import { collection, getDocs, query, where, orderBy, limit, startAfter } from "firebase/firestore";
-import { db } from '../firebase';
+import { useParams, useLocation, Link } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+
 import Product from "./Product";
 import Banner from "./Banner";
+import useActiveOrder from "../hooks/useActiveOrder";
 import "./ProductList.css";
 
 function ProductList({ onAdd, defaultCategory = "All" }) {
     const { categoryKey } = useParams();
     const location = useLocation();
     const initialSearch = new URLSearchParams(location.search).get("search") || "";
+
+  
 
     // State
     const [products, setProducts] = useState([]);
@@ -20,25 +22,19 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [sortOption, setSortOption] = useState("default");
     const [minPrice, setMinPrice] = useState(0);
-    const [maxPrice, setMaxPrice] = useState(200000); // Sẽ cập nhật từ Firestore
-    const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 }); // Sẽ cập nhật
-    const [loadingProducts, setLoadingProducts] = useState(true); // Thêm state loading
+    const [maxPrice, setMaxPrice] = useState(200000);
+    const [priceRange, setPriceRange] = useState({ min: 0, max: 200000 });
+    const [loadingProducts, setLoadingProducts] = useState(true);
 
     const productsPerPage = 6;
     const bannerImages = ["/Images/1.png", "/Images/Banner2.png", "/Images/Banner3.png"];
 
-    // 2. Fetch sản phẩm từ Firestore (chỉ chạy 1 lần khi component mount)
     useEffect(() => {
         const fetchProducts = async () => {
             setLoadingProducts(true);
             try {
-                // Tham chiếu đến collection "products" trong Firestore
                 const productsCollectionRef = collection(db, "products");
-
-                // Lấy tất cả documents từ collection
                 const dataSnapshot = await getDocs(productsCollectionRef);
-
-                // Chuyển đổi dữ liệu sang dạng mảng [{ id: ..., ...data }]
                 const fetchedProducts = dataSnapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
@@ -46,61 +42,49 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
 
                 setProducts(fetchedProducts);
 
-                // Cập nhật khoảng giá min/max dựa trên dữ liệu thực tế
-                if (fetchedProducts && fetchedProducts.length > 0) {
+                if (fetchedProducts.length > 0) {
                     const prices = fetchedProducts.map((p) => Number(p.price ?? 0));
-                    const min = Math.min(0, ...prices); // Đảm bảo min không lớn hơn 0
-                    const max = Math.max(200000, ...prices); // Đảm bảo max ít nhất là 200k
+                    const min = Math.min(0, ...prices);
+                    const max = Math.max(200000, ...prices);
                     setPriceRange({ min, max });
                     setMinPrice(min);
                     setMaxPrice(max);
                 } else {
-                    // Giữ giá default nếu không có sản phẩm
                     setPriceRange({ min: 0, max: 200000 });
                     setMinPrice(0);
                     setMaxPrice(200000);
                 }
-
             } catch (err) {
                 console.error("Lỗi khi fetch sản phẩm từ Firestore:", err);
-                setProducts([]); // Set mảng rỗng nếu có lỗi
+                setProducts([]);
             } finally {
-                setLoadingProducts(false); // Kết thúc loading dù thành công hay lỗi
+                setLoadingProducts(false);
             }
         };
 
         fetchProducts();
-    }, []); // Mảng dependency rỗng [] để chỉ fetch 1 lần
-    // Khi query string thay đổi (ví dụ user search từ Header) => cập nhật searchTerm
+    }, []);
+
     useEffect(() => {
         const q = new URLSearchParams(location.search).get("search") || "";
         setSearchTerm(q);
         setCurrentPage(1);
     }, [location.search]);
 
-    // Khi category route thay đổi (vd: /menu/Burger)
     useEffect(() => {
         if (categoryKey) {
             setSelectedCategory(categoryKey);
-
-            // Nếu URL hiện không có query 'search' thì reset searchTerm,
-            // còn nếu có query 'search' (vd: /menu/All?search=...), thì giữ nguyên searchTerm.
             const q = new URLSearchParams(location.search).get("search");
-            if (!q) {
-                setSearchTerm("");
-            }
+            if (!q) setSearchTerm("");
             setCurrentPage(1);
         } else {
-            // Nếu không có categoryKey (về trang gốc), đặt về default
             setSelectedCategory(defaultCategory);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [categoryKey]); // intentionally not including location to avoid double-handling
+    }, [categoryKey]);
 
-    // Danh mục từ dữ liệu
     const categories = ["All", ...new Set(products.map((p) => p.category))];
 
-    // Lọc sản phẩm theo search / category / price
     let filteredProducts = products.filter((p) => {
         const name = (p.name || "").toString().toLowerCase();
         const matchSearch = name.includes((searchTerm || "").toLowerCase());
@@ -108,15 +92,12 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
         const priceNum = Number(p.price ?? 0);
         const matchPrice = priceNum >= Number(minPrice) && priceNum <= Number(maxPrice);
 
-        if (searchTerm && searchTerm.trim() !== "") {
-            // Nếu có từ khóa tìm kiếm → ưu tiên tìm theo tên + price
+        if (searchTerm.trim() !== "") {
             return matchSearch && matchPrice;
         }
-        // Nếu không có search → lọc theo category + price
         return matchCategory && matchPrice;
     });
 
-    // Sắp xếp
     filteredProducts.sort((a, b) => {
         switch (sortOption) {
             case "price-asc":
@@ -132,13 +113,11 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
         }
     });
 
-    // Phân trang
     const indexOfLastProduct = currentPage * productsPerPage;
     const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
     const currentProducts = filteredProducts.slice(indexOfFirstProduct, indexOfLastProduct);
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
 
-    // Helper: reset all filters
     const resetFilters = () => {
         setSelectedCategory("All");
         setSortOption("default");
@@ -153,6 +132,7 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
         <div className="main-home">
             <Banner images={bannerImages} />
 
+
             <div className="main-title">
                 <h1>Hôm nay ăn gì?</h1>
             </div>
@@ -160,7 +140,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
             <div className="content-wrapper">
                 {/* Sidebar */}
                 <aside className="sidebar">
-                    {/* 🔎 Tìm kiếm (nếu muốn vẫn dùng sidebar search) */}
                     <div className="search-bar">
                         <input
                             type="text"
@@ -173,18 +152,12 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                         />
                     </div>
 
-                    {/* Nút reset nhanh */}
                     <div style={{ marginTop: 12 }}>
-                        <button
-                            className="reset-filters"
-                            onClick={resetFilters}
-                            type="button"
-                        >
+                        <button className="reset-filters" onClick={resetFilters} type="button">
                             Xóa bộ lọc
                         </button>
                     </div>
 
-                    {/* 🧩 Danh mục */}
                     <h3>Danh mục</h3>
                     <div className="menu">
                         {categories.map((c) => (
@@ -193,7 +166,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                                     className={selectedCategory === c ? "active" : ""}
                                     onClick={() => {
                                         setSelectedCategory(c);
-                                        // Nếu user nhấn category, xóa search trong sidebar (nếu URL không có search)
                                         const q = new URLSearchParams(location.search).get("search");
                                         if (!q) setSearchTerm("");
                                         setCurrentPage(1);
@@ -205,7 +177,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                         ))}
                     </div>
 
-                    {/* 💰 Bộ lọc giá */}
                     <h3>Lọc theo giá</h3>
                     <div className="price-filter">
                         <label>Từ:</label>
@@ -250,7 +221,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                         </p>
                     </div>
 
-                    {/* 🧭 Bộ sắp xếp */}
                     <h3>Sắp xếp</h3>
                     <div className="sort-filter">
                         <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
@@ -263,7 +233,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                     </div>
                 </aside>
 
-                {/* Danh sách sản phẩm */}
                 <div className="product-show">
                     <div className="product-grid">
                         {currentProducts.length > 0 ? (
@@ -273,7 +242,6 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                         )}
                     </div>
 
-                    {/* Phân trang */}
                     {totalPages > 1 && (
                         <div className="pagination">
                             <button

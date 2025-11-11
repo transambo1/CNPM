@@ -188,3 +188,40 @@
 .btn.reset:hover {
   background: #f8f9fb;
 }
+
+/* ====== PERSONALIZED PAGINATION FOR RESTAURANT DASHBOARD ====== */
+
+.orders-pagination {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.orders-page-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d0d0d0;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.orders-page-btn:hover:not(.active):not(:disabled) {
+  background: #f3f3f3;
+}
+
+.orders-page-btn.active {
+  background: #ff7a00;
+  border-color: #ff7a00;
+  color: #fff;
+  font-weight: 600;
+}
+
+.orders-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
