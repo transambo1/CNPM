@@ -65,25 +65,39 @@ export default function AdminDashboard() {
           totalRevenue,
         });
 
-        // ✅ Gom nhóm doanh thu theo ngày
+        // ✅ Gom nhóm doanh thu theo ngày (fix chuẩn lỗi sort)
         const dailyStats = {};
         doneOrders.forEach((o) => {
-          let dateKey = o.date;
-          if (!dateKey && o.createdAt?.seconds) {
-            const d = new Date(o.createdAt.seconds * 1000);
-            dateKey = d.toLocaleDateString("vi-VN");
-          } else if (!dateKey) {
-            dateKey = "Không rõ";
+          let dateObj;
+
+          if (o.createdAt?.seconds) {
+            dateObj = new Date(o.createdAt.seconds * 1000);
+          } else if (o.date) {
+            const [day, month, year] = o.date.split("/").map(Number);
+            dateObj = new Date(year, month - 1, day);
+          } else {
+            dateObj = new Date();
           }
 
+          const dateKey = dateObj.toLocaleDateString("vi-VN");
+          const timestamp = dateObj.getTime();
+
           if (!dailyStats[dateKey]) {
-            dailyStats[dateKey] = { date: dateKey, revenue: 0, count: 0 };
+            dailyStats[dateKey] = {
+              date: dateKey,
+              revenue: 0,
+              count: 0,
+              timestamp,
+            };
           }
+
           dailyStats[dateKey].revenue += o.total || 0;
           dailyStats[dateKey].count += 1;
         });
 
-        setChartData(Object.values(dailyStats).sort((a, b) => new Date(a.date) - new Date(b.date)));
+        setChartData(
+          Object.values(dailyStats).sort((a, b) => a.timestamp - b.timestamp)
+        );
       } catch (err) {
         console.error("🔥 Lỗi tải dữ liệu Dashboard:", err);
         message.error("Không thể tải dữ liệu Dashboard");
@@ -96,17 +110,6 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) return <div className="loading">⏳ Đang tải dữ liệu...</div>;
-
-  // 🔹 Lọc ra các đơn hàng của hôm nay
-  const today = new Date().toLocaleDateString("vi-VN");
-  const todayOrders = orders.filter((o) => {
-    if (o.date) return o.date === today;
-    if (o.createdAt?.seconds) {
-      const d = new Date(o.createdAt.seconds * 1000);
-      return d.toLocaleDateString("vi-VN") === today;
-    }
-    return false;
-  });
 
   return (
     <div className="dashboard">
@@ -143,7 +146,13 @@ export default function AdminDashboard() {
               <YAxis />
               <Tooltip formatter={(v) => `${v.toLocaleString()}₫`} />
               <Legend />
-              <Line type="monotone" dataKey="revenue" stroke="#4f46e5" strokeWidth={3} name="Doanh thu" />
+              <Line
+                type="monotone"
+                dataKey="revenue"
+                stroke="#4f46e5"
+                strokeWidth={3}
+                name="Doanh thu"
+              />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -157,65 +166,16 @@ export default function AdminDashboard() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="count" fill="#10b981" name="Số đơn hàng" barSize={40} />
+              <Bar
+                dataKey="count"
+                fill="#10b981"
+                name="Số đơn hàng"
+                barSize={40}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
-
-      {/* ==== BẢNG ĐƠN HÀNG HÔM NAY ==== */}
-      <h2 style={{ marginTop: "30px", color: "#2c3e75" }}>📅 Đơn hàng hôm nay</h2>
-      <table className="orders-table">
-        <thead>
-          <tr>
-            <th>STT</th>
-            <th>Mã đơn</th>
-            <th>Khách hàng</th>
-            <th>SDT</th>
-            <th>Thành tiền</th>
-            <th>Ngày</th>
-            <th>Nhà hàng</th>
-            <th>Trạng thái</th>
-          </tr>
-        </thead>
-        <tbody>
-          {todayOrders.length ? (
-            todayOrders.map((o, i) => (
-              <tr key={o.id}>
-                <td>{i + 1}</td>
-                <td>{o.id}</td>
-                <td>{o.customer?.name || "—"}</td>
-                <td>{o.customer?.phone || "—"}</td>
-                <td>{(o.total || 0).toLocaleString()}₫</td>
-                <td>
-                  {o.date ||
-                    (o.createdAt?.seconds
-                      ? new Date(o.createdAt.seconds * 1000).toLocaleDateString("vi-VN")
-                      : "—")}
-                </td>
-                <td>{restaurantMap[o.restaurantId] || o.items?.[0]?.restaurant || "Không rõ"}</td>
-                <td
-                  className={
-                    o.status?.includes("Đã giao")
-                      ? "done"
-                      : o.status?.includes("Đang")
-                      ? "processing"
-                      : "pending"
-                  }
-                >
-                  {o.status || "—"}
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="8" style={{ textAlign: "center", padding: "20px" }}>
-                Hôm nay chưa có đơn hàng nào.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
     </div>
   );
 }
