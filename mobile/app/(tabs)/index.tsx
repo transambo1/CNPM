@@ -171,6 +171,41 @@ const FoodScreenListHeader = ({
         </TouchableOpacity>
       </View>
 
+
+      <View style={styles.quickFilterSection}>
+        <Text style={styles.sectionLabel}>Thực đơn hôm nay</Text>
+        {/* Categories */}
+        <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}
+          style={styles.categoryScroll} contentContainerStyle={{ paddingRight: 20 }}>
+
+          {categories.map((cat) => (
+            <TouchableOpacity
+              key={cat.id}
+              style={styles.categoryItem}
+              onPress={() => onSelectCategory({ id: cat.id, name: cat.name })}
+              onLongPress={() => router.push({ pathname: '/category/[name]', params: { name: cat.name } } as never)}
+            >
+
+              <Image source={{ uri: cat.image }} style={styles.categoryImage} />
+              <Text style={styles.categoryText}>{cat.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+      {/* Suggestions */}
+      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}
+        style={styles.suggestionScroll} contentContainerStyle={{ paddingRight: 15 }}>
+        {suggestions.map((s) => (
+          <TouchableOpacity
+            key={s.id} style={styles.suggestionCard}
+            onPress={() => onSelectCategory({ id: s.id, name: s.name })}
+            onLongPress={() => router.push({ pathname: '/category/[name]', params: { name: s.name } } as never)}
+          >
+            <Image source={{ uri: s.image }} style={styles.suggestionImage} />
+            <Text style={styles.suggestionText}>{s.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
       {/* Quick filters */}
       <View style={styles.quickFilterSection}>
         <Text style={styles.sectionLabel}>Bộ lọc nổi bật</Text>
@@ -195,40 +230,6 @@ const FoodScreenListHeader = ({
         </ScrollView>
       </View>
 
-      {/* Categories */}
-      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}
-        style={styles.categoryScroll} contentContainerStyle={{ paddingRight: 20 }}>
-        {categories.map((cat) => (
-          <TouchableOpacity
-            key={cat.id}
-            style={styles.categoryItem}
-            onPress={() => onSelectCategory({ id: cat.id, name: cat.name })}
-            onLongPress={() => router.push({ pathname: '/category/[name]', params: { name: cat.name } } as never)}
-          >
-            <Image source={{ uri: cat.image }} style={styles.categoryImage} />
-            <Text style={styles.categoryText}>{cat.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Suggestions */}
-      <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}
-        style={styles.suggestionScroll} contentContainerStyle={{ paddingRight: 15 }}>
-        {suggestions.map((s) => (
-          <TouchableOpacity
-            key={s.id} style={styles.suggestionCard}
-            onPress={() => onSelectCategory({ id: s.id, name: s.name })}
-            onLongPress={() => router.push({ pathname: '/category/[name]', params: { name: s.name } } as never)}
-          >
-            <Image source={{ uri: s.image }} style={styles.suggestionImage} />
-            <Text style={styles.suggestionText}>{s.name}</Text>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      <View style={styles.footerBannerContainer}>
-        <Text style={styles.footerText}>Deal chớp nhoáng giảm thêm 15.000đ</Text>
-      </View>
 
       <Text style={styles.sectionTitle}>Nhà hàng gần bạn</Text>
     </View>

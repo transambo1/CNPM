@@ -254,7 +254,7 @@ export default function DetailProduct() {
             <View style={styles.infoCard}>
               <Ionicons name="shield-checkmark-outline" size={20} color="#00A74F" />
               <View style={styles.infoCardBody}>
-                <Text style={styles.infoCardTitle}>Đảm bảo GrabFood</Text>
+                <Text style={styles.infoCardTitle}>Đảm bảo đúng chất lượng </Text>
                 <Text style={styles.infoCardSubtitle}>Hoàn tiền nếu món không giống mô tả</Text>
               </View>
             </View>
