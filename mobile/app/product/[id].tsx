@@ -30,6 +30,7 @@ type Product = {
   reviews?: number;
   ingredients?: string[];
   restaurantId: string;
+  restaurantName?: string;
   calories?: number;
   prepTime?: number;
 };
@@ -39,6 +40,7 @@ export default function DetailProduct() {
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quantity, setQuantity] = useState(1);
   const { addToCart, totalItems, totalPrice } = useCart();
   const db = useMemo(() => getFirestore(app), []);
 
@@ -51,6 +53,21 @@ export default function DetailProduct() {
 
       if (snap.exists()) {
         const d = snap.data() as any;
+        let restaurantName: string | undefined = d.restaurantName;
+        const restaurantId = d.restaurantId as string | undefined;
+
+        if (!restaurantName && restaurantId) {
+          try {
+            const restaurantDoc = await getDoc(doc(db, 'restaurants', restaurantId));
+            if (restaurantDoc.exists()) {
+              const restaurantData = restaurantDoc.data() as any;
+              restaurantName = restaurantData.name ?? restaurantName;
+            }
+          } catch (error) {
+            console.warn('Không thể tải tên nhà hàng:', error);
+          }
+        }
+
         setProduct({
           id: snap.id,
           name: d.name,
@@ -60,7 +77,8 @@ export default function DetailProduct() {
           rating: d.rating,
           reviews: d.reviews,
           ingredients: d.ingredients ?? [],
-          restaurantId: d.restaurantId,
+          restaurantId: restaurantId ?? '',
+          restaurantName,
           calories: d.calories,
           prepTime: d.prepTime ?? d.eta,
         });
@@ -91,16 +109,60 @@ export default function DetailProduct() {
     router.push('/' as never);
   }, [product?.restaurantId, router]);
 
+  const incrementQuantity = useCallback(() => {
+    setQuantity((prev) => Math.min(99, prev + 1));
+  }, []);
+
+  const decrementQuantity = useCallback(() => {
+    setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
+  }, []);
+
   const handleAddToCart = () => {
     if (!product) return;
-    addToCart({
+    const result = addToCart({
       id: product.id,
       name: product.name,
       price: product.price,
       img: product.img,
       restaurantId: product.restaurantId,
-    });
-    Alert.alert('Đã thêm vào giỏ', `${product.name} x1`);
+      restaurantName: product.restaurantName,
+    }, quantity, { restaurantName: product.restaurantName });
+
+    if (result.status === 'conflict') {
+      const currentName = result.activeRestaurantName || 'nhà hàng khác';
+      const nextName = result.restaurantName || 'nhà hàng này';
+      Alert.alert(
+        'Tạo giỏ hàng mới?',
+        `Bạn đang có giỏ hàng từ ${currentName}. Bạn có muốn tạo giỏ mới cho ${nextName} không?`,
+        [
+          { text: 'Huỷ', style: 'cancel' },
+          {
+            text: 'Tạo giỏ mới',
+            style: 'default',
+            onPress: () => {
+              const retry = addToCart({
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                img: product.img,
+                restaurantId: product.restaurantId,
+                restaurantName: product.restaurantName,
+              }, quantity, { restaurantName: product.restaurantName, allowCreateNewCart: true });
+              if (retry.status === 'added') {
+                Alert.alert('Đã thêm vào giỏ', `${product.name} x${quantity}`);
+              }
+            },
+          },
+        ]
+      );
+      return;
+    }
+
+    if (result.status === 'added') {
+      Alert.alert('Đã thêm vào giỏ', `${product.name} x${quantity}`);
+    } else if (result.status === 'error') {
+      Alert.alert('Không thể thêm vào giỏ', result.message);
+    }
   };
 
 
@@ -243,10 +305,32 @@ export default function DetailProduct() {
             <Ionicons name="chevron-forward" size={20} color="#fff" />
           </TouchableOpacity>
         )}
-        <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
-          <Ionicons name="cart" size={20} color="#fff" style={{ marginRight: 6 }} />
-          <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
-        </TouchableOpacity>
+        <View style={styles.buyRow}>
+          <View style={styles.quantitySelector}>
+            <TouchableOpacity
+              onPress={decrementQuantity}
+              style={[styles.quantityBtn, quantity === 1 && { opacity: 0.6 }]}
+              accessibilityLabel="Giảm số lượng"
+            >
+              <Ionicons name="remove" size={18} color="#111" />
+            </TouchableOpacity>
+            <Text style={styles.quantityValue}>{quantity}</Text>
+            <TouchableOpacity
+              onPress={incrementQuantity}
+              style={styles.quantityBtn}
+              accessibilityLabel="Tăng số lượng"
+            >
+              <Ionicons name="add" size={18} color="#111" />
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddToCart}>
+            <Ionicons name="cart" size={20} color="#fff" style={{ marginRight: 6 }} />
+            <View>
+              <Text style={styles.addButtonText}>Thêm vào giỏ</Text>
+              <Text style={styles.addButtonSub}>{formatCurrency(product.price * quantity)}</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -429,6 +513,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     gap: 12,
   },
+  buyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  quantitySelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    backgroundColor: '#fff',
+  },
+  quantityBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quantityValue: {
+    minWidth: 36,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111',
+  },
   viewCartButton: {
     backgroundColor: '#00A74F',
     borderRadius: 16,
@@ -452,14 +562,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#111',
     borderRadius: 16,
     paddingVertical: 16,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flex: 1,
   },
   addButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  addButtonSub: {
+    color: '#CBD5F5',
+    fontSize: 12,
+    marginTop: 2,
   },
   center: {
     flex: 1,
