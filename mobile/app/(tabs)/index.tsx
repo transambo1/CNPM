@@ -123,20 +123,44 @@ type FoodScreenListHeaderProps = {
   onSelectCategory: (c: SelectedCategory) => void;
   activeQuickFilter: QuickFilterId;
   onQuickFilterChange: (f: QuickFilterId) => void;
+  featuredRestaurant?: Restaurant | null;
 };
 
 const FoodScreenListHeader = ({
   categories, suggestions, selectedCategory, onSelectCategory,
-  activeQuickFilter, onQuickFilterChange,
+  activeQuickFilter, onQuickFilterChange, featuredRestaurant,
 }: FoodScreenListHeaderProps) => {
   const router = useRouter();
 
   return (
     <View style={styles.listHeaderContainer}>
-      <View style={styles.bannerContainer}>
-        <Text style={styles.bannerTitle}>Deal matcha HOT</Text>
-        <Text style={styles.bannerSubtitle}>Order matcha ngay</Text>
-      </View>
+      {featuredRestaurant ? (
+        <TouchableOpacity
+          activeOpacity={0.9}
+          style={[styles.bannerContainer, { padding: 0, height: 160 }]}
+          onPress={() =>
+            router.push({ pathname: '/restaurant/[id]', params: { id: featuredRestaurant.id } } as never)
+          }
+        >
+          <Image source={{ uri: featuredRestaurant.image }} style={styles.bannerImage} />
+          <View style={styles.bannerOverlay}>
+
+            <Text style={styles.bannerTitle}>Nhà hàng nổi bật</Text>
+            <Text style={styles.bannerSubtitle}>Order món ngay</Text>
+            {!!featuredRestaurant.address && (
+              <Text style={styles.bannerSubtitle} numberOfLines={1}>
+                {featuredRestaurant.address}
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.bannerContainer}>
+          <Text style={styles.bannerTitle}>Nhà hàng nổi bật</Text>
+          <Text style={styles.bannerSubtitle}>Order món ngay</Text>
+        </View>
+      )}
+
 
       <View style={styles.segmentContainer}>
         <TouchableOpacity style={[styles.segmentButton, styles.segmentButtonActive]}>
@@ -223,6 +247,8 @@ export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory>({ id: null, name: null });
   const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilterId>('recommended');
+  const [featuredRestaurant, setFeaturedRestaurant] = useState<Restaurant | null>(null);
+
 
   // Derived stats
   const [derived, setDerived] = useState<Record<string, DerivedStats>>({});
@@ -255,6 +281,12 @@ export default function HomePage() {
           } as Restaurant;
         });
         setRestaurants(rs);
+        // 🔥 Random 1 nhà hàng nổi bật
+        const available = rs.filter(r => typeof r.image === "string" && r.image.trim().length > 0);
+        if (available.length > 0) {
+          const randomIndex = Math.floor(Math.random() * available.length);
+          setFeaturedRestaurant(available[randomIndex]);
+        }
 
         /** Categories */
         try {
@@ -422,6 +454,7 @@ export default function HomePage() {
               onSelectCategory={handleSelectCategory}
               activeQuickFilter={activeQuickFilter}
               onQuickFilterChange={handleQuickFilterChange}
+              featuredRestaurant={featuredRestaurant}
             />
           }
           ListEmptyComponent={
@@ -590,4 +623,21 @@ const styles = StyleSheet.create({
   emptySubtitle: { marginTop: 8, fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20 },
   clearFiltersButton: { marginTop: 18, flexDirection: 'row', alignItems: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#00A74F', paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#E6F7EF' },
   clearFiltersText: { color: '#007A3B', fontSize: 13, fontWeight: '600' },
+
+  bannerImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 10,
+  },
+  bannerOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    padding: 10,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+
 });
