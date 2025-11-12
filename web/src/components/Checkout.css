@@ -392,3 +392,56 @@
     opacity: 1;
   }
 }
+/* ===== PHƯƠNG THỨC THANH TOÁN (CHỈ CÒN 1 MỤC: QR) ===== */
+.payment-section {
+  margin-top: 25px;
+  border-top: 1px solid #eee;
+  padding-top: 20px;
+}
+
+.payment-section h2 {
+  font-size: 1.2rem;
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  font-weight: 700;
+}
+
+.payment-option {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 15px 18px;
+  border: 2px solid #ff7a00;
+  border-radius: 10px;
+  background: #fff8f3;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.payment-option:hover {
+  background: #fff0e6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(255, 122, 0, 0.25);
+}
+
+.payment-option input[type="radio"] {
+  accent-color: #ff7a00;
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.payment-option label {
+  font-size: 1rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.payment-option img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
