@@ -944,12 +944,12 @@ export default function PaymentScreen() {
                         )}
                     </View>
 
-                    {/* Tùy chọn giao hàng (placeholder) */}
+                    {/* Tùy chọn giao hàng (placeholder)    <Text style={styles.mutedSmall}>(Có thể cộng/trừ phí )</Text> */}
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>Tùy chọn giao hàng</Text>
                         <View style={styles.shipChoice}>
                             <Text style={styles.shipChoiceActive}>Nhanh • 25 phút</Text>
-                            <Text style={styles.mutedSmall}>(Có thể cộng/trừ phí sau này nếu bạn muốn)</Text>
+
                         </View>
                     </View>
 

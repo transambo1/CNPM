@@ -238,7 +238,7 @@ export default function DetailProduct() {
           <View style={styles.ratingRow}>
             <Ionicons name="thumbs-up-outline" size={16} color="#00A74F" style={{ marginRight: 6 }} />
             <Text style={styles.ratingText}>
-              {(product.reviews ?? 128) + ' đánh giá xuất sắc từ thực khách Grab'}
+              {(product.reviews ?? 128) + ' đánh giá xuất sắc từ thực khách '}
             </Text>
           </View>
 
@@ -259,10 +259,10 @@ export default function DetailProduct() {
               </View>
             </View>
             <View style={styles.infoCard}>
-              <Ionicons name="bicycle-outline" size={20} color="#00A74F" />
+
               <View style={styles.infoCardBody}>
                 <Text style={styles.infoCardTitle}>Giao hàng siêu tốc</Text>
-                <Text style={styles.infoCardSubtitle}>Tài xế gần nhất sẽ nhận đơn của bạn</Text>
+                <Text style={styles.infoCardSubtitle}>Drone sẽ giao đơn của bạn nhanh nhất</Text>
               </View>
             </View>
           </View>
@@ -278,20 +278,25 @@ export default function DetailProduct() {
             </View>
           ) : null}
 
-          <View style={styles.sectionBox}>
-            <Text style={styles.sectionTitle}>Gợi ý thêm</Text>
-            <View style={styles.addonRow}>
-              <View style={styles.addonChip}>
-                <Ionicons name="ice-cream-outline" size={16} color="#00A74F" />
-                <Text style={styles.addonText}>Thêm topping</Text>
-              </View>
-              <View style={styles.addonChip}>
-                <Ionicons name="water-outline" size={16} color="#00A74F" />
-                <Text style={styles.addonText}>Combo nước mát</Text>
-              </View>
-            </View>
-            <Text style={styles.helperText}>Bạn có thể ghi chú yêu cầu riêng ở bước thanh toán.</Text>
-          </View>
+          {/*    <Ionicons name="bicycle-outline" size={20} color="#00A74F" />
+<View style={styles.sectionBox}>
+  <Text style={styles.sectionTitle}>Gợi ý thêm</Text>
+  <View style={styles.addonRow}>
+    <View style={styles.addonChip}>
+      <Ionicons name="ice-cream-outline" size={16} color="#00A74F" />
+      <Text style={styles.addonText}>Thêm topping</Text>
+    </View>
+    <View style={styles.addonChip}>
+      <Ionicons name="water-outline" size={16} color="#00A74F" />
+      <Text style={styles.addonText}>Combo nước mát</Text>
+    </View>
+  </View>
+  <Text style={styles.helperText}>
+    Bạn có thể ghi chú yêu cầu riêng ở bước thanh toán.
+  </Text>
+</View>
+*/}
+
         </View>
       </ScrollView>
 

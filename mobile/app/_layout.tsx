@@ -5,6 +5,8 @@ import { AuthProvider } from "../libs/AuthContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { CartProvider } from "../libs/CartContext";
 
+import "../polyfills/registerNotificationCalendarCommand";
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
@@ -18,6 +20,7 @@ export default function RootLayout() {
           <Stack.Screen name="restaurant/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
           <Stack.Screen name="cart/index" options={{ headerShown: false }} />
+          <Stack.Screen name="restaurant-admin" options={{ headerShown: false }} />
 
           {/* Auth stack (optional but recommended) */}
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
