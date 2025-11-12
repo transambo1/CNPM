@@ -46,10 +46,20 @@ const Login = () => {
                     address: userData.address,
                     role: userData.role,
                     username: userData.username,
+                    email: userData.email,
+                    restaurantId: userData.restaurantId ?? null,
+                    restaurantName:
+                        userData.restaurantName ??
+                        userData.restaurant?.name ??
+                        null,
                 };
                 await login(userForContext); // lưu vào context + AsyncStorage
-                // vào tabs chính
-                router.replace('/'); // nếu (tabs)/index là root, điều hướng về root path
+                // vào màn hình phù hợp với phân quyền
+                if (userData.role === 'restaurant') {
+                    router.replace('/restaurant-admin');
+                } else {
+                    router.replace('/'); // nếu (tabs)/index là root, điều hướng về root path
+                }
             } else {
                 Alert.alert('Đăng nhập thất bại', 'Sai mật khẩu.');
             }
