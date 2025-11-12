@@ -10,11 +10,29 @@ import {
   Image,
   Dimensions,
   Alert,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 // ❗ Expo Go: KHÔNG dùng PROVIDER_GOOGLE
-import MapView, { Marker, Polyline, Region } from 'react-native-maps';
+// Khai báo tạm (để TypeScript không lỗi)
+let MapView: any = null;
+let Marker: any = null;
+let Polyline: any = null;
+type Region = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+// 🔒 Chỉ import react-native-maps khi KHÔNG chạy web
+if (Platform.OS !== 'web') {
+  const Maps = require('react-native-maps');
+  MapView = Maps.default;
+  Marker = Maps.Marker;
+  Polyline = Maps.Polyline;
+}
 import {
   doc,
   getFirestore,
@@ -223,7 +241,7 @@ export default function OrderTrackingScreen() {
           statusText: data.statusText ?? data.status_text,
           code: data.code,
           totalPrice: Number(data.totalPrice ?? data.total ?? 0),
-          paymentMethod: data.paymentMethod ?? 'Tiền mặt',
+          paymentMethod: data.paymentMethod ?? 'Chuyển khoản ',
           createdAt,
           restaurantName:
             data.restaurantName ?? data.storeName ?? data.restaurant?.name ?? 'Nhà hàng',
@@ -543,7 +561,13 @@ export default function OrderTrackingScreen() {
       </SafeAreaView>
     );
   }
-
+  if (Platform.OS === 'web') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>🌍 Bản đồ không hỗ trợ trên Web, hãy mở trên Android hoặc iOS.</Text>
+      </View>
+    );
+  }
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />

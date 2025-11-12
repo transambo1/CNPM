@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Modal,
   ScrollView,
   StyleSheet,
@@ -26,26 +27,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { app } from '../libs/firebase';
 import { useAuth } from '../libs/AuthContext';
 
-type OrderItem = {
-  id: string;
-  name?: string;
-  quantity?: number;
-};
-
+/* ========= TYPES ========= */
+type OrderItem = { id: string; name?: string; quantity?: number };
 type OrderRecord = {
   id: string;
   status?: string;
   createdAt?: Date | null;
   total?: number;
-  customer?: {
-    name?: string;
-    phone?: string;
-    address?: string;
-  };
+  customer?: { name?: string; phone?: string; address?: string };
   items?: OrderItem[];
   droneId?: string | null;
 };
-
 type DroneRecord = {
   id: string;
   name?: string;
@@ -54,82 +46,90 @@ type DroneRecord = {
   currentOrderId?: string | null;
 };
 
+type ViewMode = 'all' | 'processing' | 'delivering' | 'delivered' | 'drones';
+
+/* ========= HELPERS ========= */
 const normalizeStatus = (value?: string | null) => (value ?? '').toLowerCase();
 
-const parseTimestamp = (value: any): Date | null => {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-  if (value instanceof Timestamp) return value.toDate();
-  if (typeof value === 'object' && typeof value.seconds === 'number') {
-    return new Date(value.seconds * 1000);
-  }
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+const parseTimestamp = (v: any): Date | null => {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (v instanceof Timestamp) return v.toDate();
+  if (typeof v === 'object' && typeof v.seconds === 'number')
+    return new Date(v.seconds * 1000);
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? null : d;
 };
 
-const formatCurrency = (value?: number | null) =>
-  `${Number(value ?? 0).toLocaleString('vi-VN')}₫`;
+const formatCurrency = (v?: number | null) =>
+  `${Number(v ?? 0).toLocaleString('vi-VN')}₫`;
 
-const formatDateTime = (value?: Date | null) => {
-  if (!value) return '—';
-  return value.toLocaleString('vi-VN');
-};
+const formatDateTime = (v?: Date | null) =>
+  v ? v.toLocaleString('vi-VN') : '—';
 
-const isProcessingStatus = (status?: string) => {
-  const s = normalizeStatus(status);
-  return (
-    s.includes('chờ') ||
-    s.includes('xử lý') ||
-    s.includes('processing') ||
-    s === 'confirmed'
-  );
-};
+const isProcessingStatus = (s?: string) =>
+  normalizeStatus(s).includes('chờ') ||
+  normalizeStatus(s).includes('xử lý') ||
+  normalizeStatus(s).includes('processing') ||
+  normalizeStatus(s) === 'confirmed';
 
-const isDeliveringStatus = (status?: string) => {
-  const s = normalizeStatus(status);
-  return s.includes('đang giao') || s.includes('delivering');
-};
+const isDeliveringStatus = (s?: string) =>
+  normalizeStatus(s).includes('đang giao') ||
+  normalizeStatus(s).includes('delivering');
 
-const isDeliveredStatus = (status?: string) => {
-  const s = normalizeStatus(status);
-  return s.includes('đã giao') || s.includes('delivered');
-};
+const isDeliveredStatus = (s?: string) =>
+  normalizeStatus(s).includes('đã giao') ||
+  normalizeStatus(s).includes('delivered');
 
-const isDroneIdle = (status?: string) => {
-  const s = normalizeStatus(status);
-  return s === '' || s === 'rảnh' || s === 'idle' || s === 'available';
-};
+const isDroneIdle = (s?: string) =>
+  ['rảnh', 'idle', 'available', ''].includes(normalizeStatus(s));
 
+/* ========= FADE WRAPPER ========= */
+function FadeIn({ children, depsKey }: { children: React.ReactNode; depsKey: string }) {
+  const opacity = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    opacity.setValue(0);
+    Animated.timing(opacity, { toValue: 1, duration: 250, useNativeDriver: true }).start();
+  }, [depsKey, opacity]);
+  return <Animated.View style={{ opacity }}>{children}</Animated.View>;
+}
+
+/* ========= SCREEN ========= */
 export default function RestaurantAdminScreen() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const db = useMemo(() => getFirestore(app), []);
 
+  // Data
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [drones, setDrones] = useState<DroneRecord[]>([]);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [dronesLoaded, setDronesLoaded] = useState(false);
+
+  // UI/State
+  const [pickerOrder, setPickerOrder] = useState<OrderRecord | null>(null);
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
   const [markingOrderId, setMarkingOrderId] = useState<string | null>(null);
-  const [pickerOrder, setPickerOrder] = useState<OrderRecord | null>(null);
 
+  // View control
+  const [viewMode, setViewMode] = useState<ViewMode>('all'); // mặc định: Tổng tất cả
+  const [menuVisible, setMenuVisible] = useState(false);
+
+  /* ----- Auth Guard ----- */
   useEffect(() => {
     if (loading) return;
     if (!user) {
       router.replace('/(auth)/login');
       return;
     }
-    if (user.role !== 'restaurant') {
-      router.replace('/');
-    }
+    if (user.role !== 'restaurant') router.replace('/');
   }, [loading, user, router]);
 
+  /* ----- Firestore subscriptions ----- */
   useEffect(() => {
     if (!user?.restaurantId) {
-      setOrders([]);
-      setDrones([]);
-      setOrdersLoaded(true);
-      setDronesLoaded(true);
+      setOrders([]); setDrones([]);
+      setOrdersLoaded(true); setDronesLoaded(true);
       return;
     }
 
@@ -145,88 +145,82 @@ export default function RestaurantAdminScreen() {
       where('restaurantId', '==', user.restaurantId)
     );
 
-    const unsubscribeOrders = onSnapshot(
+    const unsubOrders = onSnapshot(
       ordersQuery,
-      (snapshot) => {
-        const data = snapshot.docs.map((docSnap) => {
-          const data = docSnap.data() as any;
+      (snap) => {
+        const data = snap.docs.map((d) => {
+          const val = d.data() as any;
           return {
-            id: docSnap.id,
-            status: data.status,
-            createdAt: parseTimestamp(data.createdAt),
-            total: Number(data.total ?? data.totalPrice ?? 0),
-            customer: data.customer,
-            items: Array.isArray(data.items) ? data.items : [],
-            droneId: data.droneId ?? null,
+            id: d.id,
+            status: val.status,
+            createdAt: parseTimestamp(val.createdAt),
+            total: Number(val.total ?? val.totalPrice ?? 0),
+            customer: val.customer,
+            items: Array.isArray(val.items) ? val.items : [],
+            droneId: val.droneId ?? null,
           } as OrderRecord;
         });
-        data.sort((a, b) => {
-          const tA = a.createdAt?.getTime() ?? 0;
-          const tB = b.createdAt?.getTime() ?? 0;
-          return tB - tA;
-        });
+        data.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
         setOrders(data);
         setOrdersLoaded(true);
       },
-      (error) => {
-        console.error('Failed to subscribe orders', error);
-        Alert.alert('Lỗi', 'Không thể tải danh sách đơn hàng.');
+      (e) => {
+        console.error('orders subscribe error', e);
         setOrdersLoaded(true);
       }
     );
 
-    const unsubscribeDrones = onSnapshot(
+    const unsubDrones = onSnapshot(
       dronesQuery,
-      (snapshot) => {
-        const data = snapshot.docs.map((docSnap) => {
-          const data = docSnap.data() as any;
+      (snap) => {
+        const data = snap.docs.map((d) => {
+          const val = d.data() as any;
           return {
-            id: docSnap.id,
-            name: data.name ?? data.model ?? `Drone ${docSnap.id}`,
-            status: data.status,
-            battery: Number(data.battery ?? 0),
-            currentOrderId: data.currentOrderId ?? null,
+            id: d.id,
+            name: val.name ?? val.model ?? `Drone ${d.id}`,
+            status: val.status,
+            battery: Number(val.battery ?? 0),
+            currentOrderId: val.currentOrderId ?? null,
           } as DroneRecord;
         });
         setDrones(data);
         setDronesLoaded(true);
       },
-      (error) => {
-        console.error('Failed to subscribe drones', error);
-        Alert.alert('Lỗi', 'Không thể tải danh sách drone.');
+      (e) => {
+        console.error('drones subscribe error', e);
         setDronesLoaded(true);
       }
     );
 
-    return () => {
-      unsubscribeOrders();
-      unsubscribeDrones();
-    };
+    return () => { unsubOrders(); unsubDrones(); };
   }, [db, user?.restaurantId]);
 
+  /* ----- Derived ----- */
   const availableDrones = useMemo(
-    () =>
-      drones.filter(
-        (drone) => isDroneIdle(drone.status) && !drone.currentOrderId
-      ),
+    () => drones.filter((dr) => isDroneIdle(dr.status) && !dr.currentOrderId),
     [drones]
   );
 
-  const stats = useMemo(() => {
-    const total = orders.length;
-    const processing = orders.filter((order) => isProcessingStatus(order.status)).length;
-    const delivering = orders.filter((order) => isDeliveringStatus(order.status)).length;
-    const delivered = orders.filter((order) => isDeliveredStatus(order.status)).length;
-    return { total, processing, delivering, delivered };
-  }, [orders]);
+  const filteredOrders = useMemo(() => {
+    switch (viewMode) {
+      case 'processing':
+        return orders.filter((o) => isProcessingStatus(o.status));
+      case 'delivering':
+        return orders.filter((o) => isDeliveringStatus(o.status));
+      case 'delivered':
+        return orders.filter((o) => isDeliveredStatus(o.status));
+      case 'all':
+      default:
+        return orders;
+    }
+  }, [orders, viewMode]);
 
-  const findDrone = useCallback(
-    (id?: string | null) => drones.find((drone) => String(drone.id) === String(id)),
-    [drones]
-  );
+  const isLoading = loading || !ordersLoaded || !dronesLoaded;
 
+  /* ----- Actions ----- */
   const handleLogout = useCallback(() => {
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản nhà hàng?', [
+    setMenuVisible(false);
+    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
       { text: 'Hủy', style: 'cancel' },
       {
         text: 'Đăng xuất',
@@ -234,10 +228,9 @@ export default function RestaurantAdminScreen() {
         onPress: async () => {
           try {
             await logout();
-          } catch (error) {
-            console.error('Failed to logout', error);
-          } finally {
-            router.replace('/(auth)/login');
+            setTimeout(() => router.replace('/(auth)/login'), 100);
+          } catch (err) {
+            console.error('Logout failed:', err);
           }
         },
       },
@@ -246,7 +239,7 @@ export default function RestaurantAdminScreen() {
 
   const handleAssignDrone = useCallback(
     async (drone: DroneRecord) => {
-      if (!pickerOrder || !user?.restaurantId) return;
+      if (!pickerOrder) return;
       setAssigningOrderId(pickerOrder.id);
       try {
         await updateDoc(doc(db, 'drones', drone.id), {
@@ -254,35 +247,31 @@ export default function RestaurantAdminScreen() {
           currentOrderId: pickerOrder.id,
           destination: pickerOrder.customer?.address ?? null,
         });
-
         await updateDoc(doc(db, 'orders', pickerOrder.id), {
           status: 'Đang giao',
           droneId: drone.id,
           statusText: 'Đang giao bằng drone',
         });
-
         Alert.alert('Thành công', `Đã gán ${drone.name ?? 'drone'} cho đơn #${pickerOrder.id}.`);
         setPickerOrder(null);
       } catch (error) {
-        console.error('Failed to assign drone', error);
-        Alert.alert('Lỗi', 'Không thể gán drone. Vui lòng thử lại.');
+        console.error('assign drone error', error);
+        Alert.alert('Lỗi', 'Không thể gán drone.');
       } finally {
         setAssigningOrderId(null);
       }
     },
-    [db, pickerOrder, user?.restaurantId]
+    [db, pickerOrder]
   );
 
   const handleMarkDelivered = useCallback(
     async (order: OrderRecord) => {
-      if (!order) return;
       setMarkingOrderId(order.id);
       try {
         await updateDoc(doc(db, 'orders', order.id), {
           status: 'Đã giao',
           statusText: 'Đã giao bằng drone',
         });
-
         if (order.droneId) {
           await updateDoc(doc(db, 'drones', order.droneId), {
             status: 'Rảnh',
@@ -290,11 +279,10 @@ export default function RestaurantAdminScreen() {
             destination: null,
           });
         }
-
-        Alert.alert('Thành công', `Đơn #${order.id} đã được đánh dấu hoàn tất.`);
+        Alert.alert('Hoàn tất', `Đơn #${order.id} đã giao xong.`);
       } catch (error) {
-        console.error('Failed to mark delivered', error);
-        Alert.alert('Lỗi', 'Không thể cập nhật trạng thái đơn.');
+        console.error('mark delivered error', error);
+        Alert.alert('Lỗi', 'Không thể cập nhật trạng thái.');
       } finally {
         setMarkingOrderId(null);
       }
@@ -302,8 +290,7 @@ export default function RestaurantAdminScreen() {
     [db]
   );
 
-  const isLoading = loading || !ordersLoaded || !dronesLoaded;
-
+  /* ----- Render ----- */
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered}>
@@ -312,203 +299,218 @@ export default function RestaurantAdminScreen() {
     );
   }
 
-  if (!user?.restaurantId) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.emptyTitle}>Không tìm thấy nhà hàng được gán.</Text>
-        <Text style={styles.emptySubtitle}>
-          Vui lòng liên hệ quản trị viên để được cấp quyền quản lý nhà hàng.
-        </Text>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/') }>
-          <Ionicons name="arrow-back" size={18} color="#00A74F" />
-          <Text style={styles.backButtonText}>Quay lại trang chính</Text>
-        </TouchableOpacity>
-      </SafeAreaView>
-    );
-  }
+  // Title + count for orders section
+  const sectionMeta: Record<ViewMode, { icon: string; title: string; count: number }> = {
+    all: { icon: '', title: 'Tổng tất cả', count: filteredOrders.length },
+    processing: { icon: '', title: 'Đơn đang xử lý', count: filteredOrders.length },
+    delivering: { icon: '', title: 'Đơn đang giao', count: filteredOrders.length },
+    delivered: { icon: '', title: 'Đơn đã giao', count: filteredOrders.length },
+    drones: { icon: '', title: 'Quản lý Drone', count: drones.length },
+  };
+
+  const fadeKey = `${viewMode}:${filteredOrders.length}:${drones.length}`;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header */}
         <View style={styles.header}>
           <View>
             <Text style={styles.title}>Quản lý nhà hàng</Text>
-            <Text style={styles.subtitle}>{user.restaurantName ?? 'Nhà hàng của bạn'}</Text>
+            <Text style={styles.subtitle}>{user?.restaurantName ?? 'Nhà hàng của bạn'}</Text>
           </View>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={22} color="#E53935" />
-            <Text style={styles.logoutText}>Đăng xuất</Text>
+
+          <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
+            <Ionicons name="menu-outline" size={26} color="#1A1C1E" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.statRow}>
-          <View style={[styles.statCard, styles.statPrimary]}>
-            <Text style={[styles.statLabel, styles.statPrimaryText]}>Tổng đơn</Text>
-            <Text style={[styles.statValue, styles.statPrimaryText]}>{stats.total}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Đang xử lý</Text>
-            <Text style={styles.statValue}>{stats.processing}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Đang giao</Text>
-            <Text style={styles.statValue}>{stats.delivering}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Đã giao</Text>
-            <Text style={styles.statValue}>{stats.delivered}</Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Đơn hàng gần đây</Text>
-          <View style={styles.sectionBadge}>
-            <Ionicons name="bicycle-outline" size={16} color="#00A74F" />
-            <Text style={styles.sectionBadgeText}>{availableDrones.length} drone rảnh</Text>
-          </View>
-        </View>
-
-        {orders.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Ionicons name="receipt-outline" size={48} color="#999" />
-            <Text style={styles.emptyTitle}>Chưa có đơn hàng nào</Text>
-            <Text style={styles.emptySubtitle}>
-              Khi có khách đặt, đơn hàng sẽ xuất hiện tại đây để bạn xử lý và gán drone giao.
+        {/* Section Header Card */}
+        <FadeIn depsKey={fadeKey}>
+          <View style={styles.sectionHeaderCard}>
+            <Text style={styles.sectionHeaderText}>
+              {sectionMeta[viewMode].icon} {sectionMeta[viewMode].title}
+              {viewMode !== 'drones' && (
+                <Text style={styles.sectionHeaderCount}> — {sectionMeta[viewMode].count} đơn</Text>
+              )}
+              {viewMode === 'drones' && (
+                <Text style={styles.sectionHeaderCount}> — {sectionMeta[viewMode].count} drone</Text>
+              )}
             </Text>
           </View>
-        ) : (
-          orders.map((order) => {
-            const assignedDrone = findDrone(order.droneId ?? undefined);
-            const status = order.status ?? '—';
-            const canAssign = !isDeliveredStatus(status) && !isDeliveringStatus(status);
-            const canMarkDelivered = isDeliveringStatus(status);
 
-            return (
-              <View key={order.id} style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <View>
-                    <Text style={styles.orderCode}>Đơn #{order.id}</Text>
-                    <Text style={styles.orderDate}>{formatDateTime(order.createdAt)}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, getStatusStyle(status)]}>
-                    <Text style={styles.statusText}>{status}</Text>
-                  </View>
+          {/* Content */}
+          {viewMode === 'drones' ? (
+            // Drone management
+            <View style={{ marginTop: 8 }}>
+              {drones.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="airplane-outline" size={48} color="#999" />
+                  <Text style={styles.emptyTitle}>Chưa có drone nào</Text>
+                  <Text style={styles.emptySubtitle}>Bạn chưa được cấp drone để giao hàng.</Text>
                 </View>
-
-                <View style={styles.orderInfoRow}>
-                  <Ionicons name="person-outline" size={18} color="#555" />
-                  <View style={styles.orderInfoText}>
-                    <Text style={styles.orderLabel}>{order.customer?.name ?? 'Khách lẻ'}</Text>
-                    <Text style={styles.orderSubLabel}>{order.customer?.phone}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.orderInfoRow}>
-                  <Ionicons name="location-outline" size={18} color="#555" />
-                  <View style={styles.orderInfoText}>
-                    <Text style={styles.orderLabel}>{order.customer?.address ?? 'Không rõ địa chỉ'}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.orderInfoRow}>
-                  <Ionicons name="fast-food-outline" size={18} color="#555" />
-                  <View style={styles.orderInfoText}>
-                    {order.items?.slice(0, 3).map((item) => (
-                      <Text key={item.id} style={styles.orderSubLabel}>
-                        • {item.name} x{item.quantity ?? 1}
+              ) : (
+                drones.map((drone) => (
+                  <View key={drone.id} style={styles.droneCard}>
+                    <View>
+                      <Text style={styles.droneName}>{drone.name}</Text>
+                      <Text style={styles.droneSub}>
+                        Pin: {drone.battery ?? 0}% | Trạng thái: {drone.status ?? 'Không rõ'}
                       </Text>
-                    ))}
-                    {(order.items?.length ?? 0) > 3 && (
-                      <Text style={styles.orderSubLabel}>
-                        + {Math.max(0, (order.items?.length ?? 0) - 3)} món khác
-                      </Text>
-                    )}
+                    </View>
+                    <TouchableOpacity
+                      style={styles.droneBtn}
+                      onPress={async () => {
+                        try {
+                          const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
+                          await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
+                          Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
+                        } catch (err) {
+                          console.error(err);
+                          Alert.alert('Lỗi', 'Không thể cập nhật trạng thái drone.');
+                        }
+                      }}
+                    >
+                      <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
+                    </TouchableOpacity>
                   </View>
+                ))
+              )}
+            </View>
+          ) : (
+            // Orders list
+            <View style={{ marginTop: 8 }}>
+              {filteredOrders.length === 0 ? (
+                <View style={styles.emptyState}>
+                  <Ionicons name="receipt-outline" size={48} color="#999" />
+                  <Text style={styles.emptyTitle}>Không có đơn hàng phù hợp</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Hãy thử chọn mục khác trong menu ở góc phải phía trên.
+                  </Text>
                 </View>
+              ) : (
+                filteredOrders.map((order) => {
+                  const assignedDrone = drones.find((d) => d.id === order.droneId);
+                  const status = order.status ?? '—';
+                  const canAssign = !isDeliveredStatus(status) && !isDeliveringStatus(status);
+                  const canMarkDelivered = isDeliveringStatus(status);
 
-                <View style={styles.orderFooter}>
-                  <View>
-                    <Text style={styles.totalLabel}>Tổng tiền</Text>
-                    <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
-                  </View>
-                  <View style={styles.actionColumn}>
-                    {assignedDrone ? (
-                      <View style={styles.droneTag}>
-                        <Ionicons name="airplane-outline" size={16} color="#00A74F" />
-                        <Text style={styles.droneTagText}>
-                          {assignedDrone.name ?? 'Drone'} • {assignedDrone.battery ?? 0}% pin
-                        </Text>
+                  return (
+                    <View key={order.id} style={styles.orderCard}>
+                      <View style={styles.orderHeaderRow}>
+                        <View>
+                          <Text style={styles.orderCode}>Đơn #{order.id}</Text>
+                          <Text style={styles.orderDate}>{formatDateTime(order.createdAt)}</Text>
+                        </View>
+                        <View style={[styles.statusBadge, getStatusStyle(status)]}>
+                          <Text style={styles.statusText}>{status}</Text>
+                        </View>
                       </View>
-                    ) : (
-                      <View style={styles.droneTagMuted}>
-                        <Ionicons name="airplane-outline" size={16} color="#999" />
-                        <Text style={styles.droneMutedText}>Chưa có drone</Text>
-                      </View>
-                    )}
 
-                    {canAssign ? (
-                      <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={() => setPickerOrder(order)}
-                        disabled={assigningOrderId === order.id}
-                      >
-                        {assigningOrderId === order.id ? (
-                          <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                          <Text style={styles.primaryButtonText}>Giao bằng drone</Text>
-                        )}
-                      </TouchableOpacity>
-                    ) : canMarkDelivered ? (
-                      <TouchableOpacity
-                        style={[styles.primaryButton, styles.successButton]}
-                        onPress={() => handleMarkDelivered(order)}
-                        disabled={markingOrderId === order.id}
-                      >
-                        {markingOrderId === order.id ? (
-                          <ActivityIndicator size="small" color="#fff" />
-                        ) : (
-                          <Text style={styles.primaryButtonText}>Đã giao xong</Text>
-                        )}
-                      </TouchableOpacity>
-                    ) : (
-                      <View style={styles.disabledButton}>
-                        <Text style={styles.disabledButtonText}>Đơn đã xử lý</Text>
+                      <View style={styles.orderInfoRow}>
+                        <Ionicons name="person-outline" size={18} color="#555" />
+                        <View style={styles.orderInfoText}>
+                          <Text style={styles.orderLabel}>{order.customer?.name ?? 'Khách lẻ'}</Text>
+                          <Text style={styles.orderSubLabel}>{order.customer?.phone}</Text>
+                        </View>
                       </View>
-                    )}
-                  </View>
-                </View>
-              </View>
-            );
-          })
-        )}
+
+                      <View style={styles.orderInfoRow}>
+                        <Ionicons name="location-outline" size={18} color="#555" />
+                        <View style={styles.orderInfoText}>
+                          <Text style={styles.orderLabel}>
+                            {order.customer?.address ?? 'Không rõ địa chỉ'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.orderFooter}>
+                        <View>
+                          <Text style={styles.totalLabel}>Tổng tiền</Text>
+                          <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
+                        </View>
+
+                        <View style={styles.actionColumn}>
+                          {assignedDrone ? (
+                            <View style={styles.droneTag}>
+                              <Ionicons name="airplane-outline" size={16} color="#00A74F" />
+                              <Text style={styles.droneTagText}>
+                                {assignedDrone.name} • {assignedDrone.battery ?? 0}% pin
+                              </Text>
+                            </View>
+                          ) : (
+                            <View style={styles.droneTagMuted}>
+                              <Ionicons name="airplane-outline" size={16} color="#999" />
+                              <Text style={styles.droneMutedText}>Chưa có drone</Text>
+                            </View>
+                          )}
+
+                          {canAssign ? (
+                            <TouchableOpacity
+                              style={styles.primaryButton}
+                              onPress={() => setPickerOrder(order)}
+                              disabled={assigningOrderId === order.id}
+                            >
+                              {assigningOrderId === order.id ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                              ) : (
+                                <Text style={styles.primaryButtonText}>Giao bằng drone</Text>
+                              )}
+                            </TouchableOpacity>
+                          ) : canMarkDelivered ? (
+                            <TouchableOpacity
+                              style={[styles.primaryButton, styles.successButton]}
+                              onPress={() => handleMarkDelivered(order)}
+                              disabled={markingOrderId === order.id}
+                            >
+                              {markingOrderId === order.id ? (
+                                <ActivityIndicator size="small" color="#fff" />
+                              ) : (
+                                <Text style={styles.primaryButtonText}>Đã giao xong</Text>
+                              )}
+                            </TouchableOpacity>
+                          ) : (
+                            <View style={styles.disabledButton}>
+                              <Text style={styles.disabledButtonText}>Đơn đã xử lý</Text>
+                            </View>
+                          )}
+                        </View>
+                      </View>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
+        </FadeIn>
       </ScrollView>
 
-      <Modal visible={!!pickerOrder} transparent animationType="slide">
+      {/* Modal chọn Drone */}
+      <Modal visible={!!pickerOrder} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Chọn drone giao hàng</Text>
+            <Text style={styles.modalTitle}>Chọn drone để giao</Text>
             {availableDrones.length === 0 ? (
               <View style={styles.modalEmpty}>
                 <Ionicons name="alert-circle-outline" size={32} color="#FF7043" />
                 <Text style={styles.modalEmptyText}>Hiện chưa có drone nào rảnh.</Text>
               </View>
             ) : (
-              availableDrones.map((drone) => (
+              availableDrones.map((d) => (
                 <TouchableOpacity
-                  key={drone.id}
+                  key={d.id}
                   style={styles.modalOption}
-                  onPress={() => handleAssignDrone(drone)}
+                  onPress={() => handleAssignDrone(d)}
                   disabled={assigningOrderId === pickerOrder?.id}
                 >
                   <View>
-                    <Text style={styles.modalOptionTitle}>{drone.name ?? 'Drone không tên'}</Text>
-                    <Text style={styles.modalOptionSubtitle}>Pin {drone.battery ?? 0}%</Text>
+                    <Text style={styles.modalOptionTitle}>{d.name}</Text>
+                    <Text style={styles.modalOptionSubtitle}>Pin {d.battery}% - {d.status}</Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#00A74F" />
                 </TouchableOpacity>
               ))
             )}
-
             <TouchableOpacity
               style={styles.modalCancel}
               onPress={() => setPickerOrder(null)}
@@ -519,10 +521,58 @@ export default function RestaurantAdminScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Modal Menu */}
+      <Modal
+        visible={menuVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setMenuVisible(false)}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPressOut={() => setMenuVisible(false)}
+          style={styles.menuOverlay}
+        >
+          <View style={styles.menuContainer}>
+            <Text style={styles.menuTitle}>Tùy chọn</Text>
+
+            {[
+              { key: 'all', label: ' Tổng đơn hàng' },
+              { key: 'processing', label: 'Đơn đang xử lý' },
+              { key: 'delivering', label: ' Đơn đang giao' },
+              { key: 'delivered', label: ' Đơn đã giao' },
+              { key: 'drones', label: ' Quản lý Drone' },
+            ].map((item) => (
+              <TouchableOpacity
+                key={item.key}
+                style={styles.menuItem}
+                onPress={() => {
+                  setViewMode(item.key as ViewMode);
+                  setMenuVisible(false);
+                }}
+              >
+                <Text style={styles.menuItemText}>{item.label}</Text>
+              </TouchableOpacity>
+            ))}
+
+            <View style={styles.menuDivider} />
+
+            <TouchableOpacity
+              style={[styles.menuItem, { backgroundColor: '#FDECEA' }]}
+              onPress={handleLogout}
+            >
+              <Ionicons name="log-out-outline" size={18} color="#E53935" />
+              <Text style={[styles.menuItemText, { color: '#E53935' }]}>Đăng xuất</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
 
+/* ========= STYLE ========= */
 const getStatusStyle = (status: string) => {
   if (isDeliveredStatus(status)) return styles.statusDelivered;
   if (isDeliveringStatus(status)) return styles.statusDelivering;
@@ -531,111 +581,51 @@ const getStatusStyle = (status: string) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F7FA',
+  container: { flex: 1, backgroundColor: '#F5F7FA' },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, backgroundColor: '#F5F7FA' },
+  scrollContent: { padding: 20, paddingBottom: 40, gap: 16 },
+
+  /* Header */
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 24, fontWeight: '700', color: '#1A1C1E' },
+  subtitle: { marginTop: 4, fontSize: 15, color: '#4A4C50' },
+  menuButton: {
+    padding: 8, backgroundColor: '#fff', borderRadius: 999,
+    shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2,
   },
-  centered: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#F5F7FA',
+
+  /* Section Header Card (xanh nhạt) */
+  sectionHeaderCard: {
+    marginTop: 16,
+    backgroundColor: '#E6F6EC',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-    gap: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1A1C1E',
-  },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 15,
-    color: '#4A4C50',
-  },
-  logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#E53935',
-    backgroundColor: '#FDECEA',
-  },
-  logoutText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#C62828',
-  },
-  statRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
+  sectionHeaderText: { color: '#007C35', fontWeight: '700', fontSize: 15 },
+  sectionHeaderCount: { color: '#007C35', fontWeight: '700', fontSize: 15 },
+
+  /* Drone list */
+  droneCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    elevation: 1,
+    padding: 14,
+    marginBottom: 10,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 2 },
-  },
-  statPrimary: {
-    backgroundColor: '#00A74F',
-  },
-  statPrimaryText: {
-    color: '#FFFFFF',
-  },
-  statLabel: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#4A4C50',
-  },
-  statValue: {
-    marginTop: 4,
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1C1E',
-  },
-  sectionHeader: {
+    elevation: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 4,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
-  },
-  sectionBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#E6F6EC',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  sectionBadgeText: {
-    color: '#007C35',
-    fontWeight: '600',
-    fontSize: 13,
-  },
+  droneName: { fontSize: 16, fontWeight: '700', color: '#1A1C1E' },
+  droneSub: { color: '#6C6F75', fontSize: 13, marginTop: 4 },
+  droneBtn: { backgroundColor: '#00A74F', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
+  droneBtnText: { color: '#FFF', fontWeight: '600', fontSize: 13 },
+
+  /* Orders list */
   orderCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -646,22 +636,86 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 4 },
     elevation: 1,
+    marginTop: 12,
   },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  orderHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  orderCode: { fontSize: 16, fontWeight: '700', color: '#1A1C1E' },
+  orderDate: { marginTop: 2, color: '#6C6F75', fontSize: 13 },
+  orderInfoRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
+  orderInfoText: { flex: 1, gap: 2 },
+  orderLabel: { fontSize: 14, fontWeight: '600', color: '#1A1C1E' },
+  orderSubLabel: { fontSize: 13, color: '#6C6F75' },
+  orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
+
+  totalLabel: { fontSize: 13, color: '#6C6F75' },
+  totalValue: { marginTop: 4, fontSize: 18, fontWeight: '700', color: '#1A1C1E' },
+
+  actionColumn: { alignItems: 'flex-end', gap: 10 },
+  droneTag: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#E6F6EC', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  droneTagText: { color: '#007C35', fontWeight: '600', fontSize: 13 },
+  droneTagMuted: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#F1F2F4', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
+  },
+  droneMutedText: { fontSize: 13, color: '#85888E' },
+
+  primaryButton: {
+    backgroundColor: '#00A74F',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    minWidth: 150,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  orderCode: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1C1E',
+  primaryButtonText: { color: '#FFFFFF', fontWeight: '700' },
+  successButton: { backgroundColor: '#2E7D32' },
+  disabledButton: { backgroundColor: '#E0E0E0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
+  disabledButtonText: { color: '#8C8C8C', fontWeight: '600' },
+
+  /* Empty state */
+  emptyState: {
+    alignItems: 'center', gap: 12, padding: 32,
+    backgroundColor: '#FFFFFF', borderRadius: 16,
   },
-  orderDate: {
-    marginTop: 2,
-    color: '#6C6F75',
-    fontSize: 13,
+  emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1A1C1E', textAlign: 'center' },
+  emptySubtitle: { fontSize: 13, color: '#6C6F75', textAlign: 'center' },
+
+  /* Modal chọn drone */
+  modalBackdrop: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center', alignItems: 'center', padding: 24,
   },
+  modalContent: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, gap: 12 },
+  modalTitle: { fontSize: 18, fontWeight: '700', color: '#1A1C1E' },
+  modalEmpty: { alignItems: 'center', gap: 12, paddingVertical: 12 },
+  modalEmptyText: { fontSize: 14, color: '#6C6F75', textAlign: 'center' },
+  modalOption: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#E0E0E0',
+  },
+  modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#1A1C1E' },
+  modalOptionSubtitle: { fontSize: 13, color: '#6C6F75', marginTop: 4 },
+  modalCancel: {
+    marginTop: 4, alignSelf: 'center', paddingHorizontal: 24, paddingVertical: 10,
+    borderRadius: 999, borderWidth: 1, borderColor: '#00A74F',
+  },
+  modalCancelText: { color: '#00A74F', fontWeight: '600' },
+
+  /* Menu */
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  menuContainer: { width: '80%', backgroundColor: '#fff', borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20 },
+  menuTitle: { fontSize: 18, fontWeight: '700', color: '#1A1C1E', marginBottom: 10, textAlign: 'center' },
+  menuItem: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    paddingVertical: 12, borderRadius: 8, marginBottom: 6, backgroundColor: '#F5F7FA',
+  },
+  menuItemText: { fontSize: 15, fontWeight: '600', color: '#1A1C1E' },
+  menuDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 8 },
+  /* Status badges */
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -684,189 +738,5 @@ const styles = StyleSheet.create({
   statusPending: {
     backgroundColor: '#F1F2F4',
   },
-  orderInfoRow: {
-    flexDirection: 'row',
-    gap: 10,
-    alignItems: 'flex-start',
-  },
-  orderInfoText: {
-    flex: 1,
-    gap: 2,
-  },
-  orderLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1A1C1E',
-  },
-  orderSubLabel: {
-    fontSize: 13,
-    color: '#6C6F75',
-  },
-  orderFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    gap: 12,
-  },
-  totalLabel: {
-    fontSize: 13,
-    color: '#6C6F75',
-  },
-  totalValue: {
-    marginTop: 4,
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
-  },
-  actionColumn: {
-    alignItems: 'flex-end',
-    gap: 10,
-  },
-  droneTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#E6F6EC',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  droneTagText: {
-    color: '#007C35',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  droneTagMuted: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#F1F2F4',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
-  droneMutedText: {
-    fontSize: 13,
-    color: '#85888E',
-  },
-  primaryButton: {
-    backgroundColor: '#00A74F',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    minWidth: 150,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-  },
-  successButton: {
-    backgroundColor: '#2E7D32',
-  },
-  disabledButton: {
-    backgroundColor: '#E0E0E0',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-  },
-  disabledButtonText: {
-    color: '#8C8C8C',
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    gap: 12,
-    padding: 32,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-  },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1A1C1E',
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: '#6C6F75',
-    textAlign: 'center',
-  },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    gap: 12,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1A1C1E',
-  },
-  modalEmpty: {
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-  },
-  modalEmptyText: {
-    fontSize: 14,
-    color: '#6C6F75',
-    textAlign: 'center',
-  },
-  modalOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#E0E0E0',
-  },
-  modalOptionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1C1E',
-  },
-  modalOptionSubtitle: {
-    fontSize: 13,
-    color: '#6C6F75',
-    marginTop: 4,
-  },
-  modalCancel: {
-    marginTop: 4,
-    alignSelf: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: '#00A74F',
-  },
-  modalCancelText: {
-    color: '#00A74F',
-    fontWeight: '600',
-  },
-  backButton: {
-    marginTop: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: '#00A74F',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#E6F6EC',
-  },
-  backButtonText: {
-    color: '#007C35',
-    fontWeight: '600',
-  },
+
 });

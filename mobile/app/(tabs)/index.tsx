@@ -161,7 +161,7 @@ const FoodScreenListHeader = ({
         </View>
       )}
 
-
+      {/*
       <View style={styles.segmentContainer}>
         <TouchableOpacity style={[styles.segmentButton, styles.segmentButtonActive]}>
           <Text style={[styles.segmentText, styles.segmentTextActive]}>Giao hàng</Text>
@@ -170,7 +170,7 @@ const FoodScreenListHeader = ({
           <Text style={styles.segmentText}>Đi Ăn Nhà Hàng</Text>
         </TouchableOpacity>
       </View>
-
+*/}
 
       <View style={styles.quickFilterSection}>
         <Text style={styles.sectionLabel}>Thực đơn hôm nay</Text>
