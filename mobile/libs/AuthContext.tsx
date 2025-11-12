@@ -14,6 +14,8 @@ type User = {
     address?: string;
     username?: string;
     email?: string;
+    restaurantId?: string | null;
+    restaurantName?: string | null;
 };
 
 type AuthContextType = {

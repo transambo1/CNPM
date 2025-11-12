@@ -11,12 +11,16 @@ export default function ProtectedLayout() {
 
   useEffect(() => {
     if (loading) return;
+    if (user?.role === 'restaurant') {
+      router.replace('/restaurant-admin');
+      return;
+    }
     if (!user) {
       router.replace("/(auth)/login");
     }
   }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading || !user || user.role === 'restaurant') {
     return null;
   }
 
