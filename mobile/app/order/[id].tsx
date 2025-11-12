@@ -27,12 +27,7 @@ type Region = {
 };
 
 // 🔒 Chỉ import react-native-maps khi KHÔNG chạy web
-if (Platform.OS !== 'web') {
-  const Maps = require('react-native-maps');
-  MapView = Maps.default;
-  Marker = Maps.Marker;
-  Polyline = Maps.Polyline;
-}
+
 import {
   doc,
   getFirestore,
@@ -561,13 +556,7 @@ export default function OrderTrackingScreen() {
       </SafeAreaView>
     );
   }
-  if (Platform.OS === 'web') {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>🌍 Bản đồ không hỗ trợ trên Web, hãy mở trên Android hoặc iOS.</Text>
-      </View>
-    );
-  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
@@ -605,8 +594,15 @@ export default function OrderTrackingScreen() {
           const ORDER_STEPS = [
             { key: 'pending', title: 'Đặt đơn thành công', subtitle: 'Đang chờ nhà hàng xác nhận.' },
             { key: 'confirmed', title: 'Nhà hàng xác nhận', subtitle: 'Sẽ sớm điều phối drone.' },
+            { key: 'completed', title: 'Đã giao', subtitle: 'Đơn hàng đã được giao thành công.' },
           ];
-          const stepKey = isCancelled ? 'pending' : normalizedStatus === 'pending' ? 'pending' : 'confirmed';
+          const stepKey =
+            normalizedStatus === 'completed'
+              ? 'completed'
+              : normalizedStatus === 'confirmed' || normalizedStatus === 'delivering'
+                ? 'confirmed'
+                : 'pending';
+
           const stepIndex = Math.max(0, ORDER_STEPS.findIndex(s => s.key === stepKey));
 
           return (
@@ -638,113 +634,86 @@ export default function OrderTrackingScreen() {
             </View>
           );
         })()}
+        {/* Nút hành động thay đổi trạng thái */}
+        {(() => {
+          // pending → nút "Xác nhận đơn"
+          if (normalizedStatus === 'pending') {
+            return (
+              <TouchableOpacity
+                style={styles.confirmBtn}
+                onPress={async () => {
+                  try {
+                    const orderRef = doc(db, "orders", order.id);
+                    await updateDoc(orderRef, {
+                      status: "confirmed",
+                      statusText: "Nhà hàng đã xác nhận đơn hàng",
+                      updatedAt: serverTimestamp(),
+                    });
+                    Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận!");
+                  } catch (err) {
+                    console.error(err);
+                    Alert.alert("Lỗi", "Không thể xác nhận đơn hàng.");
+                  }
+                }}
+              >
+                <Ionicons name="checkmark-done" size={22} color="#fff" />
+                <Text style={styles.confirmBtnText}>Xác nhận đơn</Text>
+              </TouchableOpacity>
+            );
+          }
+
+          // confirmed hoặc delivering → nút "Đã nhận hàng"
+          if (normalizedStatus === 'confirmed' || normalizedStatus === 'delivering') {
+            return (
+              <TouchableOpacity
+                style={[styles.confirmBtn, { backgroundColor: '#0EA5E9' }]}
+                onPress={async () => {
+                  try {
+                    const orderRef = doc(db, "orders", order.id);
+                    await updateDoc(orderRef, {
+                      status: "completed",
+                      statusText: "Đơn hàng đã được giao thành công",
+                      updatedAt: serverTimestamp(),
+                    });
+                    Alert.alert("🎉 Thành công", "Đơn hàng đã chuyển sang Đã giao!");
+                  } catch (err) {
+                    console.error(err);
+                    Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
+                  }
+                }}
+              >
+                <Ionicons name="cube-outline" size={22} color="#fff" />
+                <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
+              </TouchableOpacity>
+            );
+          }
+
+          // completed → không hiển thị nút
+          return null;
+        })()}
+
 
         {/* Map card */}
-        {(() => {
-          const showMap =
-            mapRegion && !isCancelled && mapEnabledStatuses.includes(normalizedStatus) && (restaurantPoint || customerPoint);
-          if (!showMap) return null;
+        <View style={[styles.card, styles.mapCard]}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
+          </View>
 
-          return (
-            <View style={[styles.card, styles.mapCard]}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
-                <View style={styles.mapHeaderRight}>
-                  {droneDoc?.name ? (
-                    <View style={styles.mapBadge}>
-                      <Ionicons name="airplane-outline" size={12} />
-                      <Text style={styles.mapBadgeText}>{droneDoc.name}</Text>
-                    </View>
-                  ) : null}
-                  {typeof droneDoc?.battery === 'number' ? (
-                    <View style={styles.mapBadge}>
-                      <Ionicons name="battery-half-outline" size={12} />
-                      <Text style={styles.mapBadgeText}>{Math.round(droneDoc.battery)}%</Text>
-                    </View>
-                  ) : null}
-                </View>
-              </View>
-
-              <View style={styles.mapContainer}>
-                <MapView
-                  ref={mapRef}
-                  style={styles.mapView}
-                  initialRegion={mapRegion || undefined}
-                  scrollEnabled
-                  zoomEnabled
-                  rotateEnabled={false}
-                  pitchEnabled={false}
-                >
-                  {restaurantPoint ? (
-                    <Marker
-                      coordinate={restaurantPoint}
-                      title={order.restaurantName || 'Nhà hàng'}
-                      description={order.restaurantAddress}
-                      pinColor="#047857"
-                    />
-                  ) : null}
-
-                  {customerPoint ? (
-                    <Marker
-                      coordinate={customerPoint}
-                      title={order.customer?.name || 'Khách hàng'}
-                      description={order.deliveryAddress}
-                      pinColor="#EF4444"
-                    />
-                  ) : null}
-
-                  {/* Drone marker */}
-                  <Marker
-                    {...({ coordinate: dronePos, anchor: { x: 0.5, y: 0.5 }, flat: true, rotation: droneHeading, image: droneIcon } as any)}
-                  />
-
-
-                  {/* Route nhà hàng -> khách */}
-                  {restaurantPoint && customerPoint ? (
-                    <Polyline
-                      coordinates={[restaurantPoint, customerPoint]}
-                      strokeColor="#CBD5F5"
-                      strokeWidth={3}
-                      lineDashPattern={[6, 4]}
-                    />
-                  ) : null}
-
-                  {/* Drone -> khách (đoạn còn lại) */}
-                  {dronePos && customerPoint ? (
-                    <Polyline
-                      coordinates={[dronePos, customerPoint]}
-                      strokeColor="#22C55E"
-                      strokeWidth={4}
-                    />
-                  ) : null}
-                </MapView>
-
-
-              </View>
-
-              <View style={styles.mapInfoRow}>
-                <View style={styles.mapInfoItem}>
-                  <Ionicons name="navigate-outline" size={16} />
-                  <Text style={styles.mapInfoText}>
-                    {distanceLabel ? `Còn ${distanceLabel}` : 'Đang cập nhật vị trí drone'}
-                  </Text>
-                </View>
-                <View style={styles.mapInfoItem}>
-                  <Ionicons name="time-outline" size={16} />
-                  <Text style={styles.mapInfoText}>
-                    {etaLabel ? `ETA ${etaLabel}` : 'Đang ước tính thời gian'}
-                  </Text>
-                </View>
-                {droneDoc?.status ? (
-                  <View style={styles.mapInfoItem}>
-                    <Ionicons name="radio-outline" size={16} />
-                    <Text style={styles.mapInfoText}>{String(droneDoc.status)}</Text>
-                  </View>
-                ) : null}
-              </View>
-            </View>
-          );
-        })()}
+          <View
+            style={{
+              height: 220,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#F8FAFC',
+            }}
+          >
+            <Ionicons name="earth-outline" size={36} color="#94A3B8" />
+            <Text style={{ color: '#64748B', marginTop: 8 }}>Bản đồ không khả dụng trên Web</Text>
+          </View>
+        </View>
 
         {/* Items */}
         <View style={styles.card}>
@@ -824,16 +793,7 @@ export default function OrderTrackingScreen() {
         </View>
 
         {/* Confirm Delivered Button */}
-        {shouldShowConfirm ? (
-          <TouchableOpacity style={styles.confirmBtn} onPress={handleConfirmDelivered} activeOpacity={0.9}>
-            <Ionicons name="checkmark-done" size={22} color="#fff" />
-            <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
-              <Text style={styles.confirmBtnHint}>Xác nhận để hoàn tất đơn và giải phóng drone</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color="#fff" />
-          </TouchableOpacity>
-        ) : null}
+
 
         {/* Completed */}
         {isCompleted ? (
