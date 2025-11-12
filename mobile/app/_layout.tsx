@@ -5,6 +5,8 @@ import { AuthProvider } from "../libs/AuthContext";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { CartProvider } from "../libs/CartContext";
 
+import "../polyfills/registerNotificationCalendarCommand";
+
 export default function RootLayout() {
   return (
     <SafeAreaProvider>
