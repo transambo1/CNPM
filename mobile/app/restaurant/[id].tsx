@@ -8,6 +8,8 @@ import {
   ActivityIndicator,
   StyleSheet,
   RefreshControl,
+  ScrollView,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,7 +23,6 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
-
 import { app } from '../../libs/firebase';
 import { useCart } from '../../libs/CartContext';
 
@@ -48,6 +49,14 @@ type Restaurant = {
   promoText?: string;
 };
 
+const sortOptions = [
+  { key: 'all', label: 'Tất cả' },
+  { key: 'price_asc', label: 'Giá tăng dần' },
+  { key: 'price_desc', label: 'Giá giảm dần' },
+  { key: 'popular', label: 'Phổ biến' },
+  { key: 'rating', label: 'Đánh giá cao' },
+];
+
 export default function RestaurantMenu() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -58,16 +67,17 @@ export default function RestaurantMenu() {
   const [refreshing, setRefreshing] = useState(false);
   const { totalItems } = useCart();
 
-  const db = useMemo(() => getFirestore(app), []);
+  const [searchText, setSearchText] = useState('');
+  const [sortFilter, setSortFilter] = useState('all');
 
+  const db = useMemo(() => getFirestore(app), []);
   const titleText = restaurant?.name ? restaurant.name : 'Nhà hàng';
 
   const fetchAll = useCallback(async (options?: { silent?: boolean }) => {
     if (!id) return;
     const silent = options?.silent ?? false;
-    if (!silent) {
-      setLoading(true);
-    }
+    if (!silent) setLoading(true);
+
     const restaurantId = Array.isArray(id) ? id[0] : id;
 
     try {
@@ -122,6 +132,33 @@ export default function RestaurantMenu() {
     fetchAll({ silent: true });
   }, [fetchAll]);
 
+  const filteredProducts = useMemo(() => {
+    let data = products;
+
+    if (searchText.trim()) {
+      data = data.filter((p) =>
+        p.name.toLowerCase().includes(searchText.trim().toLowerCase())
+      );
+    }
+
+    switch (sortFilter) {
+      case 'price_asc':
+        data = [...data].sort((a, b) => a.price - b.price);
+        break;
+      case 'price_desc':
+        data = [...data].sort((a, b) => b.price - a.price);
+        break;
+      case 'rating':
+        data = [...data].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+        break;
+      case 'popular':
+        data = [...data].sort((a, b) => (b.reviews ?? 0) - (a.reviews ?? 0));
+        break;
+    }
+
+    return data;
+  }, [products, searchText, sortFilter]);
+
   const renderMenuItem = ({ item }: { item: Product }) => (
     <TouchableOpacity
       activeOpacity={0.9}
@@ -164,39 +201,9 @@ export default function RestaurantMenu() {
             <Text style={styles.heroAddress} numberOfLines={1}>
               {restaurant.address}
             </Text>
-            <View style={styles.heroBadges}>
-              <View style={styles.badgeChip}>
-                <Ionicons name="star" size={14} color="#FFC107" style={{ marginRight: 4 }} />
-                <Text style={styles.badgeText}>{(restaurant.rating ?? 4.6).toFixed(1)} điểm</Text>
-              </View>
-              <View style={styles.badgeChip}>
-                <Ionicons name="time-outline" size={14} color="#00A74F" style={{ marginRight: 4 }} />
-                <Text style={styles.badgeText}>{restaurant.deliveryTime ?? 20} phút</Text>
-              </View>
-              <View style={styles.badgeChip}>
-                <Ionicons name={restaurant.isOpen ? 'checkmark-circle-outline' : 'moon-outline'} size={14} color="#fff" style={{ marginRight: 4 }} />
-                <Text style={styles.badgeText}>{restaurant.isOpen ? 'Đang mở cửa' : 'Đóng cửa'}</Text>
-              </View>
-            </View>
           </View>
         </View>
       )}
-
-      <View style={styles.infoBanner}>
-        <View style={styles.infoRow}>
-          <Ionicons name="bicycle-outline" size={20} color="#00A74F" />
-          <View style={{ marginLeft: 10 }}>
-            <Text style={styles.infoTitle}>Giao nhanh bởi Grab</Text>
-            <Text style={styles.infoSubtitle}>Theo dõi đơn hàng trong thời gian thực ngay trên ứng dụng</Text>
-          </View>
-        </View>
-        {restaurant?.promoText ? (
-          <View style={styles.promoRow}>
-            <Ionicons name="pricetag-outline" size={16} color="#00A74F" style={{ marginRight: 6 }} />
-            <Text style={styles.promoText}>{restaurant.promoText}</Text>
-          </View>
-        ) : null}
-      </View>
 
       <Text style={styles.sectionTitle}>Món nổi bật</Text>
     </View>
@@ -214,18 +221,18 @@ export default function RestaurantMenu() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
+
+      {/* 🔹 HEADER + FILTER */}
       <View style={styles.appBar}>
         <TouchableOpacity onPress={() => router.canGoBack() ? router.back() : router.push('/(tabs)')} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={26} color="#111" />
         </TouchableOpacity>
+
         <Text numberOfLines={1} style={styles.appBarTitle}>
           {titleText}
         </Text>
-        <TouchableOpacity
-          onPress={() => router.push('/cart')}
-          style={styles.cartButton}
-          accessibilityLabel="Xem giỏ hàng"
-        >
+
+        <TouchableOpacity onPress={() => router.push('/cart')} style={styles.cartButton}>
           <Ionicons name="cart-outline" size={24} color="#111" />
           {totalItems > 0 && (
             <View style={styles.cartBadge}>
@@ -235,193 +242,135 @@ export default function RestaurantMenu() {
         </TouchableOpacity>
       </View>
 
+      {/* 🔽 FILTER ngay dưới header */}
+      <View style={styles.filterBar}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {sortOptions.map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={[
+                styles.filterButton,
+                sortFilter === option.key && styles.filterButtonActive,
+              ]}
+              onPress={() => setSortFilter(option.key)}
+            >
+              <Text
+                style={[
+                  styles.filterText,
+                  sortFilter === option.key && styles.filterTextActive,
+                ]}
+              >
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <View style={styles.searchBox}>
+          <Ionicons name="search-outline" size={20} color="#555" style={{ marginRight: 6 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Tìm món ăn..."
+            placeholderTextColor="#888"
+            value={searchText}
+            onChangeText={setSearchText}
+          />
+        </View>
+      </View>
+
+      {/* 🔹 DANH SÁCH MÓN */}
       <FlatList
-        data={products}
+        data={filteredProducts}
         renderItem={renderMenuItem}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={products.length === 0 ? styles.emptyListContent : styles.listContent}
+        contentContainerStyle={filteredProducts.length === 0 ? styles.emptyListContent : styles.listContent}
         ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
         ListHeaderComponent={listHeader}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons name="fast-food-outline" size={56} color="#A0AEC0" />
-            <Text style={styles.emptyTitle}>Nhà hàng đang cập nhật menu</Text>
-            <Text style={styles.emptySubtitle}>Vui lòng quay lại sau để xem thêm món hấp dẫn nhé.</Text>
-          </View>
-        }
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor="#00A74F"
-            colors={["#00A74F"]}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#00A74F" colors={["#00A74F"]} />}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F6F8FB',
-  },
+  safeArea: { flex: 1, backgroundColor: '#F6F8FB' },
   appBar: {
     height: 56,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E9F0',
     backgroundColor: '#fff',
+    borderBottomColor: '#E5E9F0',
+    borderBottomWidth: 1,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#F0F3F6',
   },
   appBarTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#111',
+    flex: 1, textAlign: 'center',
+    fontSize: 18, fontWeight: '700', color: '#111',
   },
   cartButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
     backgroundColor: '#F0F3F6',
   },
   cartBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#FF3B30',
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', top: -4, right: -4,
+    minWidth: 18, height: 18, borderRadius: 9,
+    backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: '700',
+  cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+
+  filterBar: {
+    backgroundColor: '#fff',
+    borderBottomColor: '#E5E9F0',
+    borderBottomWidth: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
+  filterButton: {
+    paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: 20, backgroundColor: '#F1F5F9',
+    marginRight: 8,
+  },
+  filterButtonActive: { backgroundColor: '#00A74F' },
+  filterText: { fontSize: 14, color: '#111', fontWeight: '500' },
+  filterTextActive: { color: '#fff', fontWeight: '700' },
+
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F5F9',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 8,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: '#111' },
+
   heroWrapper: {
-    margin: 16,
-    borderRadius: 18,
-    overflow: 'hidden',
-    height: 200,
+    margin: 16, borderRadius: 18, overflow: 'hidden', height: 200,
   },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
+  heroImage: { width: '100%', height: '100%' },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.35)',
   },
-  heroContent: {
-    position: 'absolute',
-    bottom: 18,
-    left: 18,
-    right: 18,
-  },
-  heroName: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 6,
-  },
-  heroAddress: {
-    color: '#F1F5F9',
-    fontSize: 14,
-  },
-  heroBadges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 14,
-  },
-  badgeChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  infoBanner: {
-    backgroundColor: '#fff',
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-  },
-  infoSubtitle: {
-    marginTop: 4,
-    color: '#64748B',
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  promoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    backgroundColor: '#E6F7EF',
-  },
-  promoText: {
-    color: '#008D4C',
-    fontWeight: '600',
-  },
+  heroContent: { position: 'absolute', bottom: 18, left: 18, right: 18 },
+  heroName: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 6 },
+  heroAddress: { color: '#F1F5F9', fontSize: 14 },
   sectionTitle: {
-    marginTop: 26,
-    marginBottom: 12,
-    marginHorizontal: 16,
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111',
+    marginTop: 26, marginBottom: 12,
+    marginHorizontal: 16, fontSize: 20,
+    fontWeight: '700', color: '#111',
   },
-  listContent: {
-    paddingBottom: 32,
-    paddingHorizontal: 16,
-  },
-  emptyListContent: {
-    flexGrow: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 32,
-  },
+  listContent: { paddingBottom: 32, paddingHorizontal: 16 },
+  emptyListContent: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 32 },
   menuCard: {
     flexDirection: 'row',
     backgroundColor: '#fff',
@@ -440,65 +389,16 @@ const styles = StyleSheet.create({
     marginRight: 12,
     backgroundColor: '#F1F5F9',
   },
-  menuContent: {
-    flex: 1,
-    justifyContent: 'space-between',
-  },
-  menuHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 10,
-  },
-  menuTitle: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#111',
-  },
-  menuPrice: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#00A74F',
-  },
+  menuContent: { flex: 1, justifyContent: 'space-between' },
+  menuHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
+  menuTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#111' },
+  menuPrice: { fontSize: 15, fontWeight: '700', color: '#00A74F' },
   menuMeta: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
     marginTop: 14,
   },
-  metaGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  metaText: {
-    marginLeft: 6,
-    fontSize: 13,
-    color: '#111',
-    fontWeight: '600',
-  },
-  metaSub: {
-    marginLeft: 4,
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 40,
-    marginTop: 40,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    marginTop: 12,
-    color: '#111',
-  },
-  emptySubtitle: {
-    marginTop: 4,
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-  },
+  metaGroup: { flexDirection: 'row', alignItems: 'center' },
+  metaText: { marginLeft: 6, fontSize: 13, color: '#111', fontWeight: '600' },
+  metaSub: { marginLeft: 4, fontSize: 12, color: '#6B7280' },
 });
