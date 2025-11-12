@@ -177,8 +177,8 @@ function Cart({ cart = [], setCart }) {
               Thanh toán
             </button>
 
-            <Link to="/" className="cart-page-back-link">
-              ⬅ Quay lại menu
+            <Link to="/" className="cart-page-back-link1">
+              Quay lại menu
             </Link>
           </div>
         </aside>

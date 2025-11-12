@@ -13,7 +13,7 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
     const location = useLocation();
     const initialSearch = new URLSearchParams(location.search).get("search") || "";
 
-  
+
 
     // State
     const [products, setProducts] = useState([]);
@@ -88,7 +88,10 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
     let filteredProducts = products.filter((p) => {
         const name = (p.name || "").toString().toLowerCase();
         const matchSearch = name.includes((searchTerm || "").toLowerCase());
-        const matchCategory = selectedCategory === "All" || p.category === selectedCategory;
+        const matchCategory =
+            selectedCategory.trim().toLowerCase() === "all" ||
+            (p.category || "").trim().toLowerCase() === selectedCategory.trim().toLowerCase();
+
         const priceNum = Number(p.price ?? 0);
         const matchPrice = priceNum >= Number(minPrice) && priceNum <= Number(maxPrice);
 
@@ -248,7 +251,7 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                                 onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
                             >
-                                ⬅ Prev
+                                Prev
                             </button>
 
                             {[...Array(totalPages)].map((_, i) => (
@@ -265,7 +268,7 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
                                 onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                                 disabled={currentPage === totalPages}
                             >
-                                Next ➡
+                                Next
                             </button>
                         </div>
                     )}

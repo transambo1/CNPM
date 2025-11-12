@@ -9,12 +9,12 @@ function Header({ cartCount }) {
   const [searchValue, setSearchValue] = useState("");
 
   // 🔹 Lấy currentUser từ context
-  const { currentUser, logout } = useAuth(); 
-    if (currentUser === undefined) return null;
+  const { currentUser, logout } = useAuth();
+  if (currentUser === undefined) return null;
 
   useEffect(() => {
-  console.log("Header currentUser:", currentUser);
-}, [currentUser]);
+    console.log("Header currentUser:", currentUser);
+  }, [currentUser]);
   const categories = [
     { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
     { key: "Sushi", label: "Sushi", img: "/Images/Sushi.jpg" },
@@ -79,7 +79,7 @@ function Header({ cartCount }) {
         </div>
 
         <button onClick={() => navigate("/restaurant")}>Nhà hàng</button>
-   
+
 
         <Link to="/Cart" className="cart-button">
           Giỏ hàng ({cartCount > 0 ? cartCount : 0})
