@@ -1,0 +1,43 @@
+.add-btn {
+    background-color: #ff9933;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 12px;
+}
+
+.add-btn:hover {
+    background-color: #ff7f00;
+}
+
+.add-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    background-color: #fafafa;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.add-form input,
+.add-form textarea {
+    padding: 6px;
+    flex: 1 1 200px;
+}
+
+.add-form button {
+    padding: 6px 10px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.add-form button:hover {
+    background: #0056b3;
+}

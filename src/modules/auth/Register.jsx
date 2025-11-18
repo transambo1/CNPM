@@ -13,7 +13,7 @@ function Register() {
         }
 
         // Kiểm tra username đã tồn tại chưa
-        const resCheck = await fetch(`http://localhost:5002/users?username=${username}`);
+        const resCheck = await fetch(`http://localhost:5005/users?username=${username}`);
         const dataCheck = await resCheck.json();
         if (dataCheck.length > 0) {
             alert("Username đã tồn tại");
@@ -21,7 +21,7 @@ function Register() {
         }
 
         // Tạo user mới
-        const res = await fetch(`http://localhost:5002/users`, {
+        const res = await fetch(`http://localhost:5005/users`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password, role: "customer" })

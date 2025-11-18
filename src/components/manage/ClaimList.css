@@ -1,0 +1,22 @@
+.claim-button {
+    background-color: #3a86ff;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.claim-button:hover {
+    background-color: #265cff;
+}
+
+.claim-list-container,
+.order-history-container {
+    margin: 20px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}

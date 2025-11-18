@@ -1,0 +1,109 @@
+/* ==== Tổng Layout ==== */
+.home-container {
+    width: 100%;
+    background-color: #ffffff;
+    overflow-x: hidden;
+}
+
+/* ==== Section Title ==== */
+.section-title {
+    text-align: center;
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #003e9a;
+}
+
+/* ==== Category Grid ==== */
+.category-section {
+    padding: 60px 40px;
+    background: #F5F9FF;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 28px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* ==== Category Card ==== */
+.category-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+
+.shadow-soft {
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05);
+}
+
+.category-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* ==== Image ==== */
+.category-img {
+    width: 85px;
+    height: 85px;
+    object-fit: contain;
+    margin-bottom: 15px;
+}
+
+/* ==== Text ==== */
+.card-content h3 {
+    font-size: 20px;
+    font-weight: 650;
+    color: #0044cc;
+    margin-bottom: 8px;
+}
+
+.card-content p {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.5rem;
+    margin-bottom: 16px;
+}
+
+/* ==== Button ==== */
+.btn-detail {
+    background: #0066FF;
+    border: none;
+    padding: 10px 22px;
+    color: white;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: 0.2s;
+}
+
+.btn-detail:hover {
+    background: #0052d6;
+}
+
+/* ==== Why Choose Us Section ==== */
+.why-choose {
+    padding: 60px 40px;
+    text-align: center;
+}
+
+.why-choose h2 {
+    font-size: 28px;
+    color: #003e9a;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.why-choose p {
+    max-width: 850px;
+    margin: auto;
+    font-size: 16px;
+    color: #444;
+    line-height: 1.8rem;
+}

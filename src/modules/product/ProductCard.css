@@ -1,0 +1,93 @@
+/* ======================= */
+/* PRODUCT CARD – BẢO HIỂM */
+/* ======================= */
+
+.pcard {
+    width: 320px;
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #e6eef5;
+    box-shadow: 0 8px 24px rgba(18, 24, 35, 0.06);
+
+    display: flex;
+    flex-direction: column;
+    transition: 0.25s ease;
+    cursor: pointer;
+}
+
+.pcard:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 32px rgba(18, 24, 35, 0.12);
+}
+
+/* IMAGE */
+.pcard-img-wrapper {
+    width: 100%;
+    height: 200px;
+    overflow: hidden;
+}
+
+.pcard-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* BODY */
+.pcard-body {
+    padding: 16px 20px;
+}
+
+.pcard-title {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #0b3d91;
+    /* xanh bảo hiểm */
+}
+
+.pcard-desc {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+/* CLAIM LIMIT */
+.pcard-claim {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 6px;
+}
+
+.pcard-claim span {
+    color: #d2191a;
+    font-weight: bold;
+}
+
+/* PRICE */
+.pcard-price {
+    font-size: 18px;
+    font-weight: bold;
+    color: #0a4ba3;
+    margin-bottom: 14px;
+}
+
+/* BUTTON */
+.pcard-btn {
+    text-align: center;
+    background: #0a60ff;
+    color: #fff;
+    padding: 12px 0;
+    border-radius: 0 0 16px 16px;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+
+    transition: 0.2s ease;
+}
+
+.pcard-btn:hover {
+    background: #0049d1;
+}

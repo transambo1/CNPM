@@ -5,7 +5,7 @@ function SellerOrders() {
 
     // Lấy tất cả đơn hàng
     useEffect(() => {
-        fetch("http://localhost:5002/orders")
+        fetch("http://localhost:5005/orders")
             .then((res) => res.json())
             .then((data) => setOrders(data))
             .catch((err) => console.error(err));
@@ -13,7 +13,7 @@ function SellerOrders() {
 
     // Hàm cập nhật trạng thái đơn hàng
     const updateStatus = (orderId, newStatus) => {
-        fetch(`http://localhost:5002/orders/${orderId}`, {
+        fetch(`http://localhost:5005/orders/${orderId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ status: newStatus })
@@ -31,17 +31,18 @@ function SellerOrders() {
 
     return (
         <div className="container">
-            <h2>Quản lý đơn hàng</h2>
+            <h2>Hợp đồng khách hàng </h2>
             {orders.length === 0 ? (
                 <p>Chưa có đơn hàng nào</p>
             ) : (
                 <table border="1" cellPadding="10" style={{ width: "100%", marginTop: "20px" }}>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Khách hàng</th>
+                            <th>Mã đơn</th>
+                            <th>Thông tin khách hàng</th>
                             <th>Sản phẩm</th>
                             <th>Tổng tiền</th>
+                            <th>Đền bù lên đến</th>
                             <th>Ngày đặt</th>
                             <th>Địa chỉ khách hàng</th>
                             <th>Trạng thái</th>
@@ -61,6 +62,14 @@ function SellerOrders() {
                                     ))}
                                 </td>
                                 <td>{order.total.toLocaleString()}đ</td>
+                                <td>
+                                    {order.items.map((item, index) => (
+                                        <div key={index}>
+                                            {Number(item.claim).toLocaleString()}đ
+                                        </div>
+                                    ))}
+                                </td>
+
                                 <td>{new Date(order.date).toLocaleString()}</td>
                                 <td>{order.customer.address}</td>
                                 <td>
@@ -70,8 +79,8 @@ function SellerOrders() {
                                     >
                                         <option value="Đang xử lý">Đang xử lý</option>
                                         <option value="Đã xử lý">Đã xử lý</option>
-                                        <option value="Đang giao">Đang giao</option>
-                                        <option value="Đã giao">Đã giao</option>
+
+
                                     </select>
                                 </td>
                             </tr>

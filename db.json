@@ -2,39 +2,163 @@
   "products": [
     {
       "id": "1",
-      "name": "Hamburrg",
-      "img": "/Images/Hambur.jpg",
-      "price": 25000000
+      "name": "Bảo hiểm Ô tô Toàn diện",
+      "img": "/Images/Logo.png",
+      "description": "Bảo vệ toàn diện cho xe ô tô trước rủi ro va chạm, cháy nổ và thiệt hại bất ngờ.",
+      "claim": 150000000,
+      "price": 25000000,
+      "category": "Bảo hiểm Cá nhân",
+      "bonus": [
+        {
+          "head": "Bảo vệ người ngồi trên xe",
+          "info": "Chi trả lên đến 40 triệu đồng/người trong trường hợp tai nạn.",
+          "infoPlus": "Công ty bảo hiểm hỗ trợ toàn bộ chi phí y tế hoặc tử vong do tai nạn trong khi tham gia giao thông."
+        }
+      ]
     },
     {
       "id": "2",
-      "name": "Tacos",
-      "img": "/Images/1.webp",
-      "price": 20000000
+      "name": "Bảo hiểm Tai nạn 24/7",
+      "img": "/Images/Logo.png",
+      "description": "Bảo vệ bạn suốt 24 giờ mỗi ngày trước các tai nạn trong công việc và cuộc sống.",
+      "claim": 120000000,
+      "price": 18000000,
+      "category": "Bảo hiểm Cá nhân",
+      "bonus": [
+        {
+          "head": "Chi trả thương tật hoặc tử vong do tai nạn",
+          "info": "Hỗ trợ 100% số tiền bảo hiểm nếu tử vong hoặc thương tật toàn bộ vĩnh viễn.",
+          "infoPlus": "Bao gồm tai nạn giao thông, lao động, thể thao và sinh hoạt hàng ngày."
+        }
+      ]
     },
     {
       "id": "3",
-      "name": "Gà rán",
-      "img": "/Images/Garan.jpg",
-      "price": 15000000
+      "name": "Bảo hiểm Y tế Toàn quốc",
+      "img": "/Images/Logo.png",
+      "description": "Đảm bảo quyền lợi chăm sóc y tế cho bạn tại mọi bệnh viện trong nước.",
+      "claim": 200000000,
+      "price": 22000000,
+      "category": "Bảo hiểm Y tế",
+      "bonus": [
+        {
+          "head": "Chi phí điều trị nội trú",
+          "info": "Chi trả 90% chi phí điều trị nội trú và phẫu thuật.",
+          "infoPlus": "Không giới hạn số lần nằm viện, áp dụng tại hơn 300 bệnh viện trên toàn quốc."
+        }
+      ]
     },
     {
       "id": "4",
-      "name": "Bami",
-      "img": "/Images/Hambur.jpg",
-      "price": 15000000
+      "name": "Bảo hiểm Y tế Cao cấp",
+      "img": "/Images/Logo.png",
+      "description": "Dịch vụ y tế cao cấp dành cho cá nhân có nhu cầu chăm sóc đặc biệt.",
+      "claim": 300000000,
+      "price": 35000000,
+      "category": "Bảo hiểm Y tế",
+      "bonus": [
+        {
+          "head": "Điều trị tại bệnh viện quốc tế",
+          "info": "Chi trả 100% chi phí điều trị và khám bệnh tại các bệnh viện quốc tế.",
+          "infoPlus": "Bao gồm khám tổng quát, điều trị bệnh mãn tính và hỗ trợ sau điều trị."
+        }
+      ]
     },
     {
       "id": "5",
-      "name": "Bami",
-      "img": "/Images/Hambur.jpg",
-      "price": 15000000
+      "name": "Bảo hiểm Sức khỏe Gia đình",
+      "img": "/Images/Logo.png",
+      "description": "Chăm sóc sức khỏe toàn diện cho tất cả các  thành viên trong gia đình.",
+      "claim": 180000000,
+      "price": 20000000,
+      "category": "Bảo hiểm Sức khỏe",
+      "bonus": [
+        {
+          "head": "Hỗ trợ chi phí y tế toàn phần",
+          "info": "Chi trả 80% chi phí khám bệnh, điều trị nội trú và ngoại trú.",
+          "infoPlus": "Áp dụng cho cả cha mẹ, vợ/chồng và con cái trong cùng hợp đồng."
+        }
+      ]
     },
     {
       "id": "6",
-      "name": "Sandwich",
-      "img": "/Images/Hambur.jpg",
-      "price": 18000000
+      "name": "Bảo hiểm Sức khỏe Cao cấp",
+      "img": "/Images/Logo.png",
+      "description": "Chương trình chăm sóc sức khỏe theo định kỳ và kiểm soát bệnh sớm nhất.",
+      "claim": 250000000,
+      "price": 32000000,
+      "category": "Bảo hiểm Sức khỏe",
+      "bonus": [
+        {
+          "head": "Tầm soát bệnh lý nguy hiểm",
+          "info": "Hỗ trợ chi phí tầm soát ung thư, tiểu đường, tim mạch định kỳ hằng năm.",
+          "infoPlus": "Bao gồm dịch vụ khám tại nhà và đặt lịch với chuyên gia đầu ngành."
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "name": "Bảo hiểm Doanh nghiệp ",
+      "img": "/Images/Logo.png",
+      "description": "Bảo vệ doanh nghiệp trước rủi ro về con người, tài sản và hoạt động sản xuất.",
+      "claim": 500000000,
+      "price": 80000000,
+      "category": "Bảo hiểm Công ty",
+      "bonus": [
+        {
+          "head": "Bảo vệ tài sản doanh nghiệp",
+          "info": "Chi trả thiệt hại do cháy nổ, hỏa hoạn, hoặc thiên tai.",
+          "infoPlus": "Hỗ trợ phục hồi sản xuất nhanh chóng để duy trì hoạt động kinh doanh."
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "name": "Bảo hiểm Nhân sự Cao cấp",
+      "img": "/Images/Logo.png",
+      "description": "Giải pháp bảo vệ nhân viên và người quản lý trước các rủi ro nghề nghiệp.",
+      "claim": 400000000,
+      "price": 60000000,
+      "category": "Bảo hiểm Công ty",
+      "bonus": [
+        {
+          "head": "Bảo hiểm tai nạn lao động",
+          "info": "Chi trả chi phí y tế và bồi thường thu nhập khi nghỉ việc do tai nạn.",
+          "infoPlus": "Áp dụng cho tất cả nhân viên có tên trong danh sách công ty."
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "name": "Bảo hiểm Du lịch Quốc tế",
+      "img": "/Images/Logo.png",
+      "description": "Đảm bảo an toàn cho bạn trong mọi chuyến đi nước ngoài.",
+      "claim": 180000000,
+      "price": 18000000,
+      "category": "Bảo hiểm Du lịch",
+      "bonus": [
+        {
+          "head": "Chi trả chi phí y tế ở nước ngoài",
+          "info": "Hỗ trợ đến 1 tỷ đồng cho chi phí cấp cứu, mất hành lý, hoặc chuyến bay bị hủy.",
+          "infoPlus": "Áp dụng cho hơn 150 quốc gia và vùng lãnh thổ trên thế giới."
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Bảo hiểm Du lịch Nội địa",
+      "img": "/Images/Logo.png",
+      "description": "Bảo vệ bạn và gia đình khi đi du lịch trong nước.",
+      "claim": 100000000,
+      "price": 12000000,
+      "category": "Bảo hiểm Du lịch",
+      "bonus": [
+        {
+          "head": "Hỗ trợ tai nạn và hủy chuyến",
+          "info": "Chi trả chi phí do tai nạn hoặc chi phí phát sinh khi hủy tour du lịch.",
+          "infoPlus": "Áp dụng cho cả du lịch cá nhân và theo đoàn trong lãnh thổ Việt Nam."
+        }
+      ]
     }
   ],
   "users": [
@@ -51,9 +175,15 @@
       "role": "customer"
     },
     {
-      "id": "249b",
-      "username": "âf",
-      "password": "gag",
+      "id": "1976",
+      "username": "rq",
+      "password": "rq",
+      "role": "customer"
+    },
+    {
+      "id": "8ab3",
+      "username": "aa",
+      "password": "aa",
       "role": "customer"
     }
   ],
@@ -72,6 +202,7 @@
           "id": "3",
           "name": "Gà rán",
           "img": "/Images/Garan.jpg",
+          "claim": 15000000,
           "price": 15000000,
           "quantity": 1
         }
@@ -81,91 +212,145 @@
       "date": "2025-10-02"
     },
     {
-      "id": "abd1",
-      "userId": "1",
+      "id": "e856",
+      "userId": "1976",
       "customer": {
-        "name": "ts gaa",
-        "phone": "41421",
-        "email": "gf@gmail.com",
-        "address": "200 an dương vương quânj 5"
-      },
-      "items": [
-        {
-          "id": "3",
-          "name": "Gà rán",
-          "img": "/Images/Garan.jpg",
-          "price": 15000000,
-          "quantity": 1
-        }
-      ],
-      "total": 15000000,
-      "status": "Đã xử lý",
-      "date": "2025-10-02"
-    },
-    {
-      "id": "1f37",
-      "userId": "1",
-      "customer": {
-        "name": "Kat Zan",
-        "phone": "0912",
-        "email": "fh@gmail.com",
-        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
-      },
-      "items": [
-        {
-          "id": "2",
-          "name": "Tacos",
-          "img": "/Images/1.webp",
-          "price": 20000000,
-          "quantity": 1
-        }
-      ],
-      "total": 20000000,
-      "status": "Đang giao",
-      "date": "2025-10-03"
-    },
-    {
-      "id": "52c6",
-      "userId": "1",
-      "customer": {
-        "name": "fafafa ửyw",
-        "phone": "5252",
-        "email": "gh@gmail.com",
+        "name": "fa ad",
+        "phone": "1",
+        "email": "ad@gmail.com",
         "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
       },
       "items": [
         {
           "id": "1",
-          "name": "Hamburrg",
+          "name": "Bảo hiểm Oto",
           "img": "/Images/Hambur.jpg",
+          "description": "Giúp đám bảo ô tô của bạn khỏi va chạm",
+          "claim": "Đền bù đến 15000000",
           "price": 25000000,
+          "category": " Bảo hiểm Cá nhân",
           "quantity": 1
-        },
+        }
+      ],
+      "total": 25000000,
+      "status": "Đã xử lý",
+      "date": "2025-10-08"
+    },
+    {
+      "id": "f8f4",
+      "userId": "1",
+      "customer": {
+        "name": "undefined undefined",
+        "phone": "0919040619",
+        "email": "ad@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
         {
-          "id": "2",
-          "name": "Tacos",
-          "img": "/Images/1.webp",
-          "price": 20000000,
+          "id": "3",
+          "name": "Bảo hiểm Y tế Toàn quốc",
+          "img": "/Images/Logo.png",
+          "description": "Đảm bảo quyền lợi chăm sóc y tế cho bạn tại mọi bệnh viện trong nước.",
+          "claim": 200000000,
+          "price": 22000000,
+          "category": "Bảo hiểm Y tế",
+          "bonus": [
+            {
+              "head": "Chi phí điều trị nội trú",
+              "info": "Chi trả 90% chi phí điều trị nội trú và phẫu thuật.",
+              "infoPlus": "Không giới hạn số lần nằm viện, áp dụng tại hơn 300 bệnh viện trên toàn quốc."
+            }
+          ],
           "quantity": 1
-        },
+        }
+      ],
+      "total": 22000000,
+      "totalClaim": 200000000,
+      "status": "Đang xử lý",
+      "date": "2025-10-09"
+    }
+  ],
+  "claims": [
+    {
+      "id": "c974",
+      "orderId": "7bce",
+      "userId": "1",
+      "customer": {
+        "name": "à fa",
+        "phone": "124",
+        "email": "ad@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
         {
           "id": "3",
           "name": "Gà rán",
           "img": "/Images/Garan.jpg",
-          "price": 15000000,
-          "quantity": 1
-        },
-        {
-          "id": "4",
-          "name": "Bami",
-          "img": "/Images/Hambur.jpg",
+          "claim": 15000000,
           "price": 15000000,
           "quantity": 1
         }
       ],
-      "total": 75000000,
-      "status": "Đã xử lý",
-      "date": "2025-10-03"
+      "total": 15000000,
+      "date": "2025-10-09T04:28:58.231Z",
+      "status": "Đã xử lý"
+    },
+    {
+      "id": "b227",
+      "orderId": "f8f4",
+      "userId": "1",
+      "customer": {
+        "name": "undefined undefined",
+        "phone": "0919040619",
+        "email": "ad@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "3",
+          "name": "Bảo hiểm Y tế Toàn quốc",
+          "img": "/Images/Logo.png",
+          "description": "Đảm bảo quyền lợi chăm sóc y tế cho bạn tại mọi bệnh viện trong nước.",
+          "claim": 200000000,
+          "price": 22000000,
+          "category": "Bảo hiểm Y tế",
+          "bonus": [
+            {
+              "head": "Chi phí điều trị nội trú",
+              "info": "Chi trả 90% chi phí điều trị nội trú và phẫu thuật.",
+              "infoPlus": "Không giới hạn số lần nằm viện, áp dụng tại hơn 300 bệnh viện trên toàn quốc."
+            }
+          ],
+          "quantity": 1
+        }
+      ],
+      "total": 22000000,
+      "date": "2025-10-09T04:35:20.373Z",
+      "status": "Đang xử lý"
+    },
+    {
+      "id": "0a8b",
+      "orderId": "7bce",
+      "userId": "1",
+      "customer": {
+        "name": "à fa",
+        "phone": "124",
+        "email": "ad@gmail.com",
+        "address": "45 Nguyễn Trãi, Quận 5, TP.HCM, Việt Nam"
+      },
+      "items": [
+        {
+          "id": "3",
+          "name": "Gà rán",
+          "img": "/Images/Garan.jpg",
+          "claim": 15000000,
+          "price": 15000000,
+          "quantity": 1
+        }
+      ],
+      "total": 15000000,
+      "date": "2025-11-17T15:18:11.169Z",
+      "status": "Đang chờ xử lý"
     }
   ]
 }

@@ -29,7 +29,7 @@ function Login({ setCurrentUser }) {
         }
 
         const res = await fetch(
-            `http://localhost:5002/users?username=${username}&password=${password}`
+            `http://localhost:5005/users?username=${username}&password=${password}`
         );
         const data = await res.json();
 

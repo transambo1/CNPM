@@ -39,10 +39,9 @@ function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
                                 <h3>{item.name}</h3>
                                 <p>Giá: {item.price.toLocaleString()}₫</p>
                                 <div className="qty-controls">
-                                    <button onClick={() => onChangeQuantity(item.id, item.quantity - 1)}>-</button>
-                                    <span style={{ margin: "0 15px" }}>{item.quantity}</span>
-                                    <button onClick={() => onChangeQuantity(item.id, item.quantity + 1)}>+</button>
-                                    <button onClick={() => onRemove(item.id)}>Xóa</button>
+
+                                    <span style={{ margin: "0 15px" }}>{item.description}</span>
+
                                 </div>
                             </div>
                             <div className="cart-item-price">
@@ -55,12 +54,12 @@ function Cart({ cart, onRemove, onChangeQuantity, currentUser }) {
                 {/* Cột phải: tổng kết */}
                 <aside className="summary-column">
                     <div className="summary-card">
-                        <h3>Tổng quan đơn hàng</h3>
+                        <h3>Tổng quan Bảo Hiểm</h3>
                         <ul>
                             {cart.map((item) => (
                                 <li key={item.id}>
                                     <span>
-                                        {item.quantity}x {item.name}
+                                        {item.name}
                                     </span>
                                     <span>
                                         {(item.price * item.quantity).toLocaleString()}₫
