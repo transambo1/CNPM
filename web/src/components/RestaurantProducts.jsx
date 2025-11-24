@@ -90,37 +90,51 @@ export default function RestaurantProducts() {
   };
 
   // 💾 Thêm / sửa sản phẩm
-  const handleSave = async (e) => {
-    e.preventDefault();
+ const handleSave = async (e) => {
+  e.preventDefault();
 
-    const productData = {
-      name: e.target.name.value,
-      price: Number(e.target.price.value),
-      img: e.target.img.value,
-      category: e.target.category.value,
-      description: e.target.description.value,
-      restaurantId:
-        currentUser?.role === "admin"
-          ? e.target.restaurantId.value
-          : currentUser?.restaurantId, // ✅ nếu là nhà hàng thì tự gán
-    };
+  const selectedRestaurantId =
+    currentUser?.role === "admin"
+      ? e.target.restaurantId.value
+      : currentUser?.restaurantId;
 
-    try {
-      if (editingProduct) {
-        const ref = doc(db, "products", editingProduct.id);
-        await updateDoc(ref, productData);
-      } else {
-        await addDoc(collection(db, "products"), productData);
-      }
+  // ⭐ Lấy tên nhà hàng đúng field Firestore của bạn: name
+  let restaurantName = "";
+  if (currentUser?.role === "admin") {
+    const restaurant = restaurants.find((r) => r.id === selectedRestaurantId);
+    restaurantName = restaurant ? restaurant.name : "";
+  } else {
+    // Nhà hàng đăng nhập → đã có trong user: restaurantName hoặc name?
+    restaurantName = currentUser?.restaurantName || currentUser?.name || "";
+  }
 
-      setShowForm(false);
-      setEditingProduct(null);
-      fetchProducts();
-      alert("✅ Lưu sản phẩm thành công!");
-    } catch (err) {
-      console.error("❌ Lỗi lưu:", err);
-    }
+  const productData = {
+    name: e.target.name.value,
+    price: Number(e.target.price.value),
+    img: e.target.img.value,
+    category: e.target.category.value,
+    description: e.target.description.value,
+    restaurantId: selectedRestaurantId,
+    restaurant: restaurantName,   // ⭐⭐ LƯU ĐÚNG FIELD restaurant ⭐⭐
   };
+
+  try {
+    if (editingProduct) {
+      await updateDoc(doc(db, "products", editingProduct.id), productData);
+    } else {
+      await addDoc(collection(db, "products"), productData);
+    }
+
+    setShowForm(false);
+    setEditingProduct(null);
+    fetchProducts();
+    alert("✅ Lưu sản phẩm thành công!");
+  } catch (err) {
+    console.error("❌ Lỗi lưu:", err);
+  }
+};
+
+
 
   if (loading) return <p className="rsp-loading">⏳ Đang tải sản phẩm...</p>;
 
