@@ -6,6 +6,7 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
+  Pressable,
   Text,
   TouchableOpacity,
   View,
@@ -523,18 +524,23 @@ export default function RestaurantAdminScreen() {
       </Modal>
 
       {/* Modal Menu */}
+      {/* Modal Menu */}
       <Modal
         visible={menuVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPressOut={() => setMenuVisible(false)}
+        {/* Overlay */}
+        <Pressable
           style={styles.menuOverlay}
+          onPress={() => setMenuVisible(false)}
         >
-          <View style={styles.menuContainer}>
+          {/* Content – phải chặn event bubble */}
+          <Pressable
+            style={styles.menuContainer}
+            onPress={(e) => e.stopPropagation()}
+          >
             <Text style={styles.menuTitle}>Tùy chọn</Text>
 
             {[
@@ -565,9 +571,10 @@ export default function RestaurantAdminScreen() {
               <Ionicons name="log-out-outline" size={18} color="#E53935" />
               <Text style={[styles.menuItemText, { color: '#E53935' }]}>Đăng xuất</Text>
             </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
+          </Pressable>
+        </Pressable>
       </Modal>
+
     </SafeAreaView>
   );
 }

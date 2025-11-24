@@ -1,20 +1,19 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext"; // đã có sẵn
-import "./Header.css";
+import { useAuth } from "../context/AuthContext";
+import "./Header.css"; // <-- CSS mới theo phong cách Grab
 
 function Header({ cartCount }) {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
-
-  // 🔹 Lấy currentUser từ context
   const { currentUser, logout } = useAuth();
   if (currentUser === undefined) return null;
 
   useEffect(() => {
     console.log("Header currentUser:", currentUser);
   }, [currentUser]);
+
   const categories = [
     { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
     { key: "Sushi", label: "Sushi", img: "/Images/Sushi.jpg" },
@@ -28,7 +27,7 @@ function Header({ cartCount }) {
 
   const handleLogout = async () => {
     if (logout) {
-      await logout(); // Đăng xuất Firebase
+      await logout();
       navigate("/login");
     }
   };
@@ -42,15 +41,15 @@ function Header({ cartCount }) {
   };
 
   return (
-    <header className="header">
-      <div className="header-left">
+    <header className="grab-header">
+      <div className="grab-header-left">
         <Link to="/">
-          <img src="/Images/Logo.png" alt="MEOWCHICK Logo" />
+          <img src="/Images/Logo.png" alt="MEOWCHICK Logo" className="grab-logo" />
         </Link>
       </div>
 
-      <div className="header-center">
-        <form className="search-form" onSubmit={handleSearch}>
+      <div className="grab-header-center">
+        <form className="grab-search-form" onSubmit={handleSearch}>
           <input
             type="text"
             placeholder="Tìm món ăn..."
@@ -63,14 +62,14 @@ function Header({ cartCount }) {
         </form>
       </div>
 
-      <div className="header-right">
-        <button onClick={() => navigate("/")}>Trang chủ</button>
+      <div className="grab-header-right">
+        <button className="grab-nav-btn" onClick={() => navigate("/")}>Trang chủ</button>
 
-        <div className="menu-dropdown">
-          <button onClick={() => navigate("/menu/All")}>Thực đơn</button>
-          <div className="dropdown-content">
+        <div className="grab-menu-wrapper">
+          <button className="grab-nav-btn">Thực đơn</button>
+          <div className="grab-menu-dropdown">
             {categories.map((c) => (
-              <Link key={c.key} to={`/menu/${c.key}`}>
+              <Link key={c.key} to={`/menu/${c.key}`} className="grab-menu-item">
                 <img src={c.img} alt={c.label} />
                 <span>{c.label}</span>
               </Link>
@@ -78,34 +77,29 @@ function Header({ cartCount }) {
           </div>
         </div>
 
-        <button onClick={() => navigate("/restaurant")}>Nhà hàng</button>
+        <button className="grab-nav-btn" onClick={() => navigate("/restaurant")}>
+          Nhà hàng
+        </button>
 
-
-        <Link to="/Cart" className="cart-button">
+        <Link to="/Cart" className="grab-cart-btn">
           Giỏ hàng ({cartCount > 0 ? cartCount : 0})
         </Link>
 
-        <div className="user-actions">
+        <div className="grab-user-section">
           {currentUser ? (
-            <div className="user-menu">
-              <div className="user-menu-trigger">
+            <div className="grab-user-menu">
+              <div className="grab-user-trigger">
                 <FaUserCircle size={22} />
                 <span>{currentUser.firstname} {currentUser.lastname}</span>
               </div>
-              <div className="dropdown-menu">
-                <button
-                  className="dropdown-item"
-                  onClick={() => navigate("/order-history")}
-                >
-                  Lịch sử đơn hàng
-                </button>
-                <button className="dropdown-item" onClick={handleLogout}>
-                  Đăng xuất
-                </button>
+
+              <div className="grab-user-dropdown">
+                <button onClick={() => navigate("/order-history")}>Lịch sử đơn hàng</button>
+                <button onClick={handleLogout}>Đăng xuất</button>
               </div>
             </div>
           ) : (
-            <Link to="/login" className="login-button">
+            <Link to="/login" className="grab-login-btn">
               Đăng nhập
             </Link>
           )}

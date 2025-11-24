@@ -1,275 +1,225 @@
-/* src/components/Header.css */
-
-/* --- Main Header Container --- */
-.header {
-  width: 100%;
-  position: fixed;
-  top: 0;
-  left: 0;
+/* --- HEADER CONTAINER --- */
+.grab-header {
+  background: #f6f6f6;
+  /* màu xanh Grab */
+  color: white;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-  padding: 10px 40px;
-  background-color: #2b2623;
-  color: #fcb32c;
-  border-bottom: 3px solid #fcb32c;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  box-sizing: border-box;
+  padding: 12px 20px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
-.header-left {
-  height: 60px;
+/* --- LOGO --- */
+.grab-logo {
+  height: 45px;
 }
 
-.header-left img {
-  height: 100%;
-  width: auto;
-}
-
-.header-right {
+/* --- SEARCH BAR --- */
+.grab-search-form {
   display: flex;
+  background: white;
+  border-radius: 30px;
+  padding: 5px 10px;
   align-items: center;
-  gap: 10px;
 }
 
-/* --- Kiểu dáng chung cho các nút trên Header --- */
-.header-right button,
-.cart-button,
-.login-button,
-.user-menu-trigger {
-  background-color: transparent;
-  border: 1px solid transparent;
-  color: white;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 10px 18px;
-  border-radius: 20px;
+.grab-search-form input {
+  border: none;
+  outline: none;
+  padding: 6px 10px;
+  width: 220px;
+}
+
+.grab-search-form button {
+  border: none;
+  background: transparent;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease-in-out;
-  display: flex;
-  align-items: center;
 }
 
-/* --- Hiệu ứng Hover chung --- */
-.header-right button:hover,
-.cart-button:hover,
-.login-button:hover,
-.user-menu-trigger:hover {
-  background-color: #d2191a;
+/* --- NAV BUTTONS --- */
+.grab-nav-btn {
+  background: transparent;
   color: white;
-  border-color: #d2191a;
-  transform: scale(1.05);
-}
-
-
-/* ================================== */
-/* DROPDOWN MENUS (Thực đơn & User)   */
-/* ================================== */
-.menu-dropdown,
-.user-menu {
+  border: none;
+  margin: 0 10px;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: 500;
   position: relative;
 }
 
-/* --- Dropdown "Thực đơn" --- */
-.dropdown-content {
+.grab-nav-btn:hover {
+  text-decoration: underline;
+}
+
+/* --- MENU DROPDOWN --- */
+.grab-menu-wrapper {
+  position: relative;
+}
+
+.grab-menu-dropdown {
+  display: none;
   position: absolute;
-  top: 110%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #fff;
-  border: 1px solid #ddd;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  /* thêm để căn giữa các item */
-  gap: 15px;
-  /* khoảng cách giữa các item */
-  width: 400px;
-  z-index: 100;
-  border-radius: 10px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s, transform 0.2s ease;
-}
-
-.menu-dropdown:hover .dropdown-content {
-  opacity: 1;
-  visibility: visible;
-}
-
-.dropdown-content a {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  width: 100px;
-  /* cố định rộng cho item */
-  text-decoration: none;
-  color: #5a2d0c;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border-radius: 10px;
+  top: 36px;
+  background: white;
+  color: black;
   padding: 10px;
-  background: #fff;
+  width: 200px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
 }
 
-.dropdown-content a img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
+.grab-menu-wrapper:hover .grab-menu-dropdown {
+  display: block;
 }
 
-
-.dropdown-content a:hover {
-  background-color: #fff3e0;
-  color: #e64a19;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform: translateY(-3px);
-}
-
-/* --- Dropdown "User" --- */
-.user-menu-trigger svg {
-  margin-right: 6px;
-}
-
-
-.user-menu-trigger {
-  background-color: #fcb32c;
-  /* Nền màu vàng */
-  color: #2b2623;
-  /* Chữ màu đen */
-  border-color: #fcb32c;
-}
-
-/* --- Hiệu ứng hover cho nút User --- */
-.user-menu-trigger:hover {
-  background-color: #e09d22;
-  /* Màu vàng đậm hơn khi hover */
-  color: #2b2623;
-  border-color: #e09d22;
-  transform: scale(1.05);
-  /* Giữ lại hiệu ứng phóng to */
-}
-
-/* Trong Header.css */
-
-/* --- Dropdown "User" --- */
-.dropdown-menu {
-  position: absolute;
-  top: 110%;
-  right: 0;
-  background: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px;
-  min-width: 180px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-}
-
-.user-menu:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.dropdown-menu .dropdown-item {
-  background: none;
-  border: none;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  color: #000;
-  border-radius: 6px;
-  font-size: 15px;
-  transition: all 0.2s ease;
-}
-
-.dropdown-item:hover {
-  background-color: #f5f5f5;
-  color: #000000;
-}
-
-/* =============================== */
-/* 🔍 THANH TÌM KIẾM TRÊN HEADER   */
-/* =============================== */
-
-.search-form {
+.grab-menu-item {
   display: flex;
   align-items: center;
-  background-color: #fff;
-  border-radius: 25px;
-  padding: 5px 12px;
-  border: 2px solid #fcb32c;
-  transition: all 0.3s ease;
-  height: 40px;
-  margin-right: 15px;
+  padding: 6px;
+  border-radius: 8px;
+  transition: 0.2s;
 }
 
-.search-form:hover {
-  box-shadow: 0 0 8px rgba(252, 179, 44, 0.6);
-  transform: scale(1.02);
+.grab-menu-item img {
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  margin-right: 8px;
 }
 
-/* Ô nhập */
-.search-form input {
-  border: none;
-  outline: none;
-  padding: 8px 10px;
-  font-size: 15px;
-  width: 200px;
-  background: transparent;
-  color: #2b2623;
+.grab-menu-item:hover {
+  background: #e8f5ee;
 }
 
-.search-form input::placeholder {
-  color: #999;
-  font-style: italic;
+/* --- CART BUTTON --- */
+.grab-cart-btn {
+  padding: 7px 14px;
+  background: white;
+  color: #00A758;
+  border-radius: 20px;
+  font-weight: bold;
+  margin-left: 8px;
+  text-decoration: none;
 }
 
-/* Nút tìm kiếm */
-.search-form button {
-  background-color: #fcb32c;
-  border: none;
-  color: #2b2623;
-  font-weight: 700;
-  font-size: 18px;
-  border-radius: 50%;
-  width: 35px;
-  height: 35px;
+.grab-cart-btn:hover {
+  background: #f1fff7;
+}
+
+/* --- USER MENU --- */
+.grab-user-section {
+  position: relative;
+}
+
+.grab-user-menu {
   cursor: pointer;
+  position: relative;
+}
+
+.grab-user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.grab-user-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 34px;
+  background: white;
+  color: black;
+  padding: 10px;
+  border-radius: 10px;
+  width: 160px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.grab-user-menu:hover .grab-user-dropdown {
+  display: block;
+}
+
+.grab-user-dropdown button {
+  width: 100%;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+}
+
+.grab-user-dropdown button:hover {
+  background: #eaf8f1;
+}
+
+/* --- LOGIN BUTTON --- */
+.grab-login-btn {
+  padding: 6px 12px;
+  background: white;
+  color: #00A758;
+  border-radius: 20px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.grab-login-btn:hover {
+  background: #f1fff7;
+}
+
+/* HEADER WRAPPER */
+.grab-header {
+  background: #fdfdfd;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 25px;
+  height: 70px;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  white-space: nowrap;
+  /* tránh xuống dòng */
+}
+
+/* Cột trái */
+.grab-header-left {
+  flex-shrink: 0;
+}
+
+/* LOGO */
+.grab-logo {
+  height: 45px;
+}
+
+/* Cột giữa – Search */
+.grab-header-center {
+  flex: 1;
   display: flex;
   justify-content: center;
+}
+
+.grab-search-form {
+  width: 80%;
+  max-width: 450px;
+  min-width: 260px;
+  background: white;
+  border-radius: 30px;
+  padding: 5px 12px;
+  display: flex;
   align-items: center;
-  transition: all 0.2s ease;
 }
 
-.search-form button:hover {
-  background-color: #e09d22;
-  transform: rotate(10deg) scale(1.1);
-}
-
-@media (min-width: 1200px) {
-  .search-form input {
-    width: 300px;
-  }
-}
-
-.search-form button img {
-  height: 16px;
-  /* Điều chỉnh kích thước chiều cao */
-  width: 16px;
-  /* Điều chỉnh kích thước chiều rộng */
-  display: block;
-  /* Loại bỏ khoảng trắng thừa dưới ảnh */
+/* Cột phải – Menu */
+.grab-header-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-shrink: 0;
 }
