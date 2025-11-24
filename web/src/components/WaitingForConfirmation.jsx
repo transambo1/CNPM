@@ -202,8 +202,8 @@ export default function WaitingForConfirmation() {
         await updateDoc(doc(db, "drones", order.droneId), {
           status: "Rảnh",
           currentOrderId: null,
-          destination: null,
-          restaurantId: null,
+          destination:"",
+          restaurantId: order.restaurantId,
         });
       }
 

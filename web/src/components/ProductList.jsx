@@ -29,41 +29,62 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
     const productsPerPage = 6;
     const bannerImages = ["/Images/1.png", "/Images/Banner2.png", "/Images/Banner3.png"];
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-            setLoadingProducts(true);
-            try {
-                const productsCollectionRef = collection(db, "products");
-                const dataSnapshot = await getDocs(productsCollectionRef);
-                const fetchedProducts = dataSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
+   useEffect(() => {
+    const fetchProducts = async () => {
+        setLoadingProducts(true);
+        try {
+            // 🥗 Lấy tất cả sản phẩm
+            const productsCollectionRef = collection(db, "products");
+            const dataSnapshot = await getDocs(productsCollectionRef);
+            const fetchedProducts = dataSnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
 
-                setProducts(fetchedProducts);
+            // 🏠 Lấy danh sách nhà hàng
+            const restaurantSnap = await getDocs(collection(db, "restaurants"));
+            const restaurants = restaurantSnap.docs.map(r => ({
+                id: r.id,
+                ...r.data()
+            }));
 
-                if (fetchedProducts.length > 0) {
-                    const prices = fetchedProducts.map((p) => Number(p.price ?? 0));
-                    const min = Math.min(0, ...prices);
-                    const max = Math.max(200000, ...prices);
-                    setPriceRange({ min, max });
-                    setMinPrice(min);
-                    setMaxPrice(max);
-                } else {
-                    setPriceRange({ min: 0, max: 200000 });
-                    setMinPrice(0);
-                    setMaxPrice(200000);
-                }
-            } catch (err) {
-                console.error("Lỗi khi fetch sản phẩm từ Firestore:", err);
-                setProducts([]);
-            } finally {
-                setLoadingProducts(false);
+            // ❗ Lọc sản phẩm của nhà hàng bị BAN
+            const safeProducts = fetchedProducts.filter((p) => {
+                const res = restaurants.find(r => r.id === p.restaurantId);
+
+                // Nếu không tìm thấy nhà hàng → cho hiển thị
+                if (!res) return true;
+
+                // Nếu nhà hàng bị banned → ẩn sản phẩm
+                return res.status !== "banned";
+            });
+
+            setProducts(safeProducts);
+
+            // Xử lý khoảng giá
+            if (safeProducts.length > 0) {
+                const prices = safeProducts.map((p) => Number(p.price ?? 0));
+                const min = Math.min(0, ...prices);
+                const max = Math.max(200000, ...prices);
+                setPriceRange({ min, max });
+                setMinPrice(min);
+                setMaxPrice(max);
+            } else {
+                setPriceRange({ min: 0, max: 200000 });
+                setMinPrice(0);
+                setMaxPrice(200000);
             }
-        };
 
-        fetchProducts();
-    }, []);
+        } catch (err) {
+            console.error("Lỗi khi fetch sản phẩm từ Firestore:", err);
+            setProducts([]);
+        } finally {
+            setLoadingProducts(false);
+        }
+    };
+
+    fetchProducts();
+}, []);
 
     useEffect(() => {
         const q = new URLSearchParams(location.search).get("search") || "";

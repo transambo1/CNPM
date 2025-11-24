@@ -448,33 +448,34 @@ export default function RestaurantDashboard() {
                 <td>{createdAtTxt}</td>
                 <td>{formatStatusBadge(oStatus)}</td>
                 <td>
-                  {oStatus === "Đã giao" ? (
-                    assignedDrone ? (
-                      <strong>{assignedDrone.name}</strong>
-                    ) : (
-                      <span>—</span>
-                    )
-                  ) : (
-                    <select
-                      value={selectedDrone[order.id] || ""}
-                      onChange={(e) =>
-                        setSelectedDrone((prev) => ({
-                          ...prev,
-                          [order.id]: e.target.value,
-                        }))
-                      }
-                    >
-                      <option value="">Chọn drone</option>
-                      {drones
-                        .filter((d) => d.status === "Rảnh")
-                        .map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name} ({d.battery}%)
-                          </option>
-                        ))}
-                    </select>
-                  )}
-                </td>
+  {oStatus === "Đã giao" || oStatus === "Đang giao" ? (
+    assignedDrone ? (
+      <strong>{assignedDrone.name}</strong>
+    ) : (
+      <span>—</span>
+    )
+  ) : (
+    <select
+      value={selectedDrone[order.id] || ""}
+      onChange={(e) =>
+        setSelectedDrone((prev) => ({
+          ...prev,
+          [order.id]: e.target.value,
+        }))
+      }
+    >
+      <option value="">Chọn drone</option>
+      {drones
+        .filter((d) => d.status === "Rảnh")
+        .map((d) => (
+          <option key={d.id} value={d.id}>
+            {d.name} ({d.battery}%)
+          </option>
+        ))}
+    </select>
+  )}
+</td>
+
                 <td>
                   {oStatus === "Đã giao" ? (
                     <button className="btn disabled" disabled>
