@@ -15,12 +15,16 @@ export default function ProtectedLayout() {
       router.replace('/restaurant-admin');
       return;
     }
+    if (user?.role === 'admin') {
+      router.replace('/admin-overview');
+      return;
+    }
     if (!user) {
       router.replace("/(auth)/login");
     }
   }, [user, loading, router]);
 
-  if (loading || !user || user.role === 'restaurant') {
+  if (loading || !user || user.role === 'restaurant' || user.role === 'admin') {
     return null;
   }
 

@@ -57,6 +57,8 @@ const Login = () => {
                 // vào màn hình phù hợp với phân quyền
                 if (userData.role === 'restaurant') {
                     router.replace('/restaurant-admin');
+                } else if (userData.role === 'admin') {
+                    router.replace('/admin-overview');
                 } else {
                     router.replace('/'); // nếu (tabs)/index là root, điều hướng về root path
                 }

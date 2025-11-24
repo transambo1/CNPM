@@ -1,275 +1,337 @@
-/* src/components/Header.css */
+:root {
+  --grab-green: #00b14f;
+  --grab-dark: #00683a;
+  --grab-light: #e9f7f0;
+  --text-dark: #0b1f15;
+}
 
-/* --- Main Header Container --- */
-.header {
-  width: 100%;
-  position: fixed;
+.grab-header {
+  position: sticky;
   top: 0;
-  left: 0;
+  z-index: 50;
+  background: linear-gradient(135deg, var(--grab-green), var(--grab-dark));
+  color: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 28px 16px;
+}
+
+.grab-header__bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 40px;
-  background-color: #2b2623;
-  color: #fcb32c;
-  border-bottom: 3px solid #fcb32c;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  box-sizing: border-box;
+  font-size: 13px;
+  letter-spacing: 0.1px;
 }
 
-.header-left {
-  height: 60px;
-}
-
-.header-left img {
-  height: 100%;
-  width: auto;
-}
-
-.header-right {
+.grab-location {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #d7ffea;
 }
 
-/* --- Kiểu dáng chung cho các nút trên Header --- */
-.header-right button,
-.cart-button,
-.login-button,
-.user-menu-trigger {
-  background-color: transparent;
-  border: 1px solid transparent;
-  color: white;
-  text-decoration: none;
-  font-size: 16px;
-  font-weight: 500;
-  padding: 10px 18px;
-  border-radius: 20px;
+.grab-location__label {
+  text-transform: uppercase;
+  font-size: 11px;
+  margin: 0;
+  opacity: 0.8;
+}
+
+.grab-location__value {
+  font-weight: 600;
+  color: #fff;
+}
+
+.grab-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
   cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s ease-in-out;
-  display: flex;
+  font-weight: 600;
+  transition: all 0.25s ease;
+}
+
+.grab-cta:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.grab-header__main {
+  display: grid;
+  grid-template-columns: 220px 1fr auto;
+  gap: 18px;
   align-items: center;
 }
 
-/* --- Hiệu ứng Hover chung --- */
-.header-right button:hover,
-.cart-button:hover,
-.login-button:hover,
-.user-menu-trigger:hover {
-  background-color: #d2191a;
-  color: white;
-  border-color: #d2191a;
-  transform: scale(1.05);
+.grab-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
+.grab-logo {
+  height: 48px;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
 
-/* ================================== */
-/* DROPDOWN MENUS (Thực đơn & User)   */
-/* ================================== */
-.menu-dropdown,
-.user-menu {
+.grab-header-center {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grab-search-form {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 16px;
+  padding: 8px 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.14);
+}
+
+.grab-search-form input {
+  border: none;
+  outline: none;
+  padding: 10px 12px;
+  width: 100%;
+  font-size: 15px;
+  color: var(--text-dark);
+}
+
+.grab-search-form button {
+  border: none;
+  background: var(--grab-green);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: background 0.2s ease;
+}
+
+.grab-search-form button:hover {
+  background: var(--grab-dark);
+}
+
+.grab-quick-links {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.grab-quick-links button {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #eafff4;
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.grab-quick-links button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.grab-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.grab-nav-btn {
+  background: transparent;
+  color: #f8fff8;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.grab-nav-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.grab-menu-wrapper {
   position: relative;
 }
 
-/* --- Dropdown "Thực đơn" --- */
-.dropdown-content {
+.grab-menu-dropdown {
+  display: none;
   position: absolute;
-  top: 110%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 48px;
+  left: 0;
   background: #fff;
-  border: 1px solid #ddd;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  padding: 15px;
+  color: var(--text-dark);
+  padding: 12px;
+  width: 230px;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+}
+
+.grab-menu-wrapper:hover .grab-menu-dropdown {
+  display: block;
+}
+
+.grab-menu-item {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  /* thêm để căn giữa các item */
-  gap: 15px;
-  /* khoảng cách giữa các item */
-  width: 400px;
-  z-index: 100;
+  align-items: center;
+  padding: 8px;
   border-radius: 10px;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s, transform 0.2s ease;
+  transition: 0.2s;
+  text-decoration: none;
+  color: inherit;
+  gap: 10px;
 }
 
-.menu-dropdown:hover .dropdown-content {
-  opacity: 1;
-  visibility: visible;
+.grab-menu-item img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
 }
 
-.dropdown-content a {
-  display: flex;
-  flex-direction: column;
+.grab-menu-item:hover {
+  background: var(--grab-light);
+}
+
+.grab-cart-btn {
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  width: 100px;
-  /* cố định rộng cho item */
-  text-decoration: none;
-  color: #5a2d0c;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border-radius: 10px;
-  padding: 10px;
+  padding: 10px 14px;
   background: #fff;
+  color: var(--grab-green);
+  border-radius: 14px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
 }
 
-.dropdown-content a img {
-  width: 60px;
-  height: 60px;
-  object-fit: contain;
-}
-
-
-.dropdown-content a:hover {
-  background-color: #fff3e0;
-  color: #e64a19;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  transform: translateY(-3px);
-}
-
-/* --- Dropdown "User" --- */
-.user-menu-trigger svg {
-  margin-right: 6px;
-}
-
-
-.user-menu-trigger {
-  background-color: #fcb32c;
-  /* Nền màu vàng */
-  color: #2b2623;
-  /* Chữ màu đen */
-  border-color: #fcb32c;
-}
-
-/* --- Hiệu ứng hover cho nút User --- */
-.user-menu-trigger:hover {
-  background-color: #e09d22;
-  /* Màu vàng đậm hơn khi hover */
-  color: #2b2623;
-  border-color: #e09d22;
-  transform: scale(1.05);
-  /* Giữ lại hiệu ứng phóng to */
-}
-
-/* Trong Header.css */
-
-/* --- Dropdown "User" --- */
-.dropdown-menu {
-  position: absolute;
-  top: 110%;
-  right: 0;
-  background: #ffffff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 8px;
-  min-width: 180px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  opacity: 0;
-  visibility: hidden;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
-}
-
-.user-menu:hover .dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
-}
-
-.dropdown-menu .dropdown-item {
-  background: none;
-  border: none;
-  cursor: pointer;
-  width: 100%;
-  text-align: left;
-  padding: 10px 12px;
-  color: #000;
-  border-radius: 6px;
-  font-size: 15px;
-  transition: all 0.2s ease;
-}
-
-.dropdown-item:hover {
-  background-color: #f5f5f5;
-  color: #000000;
-}
-
-/* =============================== */
-/* 🔍 THANH TÌM KIẾM TRÊN HEADER   */
-/* =============================== */
-
-.search-form {
-  display: flex;
+.grab-cart-count {
+  min-width: 26px;
+  height: 26px;
+  border-radius: 10px;
+  background: var(--grab-light);
+  color: var(--grab-green);
+  display: inline-flex;
   align-items: center;
-  background-color: #fff;
-  border-radius: 25px;
-  padding: 5px 12px;
-  border: 2px solid #fcb32c;
-  transition: all 0.3s ease;
-  height: 40px;
-  margin-right: 15px;
-}
-
-.search-form:hover {
-  box-shadow: 0 0 8px rgba(252, 179, 44, 0.6);
-  transform: scale(1.02);
-}
-
-/* Ô nhập */
-.search-form input {
-  border: none;
-  outline: none;
-  padding: 8px 10px;
-  font-size: 15px;
-  width: 200px;
-  background: transparent;
-  color: #2b2623;
-}
-
-.search-form input::placeholder {
-  color: #999;
-  font-style: italic;
-}
-
-/* Nút tìm kiếm */
-.search-form button {
-  background-color: #fcb32c;
-  border: none;
-  color: #2b2623;
-  font-weight: 700;
-  font-size: 18px;
-  border-radius: 50%;
-  width: 35px;
-  height: 35px;
-  cursor: pointer;
-  display: flex;
   justify-content: center;
+  font-weight: 700;
+}
+
+.grab-user-section {
+  position: relative;
+}
+
+.grab-user-menu {
+  cursor: pointer;
+  position: relative;
+  display: flex;
   align-items: center;
-  transition: all 0.2s ease;
 }
 
-.search-form button:hover {
-  background-color: #e09d22;
-  transform: rotate(10deg) scale(1.1);
+.grab-user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-@media (min-width: 1200px) {
-  .search-form input {
-    width: 300px;
+.grab-user-meta {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.grab-user-name {
+  font-weight: 700;
+}
+
+.grab-user-dropdown {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: 54px;
+  background: #fff;
+  color: var(--text-dark);
+  padding: 12px;
+  border-radius: 12px;
+  width: 200px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+}
+
+.grab-user-menu:hover .grab-user-dropdown {
+  display: block;
+}
+
+.grab-user-dropdown button {
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.grab-user-dropdown button:hover {
+  background: var(--grab-light);
+}
+
+.grab-login-btn {
+  padding: 10px 16px;
+  background: #fff;
+  color: var(--grab-green);
+  border-radius: 14px;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+@media (max-width: 1200px) {
+  .grab-header__main {
+    grid-template-columns: 200px 1fr;
+  }
+
+  .grab-header-right {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 }
 
-.search-form button img {
-  height: 16px;
-  /* Điều chỉnh kích thước chiều cao */
-  width: 16px;
-  /* Điều chỉnh kích thước chiều rộng */
-  display: block;
-  /* Loại bỏ khoảng trắng thừa dưới ảnh */
+@media (max-width: 992px) {
+  .grab-header__main {
+    grid-template-columns: 1fr;
+  }
+
+  .grab-header-left {
+    order: 1;
+  }
+
+  .grab-header-center {
+    order: 2;
+  }
+
+  .grab-header-right {
+    order: 3;
+  }
 }

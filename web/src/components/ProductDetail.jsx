@@ -76,14 +76,20 @@ function ProductDetail({ onAdd }) {
             <div className="productDetail__container">
                 <div className="productDetail__image">
                     <img src={product.img} alt={product.name} />
+                    <div className="productDetail__chips">
+                        <span className="chip">Ưu đãi Grab</span>
+                        <span className="chip">Freeship 15k</span>
+                        <span className="chip">Giao nhanh 25'</span>
+                    </div>
                 </div>
 
                 <div className="productDetail__info">
-                    <h2 className="productDetail__name">{product.name}</h2>
-
-                    <div className="productDetail__rating">
-                        <span className="stars">⭐ {product.rating || 4.5}</span>
-                        <span className="reviews">({product.reviews || 100} đánh giá)</span>
+                    <div className="productDetail__heading">
+                        <h2 className="productDetail__name">{product.name}</h2>
+                        <div className="productDetail__rating">
+                            <span className="stars">⭐ {product.rating || 4.5}</span>
+                            <span className="reviews">({product.reviews || 100} đánh giá)</span>
+                        </div>
                     </div>
 
                     <div className="productDetail__price">
@@ -98,17 +104,28 @@ function ProductDetail({ onAdd }) {
                         )}
                     </div>
 
+                    <div className="productDetail__meta">
+                        <span className="meta-pill">Đã bán {product.sold || 230}+</span>
+                        <span className="meta-pill">Chuẩn bị trong 15 phút</span>
+                        <span className="meta-pill">An toàn vệ sinh</span>
+                    </div>
+
                     {restaurant && (
-                        <p className="productDetail__restaurant">
-                            Nhà hàng: <strong>{restaurant.name}</strong>
-                        </p>
+                        <div className="productDetail__restaurantCard">
+                            <div>
+                                <p className="restaurant-label">Nhà hàng đối tác</p>
+                                <h4>{restaurant.name}</h4>
+                                {restaurant.address && <p className="restaurant-address">{restaurant.address}</p>}
+                            </div>
+                            <div className="restaurant-badge">Grab</div>
+                        </div>
                     )}
 
                     <p className="productDetail__desc">{product.description}</p>
 
                     {product.ingredients && (
                         <div className="productDetail__ingredients">
-                            <h4>Nguyên liệu:</h4>
+                            <h4>Nguyên liệu nổi bật</h4>
                             <ul>
                                 {product.ingredients.map((item, i) => (
                                     <li key={i}>{item}</li>
@@ -117,32 +134,33 @@ function ProductDetail({ onAdd }) {
                         </div>
                     )}
 
-                    <button
-                        className="productDetail__addBtn"
-                        onClick={() =>
-                            onAdd({
-                                ...product,
-                                restaurantId: product.restaurantId || null,
-                                restaurantName: restaurant?.name || "Chưa xác định",
-                            })
-                        }
-                    >
-                        🛒 Thêm vào giỏ hàng
-                    </button>
+                    <div className="productDetail__actions">
+                        <button
+                            className="productDetail__addBtn"
+                            onClick={() =>
+                                onAdd({
+                                    ...product,
+                                    restaurantId: product.restaurantId || null,
+                                    restaurantName: restaurant?.name || "Chưa xác định",
+                                })
+                            }
+                        >
+                            🛒 Thêm vào giỏ hàng
+                        </button>
+                        <Link to="/" className="productDetail__backLink">
+                            ⬅ Quay lại menu
+                        </Link>
+                    </div>
 
                     <div className="productDetail__progress">
                         <div className="progress__header">
-                            <span>Sắp cháy hàng!</span>
+                            <span>Đặt nhanh kẻo hết ưu đãi</span>
                             <span className="progress__claimed">84% đã bán</span>
                         </div>
                         <div className="progress__bar">
                             <div className="progress__fill" style={{ width: "84%" }}></div>
                         </div>
                     </div>
-
-                    <Link to="/" className="productDetail__backLink">
-                        ⬅ Quay lại danh sách sản phẩm
-                    </Link>
                 </div>
             </div>
 
