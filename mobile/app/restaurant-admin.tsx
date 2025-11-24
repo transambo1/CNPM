@@ -310,6 +310,14 @@ export default function RestaurantAdminScreen() {
   };
 
   const fadeKey = `${viewMode}:${filteredOrders.length}:${drones.length}`;
+  const menuItems: { key: ViewMode | 'products'; label: string; type: 'view' | 'navigate' }[] = [
+    { key: 'all', label: ' Tổng đơn hàng', type: 'view' },
+    { key: 'processing', label: 'Đơn đang xử lý', type: 'view' },
+    { key: 'delivering', label: ' Đơn đang giao', type: 'view' },
+    { key: 'delivered', label: ' Đơn đã giao', type: 'view' },
+    { key: 'drones', label: ' Quản lý Drone', type: 'view' },
+    { key: 'products', label: ' Quản lý sản phẩm', type: 'navigate' },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -543,17 +551,16 @@ export default function RestaurantAdminScreen() {
           >
             <Text style={styles.menuTitle}>Tùy chọn</Text>
 
-            {[
-              { key: 'all', label: ' Tổng đơn hàng' },
-              { key: 'processing', label: 'Đơn đang xử lý' },
-              { key: 'delivering', label: ' Đơn đang giao' },
-              { key: 'delivered', label: ' Đơn đã giao' },
-              { key: 'drones', label: ' Quản lý Drone' },
-            ].map((item) => (
+            {menuItems.map((item) => (
               <TouchableOpacity
                 key={item.key}
                 style={styles.menuItem}
                 onPress={() => {
+                  if (item.type === 'navigate') {
+                    setMenuVisible(false);
+                    router.push('/restaurant-admin-products');
+                    return;
+                  }
                   setViewMode(item.key as ViewMode);
                   setMenuVisible(false);
                 }}

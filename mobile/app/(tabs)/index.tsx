@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../libs/AuthContext';
-import { getFirestore, collection, query, getDocs, Timestamp } from 'firebase/firestore';
+import { getFirestore, collection, query, getDocs } from 'firebase/firestore';
 import { app } from '../../libs/firebase';
 import { useCart } from '../../libs/CartContext';
 
@@ -39,6 +39,7 @@ type DerivedStats = {
 };
 
 type QuickFilterId = 'recommended' | 'top_selling' | 'value' | 'premium';
+type QuickFilterState = QuickFilterId[];
 
 /** =========================
  *     CONSTANTS & HELPERS
@@ -50,13 +51,10 @@ const QUICK_FILTERS: { id: QuickFilterId; label: string; icon: keyof typeof Ioni
   { id: 'premium', label: 'Ăn sang', icon: 'diamond-outline' },
 ];
 
-const toMillis = (v: any | undefined) => {
-  if (!v) return 0;
-  if (v instanceof Timestamp) return v.toMillis();
-  if (typeof v === 'number') return v;
-  const t = Date.parse(v);
-  return Number.isNaN(t) ? 0 : t;
-};
+const QUICK_FILTER_LABEL: Record<QuickFilterId, string> = QUICK_FILTERS.reduce(
+  (acc, cur) => ({ ...acc, [cur.id]: cur.label }),
+  {} as Record<QuickFilterId, string>
+);
 
 const recScore = (r: Restaurant, derived?: DerivedStats) => {
   const rating = typeof r.rating === 'number' ? r.rating : 0;
@@ -121,16 +119,28 @@ type FoodScreenListHeaderProps = {
   suggestions: Suggestion[];
   selectedCategory: SelectedCategory;
   onSelectCategory: (c: SelectedCategory) => void;
-  activeQuickFilter: QuickFilterId;
-  onQuickFilterChange: (f: QuickFilterId) => void;
+  activeQuickFilters: QuickFilterState;
+  onQuickFilterToggle: (f: QuickFilterId) => void;
+  onClearFilters: () => void;
   featuredRestaurant?: Restaurant | null;
 };
 
 const FoodScreenListHeader = ({
   categories, suggestions, selectedCategory, onSelectCategory,
-  activeQuickFilter, onQuickFilterChange, featuredRestaurant,
+  activeQuickFilters, onQuickFilterToggle, onClearFilters, featuredRestaurant,
 }: FoodScreenListHeaderProps) => {
   const router = useRouter();
+
+  const activeFilterPills = [
+    ...(selectedCategory.id
+      ? [{ key: `category-${selectedCategory.id}`, label: selectedCategory.name ?? 'Danh mục', onRemove: () => onSelectCategory({ id: null, name: null }) }]
+      : []),
+    ...activeQuickFilters.map((f) => ({
+      key: `quick-${f}`,
+      label: QUICK_FILTER_LABEL[f],
+      onRemove: () => onQuickFilterToggle(f),
+    })),
+  ];
 
   return (
     <View style={styles.listHeaderContainer}>
@@ -213,22 +223,41 @@ const FoodScreenListHeader = ({
           {QUICK_FILTERS.map((f) => (
             <TouchableOpacity
               key={f.id}
-              style={[styles.filterChip, activeQuickFilter === f.id && styles.filterChipActive]}
-              onPress={() => onQuickFilterChange(f.id)}
+              style={[styles.filterChip, activeQuickFilters.includes(f.id) && styles.filterChipActive]}
+              onPress={() => onQuickFilterToggle(f.id)}
             >
               <Ionicons
                 name={f.icon}
                 size={16}
-                color={activeQuickFilter === f.id ? '#fff' : '#111'}
+                color={activeQuickFilters.includes(f.id) ? '#fff' : '#111'}
                 style={{ marginRight: 6 }}
               />
-              <Text style={[styles.filterChipText, activeQuickFilter === f.id && styles.filterChipTextActive]}>
+              <Text style={[styles.filterChipText, activeQuickFilters.includes(f.id) && styles.filterChipTextActive]}>
                 {f.label}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
+
+      {activeFilterPills.length > 0 && (
+        <View style={styles.activeFilterRow}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 12 }}>
+            {activeFilterPills.map((pill) => (
+              <View key={pill.key} style={styles.activeFilterChip}>
+                <Text style={styles.activeFilterText}>{pill.label}</Text>
+                <TouchableOpacity onPress={pill.onRemove} hitSlop={8}>
+                  <Ionicons name="close" size={14} color="#0f5132" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+          <TouchableOpacity style={styles.clearAllFilters} onPress={onClearFilters}>
+            <Ionicons name="trash-outline" size={16} color="#0f5132" style={{ marginRight: 6 }} />
+            <Text style={styles.clearAllFiltersText}>Xóa tất cả</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
 
       <Text style={styles.sectionTitle}>Nhà hàng gần bạn</Text>
@@ -247,7 +276,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory>({ id: null, name: null });
-  const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilterId>('recommended');
+  const [activeQuickFilters, setActiveQuickFilters] = useState<QuickFilterState>([]);
   const [featuredRestaurant, setFeaturedRestaurant] = useState<Restaurant | null>(null);
 
 
@@ -319,8 +348,18 @@ export default function HomePage() {
   const handleSelectCategory = useCallback((c: SelectedCategory) => {
     setSelectedCategory((prev) => (prev.id === c.id && prev.name === c.name ? { id: null, name: null } : c));
   }, []);
-  const handleQuickFilterChange = useCallback((f: QuickFilterId) => {
-    setActiveQuickFilter((prev) => (prev === f ? 'recommended' : f));
+  const handleQuickFilterToggle = useCallback((f: QuickFilterId) => {
+    setActiveQuickFilters((prev) => {
+      if (prev.includes(f)) {
+        return prev.filter((item) => item !== f);
+      }
+      return [...prev, f];
+    });
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSelectedCategory({ id: null, name: null });
+    setActiveQuickFilters([]);
   }, []);
 
   const top5ByOrdersIds = useMemo(() => {
@@ -335,6 +374,7 @@ export default function HomePage() {
   const filteredAndSorted = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
     const selectedKey = (selectedCategory.name ?? '').toLowerCase();
+    const effectiveQuickFilters = activeQuickFilters.length > 0 ? activeQuickFilters : ['recommended'];
 
     // Step 1: text + EXACT category
     let list = restaurants.filter((r) => {
@@ -349,43 +389,58 @@ export default function HomePage() {
       return matchesSearch && matchesCategory;
     });
 
-    // Step 2: quick filter
-    switch (activeQuickFilter) {
-      case 'recommended': {
-        return [...list].sort((a, b) => (recScore(b, derived[b.id]) - recScore(a, derived[a.id])));
-      }
-      case 'top_selling': {
-        list = list.filter(r =>
-          top5ByOrdersIds.has(r.id) ||
-          ((r.orders ?? 0) + (derived[r.id]?.totalOrdersFromHistory ?? 0)) >= 200
-        );
-        return [...list].sort((a, b) =>
-        (((b.orders ?? 0) + (derived[b.id]?.totalOrdersFromHistory ?? 0)) -
-          ((a.orders ?? 0) + (derived[a.id]?.totalOrdersFromHistory ?? 0)))
-        );
-      }
-      case 'premium': {
-        const PREMIUM = 70000;
-        list = list.filter(r => (derived[r.id]?.avgPriceTop5 ?? 0) >= PREMIUM);
-        return [...list].sort((a, b) =>
-          (derived[b.id]?.avgPriceTop5 ?? 0) - (derived[a.id]?.avgPriceTop5 ?? 0)
-        );
-      }
-      case 'value': {
-        const vs = (r: Restaurant) => {
-          const d = derived[r.id];
-          const rating = r.rating ?? 0;
-          const orders = (r.orders ?? 0) + (d?.totalOrdersFromHistory ?? 0);
-          const avg = d?.avgPriceTop5 ?? NaN;
-          const priceFactor = !avg || !isFinite(avg) || avg <= 0 ? 0 : (40000 / avg);
-          return (rating * 0.5) + (orders / 100) * 0.2 + (priceFactor) * 0.3;
-        };
-        return [...list].sort((a, b) => vs(b) - vs(a));
-      }
-      default:
-        return list;
+    // Step 2: quick filter selections
+    if (effectiveQuickFilters.includes('top_selling')) {
+      list = list.filter((r) =>
+        top5ByOrdersIds.has(r.id) ||
+        ((r.orders ?? 0) + (derived[r.id]?.totalOrdersFromHistory ?? 0)) >= 200
+      );
     }
-  }, [restaurants, searchTerm, selectedCategory, activeQuickFilter, derived, top5ByOrdersIds]);
+
+    if (effectiveQuickFilters.includes('premium')) {
+      const PREMIUM = 70000;
+      list = list.filter((r) => (derived[r.id]?.avgPriceTop5 ?? 0) >= PREMIUM);
+    }
+
+    const valueScore = (r: Restaurant) => {
+      const d = derived[r.id];
+      const rating = r.rating ?? 0;
+      const orders = (r.orders ?? 0) + (d?.totalOrdersFromHistory ?? 0);
+      const avg = d?.avgPriceTop5 ?? NaN;
+      const priceFactor = !avg || !isFinite(avg) || avg <= 0 ? 0 : 40000 / avg;
+      return rating * 0.5 + (orders / 100) * 0.2 + priceFactor * 0.3;
+    };
+
+    const sorters: ((a: Restaurant, b: Restaurant) => number)[] = [];
+
+    if (effectiveQuickFilters.includes('recommended')) {
+      sorters.push((a, b) => recScore(b, derived[b.id]) - recScore(a, derived[a.id]));
+    }
+
+    if (effectiveQuickFilters.includes('value')) {
+      sorters.push((a, b) => valueScore(b) - valueScore(a));
+    }
+
+    if (effectiveQuickFilters.includes('top_selling')) {
+      sorters.push(
+        (a, b) =>
+          ((b.orders ?? 0) + (derived[b.id]?.totalOrdersFromHistory ?? 0)) -
+          ((a.orders ?? 0) + (derived[a.id]?.totalOrdersFromHistory ?? 0))
+      );
+    }
+
+    if (sorters.length === 0) {
+      sorters.push((a, b) => recScore(b, derived[b.id]) - recScore(a, derived[a.id]));
+    }
+
+    return [...list].sort((a, b) => {
+      for (const sorter of sorters) {
+        const diff = sorter(a, b);
+        if (diff !== 0) return diff;
+      }
+      return 0;
+    });
+  }, [restaurants, searchTerm, selectedCategory, activeQuickFilters, derived, top5ByOrdersIds]);
 
   /** =============== ITEM RENDER =============== */
   const renderRestaurant = ({ item }: { item: Restaurant }) => (
@@ -453,8 +508,9 @@ export default function HomePage() {
               suggestions={suggestions}
               selectedCategory={selectedCategory}
               onSelectCategory={handleSelectCategory}
-              activeQuickFilter={activeQuickFilter}
-              onQuickFilterChange={handleQuickFilterChange}
+              activeQuickFilters={activeQuickFilters}
+              onQuickFilterToggle={handleQuickFilterToggle}
+              onClearFilters={handleClearFilters}
               featuredRestaurant={featuredRestaurant}
             />
           }
@@ -467,8 +523,7 @@ export default function HomePage() {
                 style={styles.clearFiltersButton}
                 onPress={() => {
                   setSearchTerm('');
-                  setSelectedCategory({ id: null, name: null });
-                  setActiveQuickFilter('recommended');
+                  handleClearFilters();
                 }}
               >
                 <Ionicons name="refresh" size={16} color="#00A74F" style={{ marginRight: 6 }} />
@@ -584,6 +639,37 @@ const styles = StyleSheet.create({
   filterChipActive: { backgroundColor: '#00A74F', borderColor: '#00A74F' },
   filterChipText: { fontSize: 13, fontWeight: '600', color: '#111' },
   filterChipTextActive: { color: '#fff' },
+  activeFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    marginTop: 14,
+  },
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E6F7EF',
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#C8EAD8',
+    gap: 8,
+  },
+  activeFilterText: { color: '#0f5132', fontWeight: '700', fontSize: 13 },
+  clearAllFilters: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#C8EAD8',
+  },
+  clearAllFiltersText: { color: '#0f5132', fontWeight: '700', fontSize: 12 },
 
   categoryScroll: { marginTop: 16, paddingLeft: 15 },
   categoryItem: { alignItems: 'center', marginRight: 15, width: 80 },
