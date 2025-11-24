@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ScrollView, RefreshControl, View, Text, StyleSheet } from 'react-native';
+import { Alert, ScrollView, RefreshControl, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { collection, getDocs, getFirestore } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,7 +35,7 @@ export default function AdminOverviewScreen() {
       return;
     }
     loadSummary();
-  }, [user, loading]);
+  }, [user, loading, loadSummary, router]);
 
   const loadSummary = useCallback(async () => {
     setRefreshing(true);
@@ -79,6 +79,56 @@ export default function AdminOverviewScreen() {
     }
   }, [db]);
 
+  const quickMenuItems = useMemo(
+    () => [
+      {
+        key: 'orders',
+        icon: 'receipt-outline',
+        title: 'Đơn hàng',
+        value: summary.orders,
+        subtitle: `Đang chờ: ${summary.processing} | Đang giao: ${summary.delivering}`,
+        detail: `Đã giao: ${summary.delivered}, đang giao: ${summary.delivering}, chờ xử lý: ${summary.processing}`,
+      },
+      {
+        key: 'users',
+        icon: 'people-outline',
+        title: 'Người dùng',
+        value: summary.users,
+        subtitle: 'Người dùng hoạt động trên hệ thống',
+        detail: 'Thông tin người dùng đã được đồng bộ với trang chủ.',
+      },
+      {
+        key: 'restaurants',
+        icon: 'business-outline',
+        title: 'Nhà hàng',
+        value: summary.restaurants,
+        subtitle: 'Số lượng đối tác đang mở bán',
+        detail: 'Số liệu khớp với danh sách hiển thị ngoài trang chủ.',
+      },
+      {
+        key: 'drones',
+        icon: 'airplane-outline',
+        title: 'Drone',
+        value: summary.drones,
+        subtitle: `Rảnh: ${summary.droneIdle} | Đang giao: ${summary.droneBusy}`,
+        detail: `Sẵn sàng: ${summary.droneIdle}, đang giao hoặc bảo trì: ${summary.droneBusy}`,
+      },
+      {
+        key: 'revenue',
+        icon: 'cash-outline',
+        title: 'Doanh thu',
+        value: formatCurrency(summary.revenue),
+        subtitle: 'Cập nhật theo đơn đã giao',
+        detail: `Doanh thu đang hiển thị giống trang chủ: ${formatCurrency(summary.revenue)}`,
+      },
+    ],
+    [summary]
+  );
+
+  const handleMenuPress = useCallback((detail: string) => {
+    Alert.alert('Thông tin nhanh', `${detail}\nBạn có thể đối chiếu với dữ liệu ngoài trang chủ.`);
+  }, []);
+
   if (loading || !user || user.role !== 'admin') {
     return null;
   }
@@ -91,6 +141,28 @@ export default function AdminOverviewScreen() {
     >
       <Text style={styles.title}>Tổng quan hệ thống</Text>
       <Text style={styles.subtitle}>Đơn hàng, người dùng, nhà hàng và đội drone trong một màn hình.</Text>
+
+      <View style={styles.menuSection}>
+        <Text style={styles.sectionTitle}>Menu dữ liệu</Text>
+        <Text style={styles.menuSubtitle}>Xem nhanh các chỉ số hiển thị ngoài trang chủ</Text>
+        {quickMenuItems.map((item) => (
+          <TouchableOpacity
+            key={item.key}
+            style={styles.menuItem}
+            onPress={() => handleMenuPress(item.detail)}
+            activeOpacity={0.9}
+          >
+            <View style={styles.menuIcon}>
+              <Ionicons name={item.icon as any} size={18} color="#0b1f15" />
+            </View>
+            <View style={styles.menuInfo}>
+              <Text style={styles.menuTitle}>{item.title}</Text>
+              <Text style={styles.menuSubtitleText}>{item.subtitle}</Text>
+            </View>
+            <Text style={styles.menuValue}>{item.value}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
 
       <View style={styles.row}>
         <StatCard icon="receipt-outline" label="Tổng đơn" value={summary.orders} color="#00b14f" style={styles.cardSpacer} />
@@ -156,6 +228,36 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginBottom: 12 },
   section: { marginTop: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0b1f15', marginBottom: 8 },
+  menuSection: { marginBottom: 10 },
+  menuSubtitle: { color: '#4b5d52', marginBottom: 6 },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#d9e9df',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#e6f7ef',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  menuInfo: { flex: 1 },
+  menuTitle: { fontSize: 15, fontWeight: '700', color: '#0b1f15' },
+  menuSubtitleText: { color: '#4b5d52', marginTop: 2 },
+  menuValue: { fontWeight: '800', color: '#0b1f15' },
   card: {
     flex: 1,
     backgroundColor: '#fff',
