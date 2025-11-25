@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -38,6 +39,7 @@ export default function RestaurantAdminProducts() {
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null);
   const [priceInput, setPriceInput] = useState('');
+  const [formVisible, setFormVisible] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     if (!user?.restaurantId) {
@@ -53,7 +55,7 @@ export default function RestaurantAdminProducts() {
         const val = d.data() as any;
         return {
           id: d.id,
-          name: val.name ?? 'Sản phẩm',
+          name: val.name ?? 'San pham',
           price: Number(val.price ?? 0),
           img: val.img ?? val.image ?? '',
           isActive: val.isActive ?? val.available ?? true,
@@ -67,7 +69,7 @@ export default function RestaurantAdminProducts() {
       setProducts(data);
     } catch (error) {
       console.error('fetch products error', error);
-      Alert.alert('Lỗi', 'Không thể tải sản phẩm. Kiểm tra kết nối Firestore.');
+      Alert.alert('Loi', 'Khong the tai san pham. Kiem tra ket noi Firestore.');
     } finally {
       setPageLoading(false);
       setRefreshing(false);
@@ -105,11 +107,11 @@ export default function RestaurantAdminProducts() {
           isActive: !product.isActive,
           available: !product.isActive,
         });
-        Alert.alert('Đã cập nhật', `${!product.isActive ? 'Đã mở bán' : 'Đã ẩn'} ${product.name ?? 'món ăn'}.`);
+        Alert.alert('Da cap nhat', `${!product.isActive ? 'Da mo ban' : 'Da an'} ${product.name ?? 'mon an'}.`);
         fetchProducts();
       } catch (error) {
         console.error('toggle product error', error);
-        Alert.alert('Lỗi', 'Không thể cập nhật trạng thái sản phẩm.');
+        Alert.alert('Loi', 'Khong the cap nhat trang thai san pham.');
       }
     },
     [db, fetchProducts]
@@ -118,23 +120,26 @@ export default function RestaurantAdminProducts() {
   const openEditPrice = useCallback((product: ProductRecord) => {
     setEditingProduct(product);
     setPriceInput(String(product.price ?? ''));
+    setFormVisible(true);
   }, []);
 
   const handleSavePrice = useCallback(async () => {
     if (!editingProduct) return;
     const parsed = Number(priceInput);
     if (Number.isNaN(parsed) || parsed < 0) {
-      Alert.alert('Giá không hợp lệ', 'Vui lòng nhập số lớn hơn hoặc bằng 0.');
+      Alert.alert('Gia khong hop le', 'Vui long nhap so lon hon hoac bang 0.');
       return;
     }
+
     try {
       await updateDoc(doc(db, 'products', editingProduct.id), { price: parsed });
-      Alert.alert('Đã lưu', 'Giá sản phẩm đã được cập nhật.');
+      Alert.alert('Da luu', 'Gia san pham da duoc cap nhat.');
       setEditingProduct(null);
+      setFormVisible(false);
       fetchProducts();
     } catch (error) {
       console.error('update price error', error);
-      Alert.alert('Lỗi', 'Không thể cập nhật giá sản phẩm.');
+      Alert.alert('Loi', 'Khong the cap nhat gia san pham.');
     }
   }, [db, editingProduct, priceInput, fetchProducts]);
 
@@ -153,15 +158,15 @@ export default function RestaurantAdminProducts() {
           <Ionicons name="arrow-back" size={22} color="#0b1f15" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Sản phẩm của nhà hàng</Text>
-          <Text style={styles.subtitle}>Quản lý giá, trạng thái hiển thị giống phiên bản web.</Text>
+          <Text style={styles.title}>San pham cua nha hang</Text>
+          <Text style={styles.subtitle}>Quan ly gia va trang thai hien thi.</Text>
         </View>
       </View>
 
       <View style={styles.searchRow}>
         <Ionicons name="search" size={16} color="#4b5563" style={{ marginRight: 8 }} />
         <TextInput
-          placeholder="Tìm kiếm theo tên hoặc danh mục"
+          placeholder="Tim theo ten hoac danh muc"
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
@@ -180,24 +185,24 @@ export default function RestaurantAdminProducts() {
             <View style={styles.productHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.productName}>{item.name}</Text>
-                <Text style={styles.productCategory}>{item.category ?? 'Chưa có danh mục'}</Text>
+                <Text style={styles.productCategory}>{item.category ?? 'Chua co danh muc'}</Text>
               </View>
               <View style={[styles.statusTag, item.isActive ? styles.statusActive : styles.statusInactive]}>
                 <Text style={item.isActive ? styles.statusTextActive : styles.statusTextInactive}>
-                  {item.isActive ? 'Đang mở bán' : 'Đang ẩn'}
+                  {item.isActive ? 'Dang mo ban' : 'Dang an'}
                 </Text>
               </View>
             </View>
 
             <View style={styles.productMetaRow}>
               <Ionicons name="pricetag-outline" size={16} color="#4b5563" />
-              <Text style={styles.productPrice}>{Number(item.price ?? 0).toLocaleString('vi-VN')}₫</Text>
+              <Text style={styles.productPrice}>{Number(item.price ?? 0).toLocaleString('vi-VN')} VND</Text>
             </View>
 
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.secondaryButton} onPress={() => openEditPrice(item)}>
                 <Ionicons name="create-outline" size={16} color="#0b1f15" style={{ marginRight: 6 }} />
-                <Text style={styles.secondaryText}>Cập nhật giá</Text>
+                <Text style={styles.secondaryText}>Cap nhat gia</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.primaryButton, !item.isActive && styles.outlineButton]}
@@ -210,7 +215,7 @@ export default function RestaurantAdminProducts() {
                   style={{ marginRight: 6 }}
                 />
                 <Text style={[styles.primaryText, !item.isActive && styles.outlineText]}>
-                  {item.isActive ? 'Ẩn khỏi menu' : 'Mở bán lại'}
+                  {item.isActive ? 'An khoi menu' : 'Mo ban lai'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -220,8 +225,8 @@ export default function RestaurantAdminProducts() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="cube-outline" size={48} color="#9ca3af" />
-            <Text style={styles.emptyTitle}>Chưa có sản phẩm phù hợp</Text>
-            <Text style={styles.emptySubtitle}>Kiểm tra lại bộ lọc hoặc thêm sản phẩm mới trên web.</Text>
+            <Text style={styles.emptyTitle}>Chua co san pham phu hop</Text>
+            <Text style={styles.emptySubtitle}>Thu tim kiem khac hoac them san pham tren web.</Text>
           </View>
         }
         refreshing={refreshing}
@@ -229,29 +234,51 @@ export default function RestaurantAdminProducts() {
         showsVerticalScrollIndicator={false}
       />
 
-      <Modal visible={!!editingProduct} transparent animationType="fade">
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cập nhật giá</Text>
-            <Text style={styles.modalSubtitle}>{editingProduct?.name}</Text>
+      <Modal
+        visible={formVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setFormVisible(false);
+          setEditingProduct(null);
+        }}
+      >
+        <Pressable
+          style={styles.modalBackdrop}
+          onPress={() => {
+            setFormVisible(false);
+            setEditingProduct(null);
+          }}
+        >
+          <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+            <Text style={styles.modalTitle}>Cap nhat gia</Text>
+            <Text style={styles.modalSubtitle}>
+              {editingProduct ? editingProduct.name : 'Chon san pham de cap nhat'}
+            </Text>
             <TextInput
               style={styles.modalInput}
               keyboardType="numeric"
               value={priceInput}
               onChangeText={setPriceInput}
-              placeholder="Nhập giá mới"
+              placeholder="Gia moi"
               placeholderTextColor="#9ca3af"
             />
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditingProduct(null)}>
-                <Text style={styles.modalCancelText}>Hủy</Text>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => {
+                  setFormVisible(false);
+                  setEditingProduct(null);
+                }}
+              >
+                <Text style={styles.modalCancelText}>Huy</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.modalSave} onPress={handleSavePrice}>
-                <Text style={styles.modalSaveText}>Lưu</Text>
+                <Text style={styles.modalSaveText}>Luu</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );
@@ -283,6 +310,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: 14,
+    gap: 8,
   },
   searchInput: { flex: 1, fontSize: 14, color: '#111827' },
   refreshButton: {

@@ -10,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  TextInput, // ⬅️ FIX: Bổ sung import
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -48,6 +49,8 @@ type DroneRecord = {
 };
 
 type ViewMode = 'all' | 'processing' | 'delivering' | 'delivered' | 'drones';
+type TimeFilter = 'all' | '24h' | '7d' | '30d';
+type DroneFilter = 'delivering' | 'idle' | 'maintaining';
 
 /* ========= HELPERS ========= */
 const normalizeStatus = (value?: string | null) => (value ?? '').toLowerCase();
@@ -63,27 +66,39 @@ const parseTimestamp = (v: any): Date | null => {
 };
 
 const formatCurrency = (v?: number | null) =>
-  `${Number(v ?? 0).toLocaleString('vi-VN')}₫`;
+  `${Number(v ?? 0).toLocaleString('vi-VN')} đ`;
 
 const formatDateTime = (v?: Date | null) =>
-  v ? v.toLocaleString('vi-VN') : '—';
+  v ? v.toLocaleString('vi-VN') : '';
 
 const isProcessingStatus = (s?: string) =>
+  normalizeStatus(s).includes('cho') ||
   normalizeStatus(s).includes('chờ') ||
+  normalizeStatus(s).includes('xu ly') ||
   normalizeStatus(s).includes('xử lý') ||
   normalizeStatus(s).includes('processing') ||
   normalizeStatus(s) === 'confirmed';
 
 const isDeliveringStatus = (s?: string) =>
+  normalizeStatus(s).includes('ang giao') ||
   normalizeStatus(s).includes('đang giao') ||
   normalizeStatus(s).includes('delivering');
 
 const isDeliveredStatus = (s?: string) =>
+  normalizeStatus(s).includes('a giao') ||
   normalizeStatus(s).includes('đã giao') ||
   normalizeStatus(s).includes('delivered');
 
 const isDroneIdle = (s?: string) =>
-  ['rảnh', 'idle', 'available', ''].includes(normalizeStatus(s));
+  ['ranh', 'rảnh', 'idle', 'available', ''].includes(normalizeStatus(s));
+
+const isDroneDelivering = (s?: string) =>
+  normalizeStatus(s).includes('giao') || normalizeStatus(s).includes('deliver');
+
+const isDroneMaintaining = (s?: string) =>
+  normalizeStatus(s).includes('bao tri') ||
+  normalizeStatus(s).includes('bảo trì') ||
+  normalizeStatus(s).includes('maintain');
 
 /* ========= FADE WRAPPER ========= */
 function FadeIn({ children, depsKey }: { children: React.ReactNode; depsKey: string }) {
@@ -111,9 +126,12 @@ export default function RestaurantAdminScreen() {
   const [pickerOrder, setPickerOrder] = useState<OrderRecord | null>(null);
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
   const [markingOrderId, setMarkingOrderId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
+  const [droneFilter, setDroneFilter] = useState<DroneFilter>('idle');
 
   // View control
-  const [viewMode, setViewMode] = useState<ViewMode>('all'); // mặc định: Tổng tất cả
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [menuVisible, setMenuVisible] = useState(false);
 
   /* ----- Auth Guard ----- */
@@ -165,10 +183,7 @@ export default function RestaurantAdminScreen() {
         setOrders(data);
         setOrdersLoaded(true);
       },
-      (e) => {
-        console.error('orders subscribe error', e);
-        setOrdersLoaded(true);
-      }
+      () => setOrdersLoaded(true)
     );
 
     const unsubDrones = onSnapshot(
@@ -187,10 +202,7 @@ export default function RestaurantAdminScreen() {
         setDrones(data);
         setDronesLoaded(true);
       },
-      (e) => {
-        console.error('drones subscribe error', e);
-        setDronesLoaded(true);
-      }
+      () => setDronesLoaded(true)
     );
 
     return () => { unsubOrders(); unsubDrones(); };
@@ -201,6 +213,15 @@ export default function RestaurantAdminScreen() {
     () => drones.filter((dr) => isDroneIdle(dr.status) && !dr.currentOrderId),
     [drones]
   );
+
+  const filteredDrones = useMemo(() => {
+    return drones.filter((dr) => {
+      if (droneFilter === 'idle') return isDroneIdle(dr.status);
+      if (droneFilter === 'delivering') return isDroneDelivering(dr.status);
+      if (droneFilter === 'maintaining') return isDroneMaintaining(dr.status);
+      return true;
+    });
+  }, [drones, droneFilter]);
 
   const filteredOrders = useMemo(() => {
     switch (viewMode) {
@@ -222,7 +243,7 @@ export default function RestaurantAdminScreen() {
   const handleLogout = useCallback(() => {
     setMenuVisible(false);
     Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
-      { text: 'Hủy', style: 'cancel' },
+      { text: 'Huỷ', style: 'cancel' },
       {
         text: 'Đăng xuất',
         style: 'destructive',
@@ -230,9 +251,7 @@ export default function RestaurantAdminScreen() {
           try {
             await logout();
             setTimeout(() => router.replace('/(auth)/login'), 100);
-          } catch (err) {
-            console.error('Logout failed:', err);
-          }
+          } catch (err) { }
         },
       },
     ]);
@@ -256,7 +275,6 @@ export default function RestaurantAdminScreen() {
         Alert.alert('Thành công', `Đã gán ${drone.name ?? 'drone'} cho đơn #${pickerOrder.id}.`);
         setPickerOrder(null);
       } catch (error) {
-        console.error('assign drone error', error);
         Alert.alert('Lỗi', 'Không thể gán drone.');
       } finally {
         setAssigningOrderId(null);
@@ -282,7 +300,6 @@ export default function RestaurantAdminScreen() {
         }
         Alert.alert('Hoàn tất', `Đơn #${order.id} đã giao xong.`);
       } catch (error) {
-        console.error('mark delivered error', error);
         Alert.alert('Lỗi', 'Không thể cập nhật trạng thái.');
       } finally {
         setMarkingOrderId(null);
@@ -300,23 +317,22 @@ export default function RestaurantAdminScreen() {
     );
   }
 
-  // Title + count for orders section
   const sectionMeta: Record<ViewMode, { icon: string; title: string; count: number }> = {
     all: { icon: '', title: 'Tổng tất cả', count: filteredOrders.length },
     processing: { icon: '', title: 'Đơn đang xử lý', count: filteredOrders.length },
     delivering: { icon: '', title: 'Đơn đang giao', count: filteredOrders.length },
     delivered: { icon: '', title: 'Đơn đã giao', count: filteredOrders.length },
-    drones: { icon: '', title: 'Quản lý Drone', count: drones.length },
+    drones: { icon: '', title: 'Quản lý Drone', count: filteredDrones.length },
   };
 
-  const fadeKey = `${viewMode}:${filteredOrders.length}:${drones.length}`;
+  const fadeKey = `${viewMode}:${filteredOrders.length}:${filteredDrones.length}:${droneFilter}`;
   const menuItems: { key: ViewMode | 'products'; label: string; type: 'view' | 'navigate' }[] = [
-    { key: 'all', label: ' Tổng đơn hàng', type: 'view' },
+    { key: 'all', label: 'Tổng đơn hàng', type: 'view' },
     { key: 'processing', label: 'Đơn đang xử lý', type: 'view' },
-    { key: 'delivering', label: ' Đơn đang giao', type: 'view' },
-    { key: 'delivered', label: ' Đơn đã giao', type: 'view' },
-    { key: 'drones', label: ' Quản lý Drone', type: 'view' },
-    { key: 'products', label: ' Quản lý sản phẩm', type: 'navigate' },
+    { key: 'delivering', label: 'Đơn đang giao', type: 'view' },
+    { key: 'delivered', label: 'Đơn đã giao', type: 'view' },
+    { key: 'drones', label: 'Quản lý Drone', type: 'view' },
+    { key: 'products', label: 'Quản lý sản phẩm', type: 'navigate' },
   ];
 
   return (
@@ -334,60 +350,146 @@ export default function RestaurantAdminScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Filters */}
+        <View style={styles.filterBlock}>
+          <View style={styles.searchBox}>
+            <Ionicons name="search" size={16} color="#6C6F75" />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Mã đơn, tên khách, địa chỉ"
+              placeholderTextColor="#9CA3AF"
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+            {(['all', 'processing', 'delivering', 'delivered'] as ViewMode[]).map((v) => (
+              <TouchableOpacity
+                key={v}
+                style={[styles.chip, viewMode === v && styles.chipActive]}
+                onPress={() => setViewMode(v)}
+              >
+                <Text style={[styles.chipText, viewMode === v && styles.chipTextActive]}>
+                  {v === 'all'
+                    ? 'Tất cả đơn'
+                    : v === 'processing'
+                      ? 'Đang xử lý'
+                      : v === 'delivering'
+                        ? 'Đang giao'
+                        : 'Đã giao'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+            {(['all', '24h', '7d', '30d'] as TimeFilter[]).map((tf) => (
+              <TouchableOpacity
+                key={tf}
+                style={[styles.chip, timeFilter === tf && styles.chipActive]}
+                onPress={() => setTimeFilter(tf)}
+              >
+                <Text style={[styles.chipText, timeFilter === tf && styles.chipTextActive]}>
+                  {tf === 'all'
+                    ? 'Tất cả thời gian'
+                    : tf === '24h'
+                      ? '24h gần nhất'
+                      : tf === '7d'
+                        ? '7 ngày'
+                        : '30 ngày'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Section Header Card */}
         <FadeIn depsKey={fadeKey}>
           <View style={styles.sectionHeaderCard}>
             <Text style={styles.sectionHeaderText}>
-              {sectionMeta[viewMode].icon} {sectionMeta[viewMode].title}
-              {viewMode !== 'drones' && (
-                <Text style={styles.sectionHeaderCount}> — {sectionMeta[viewMode].count} đơn</Text>
-              )}
-              {viewMode === 'drones' && (
-                <Text style={styles.sectionHeaderCount}> — {sectionMeta[viewMode].count} drone</Text>
+              {sectionMeta[viewMode].title}{' '}
+              {viewMode !== 'drones' ? (
+                <Text style={styles.sectionHeaderCount}> {sectionMeta[viewMode].count} đơn</Text>
+              ) : (
+                <Text style={styles.sectionHeaderCount}> {sectionMeta[viewMode].count} drone</Text>
               )}
             </Text>
           </View>
 
+          {viewMode === 'drones' ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={[styles.chipRow, { marginTop: 8 }]}
+            >
+              {(['idle', 'delivering', 'maintaining'] as DroneFilter[]).map((df) => (
+                <TouchableOpacity
+                  key={df}
+                  style={[styles.chip, droneFilter === df && styles.chipActive]}
+                  onPress={() => setDroneFilter(df)}
+                >
+                  <Text style={[styles.chipText, droneFilter === df && styles.chipTextActive]}>
+                    {df === 'idle' ? 'Rảnh' : df === 'delivering' ? 'Đang giao' : 'Bảo trì'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          ) : null}
+
           {/* Content */}
           {viewMode === 'drones' ? (
-            // Drone management
             <View style={{ marginTop: 8 }}>
-              {drones.length === 0 ? (
+              {filteredDrones.length === 0 ? (
                 <View style={styles.emptyState}>
                   <Ionicons name="airplane-outline" size={48} color="#999" />
                   <Text style={styles.emptyTitle}>Chưa có drone nào</Text>
-                  <Text style={styles.emptySubtitle}>Bạn chưa được cấp drone để giao hàng.</Text>
+                  <Text style={styles.emptySubtitle}>
+                    Bạn chưa được cấp drone hoặc không có drone phù hợp bộ lọc.
+                  </Text>
                 </View>
               ) : (
-                drones.map((drone) => (
-                  <View key={drone.id} style={styles.droneCard}>
-                    <View>
-                      <Text style={styles.droneName}>{drone.name}</Text>
-                      <Text style={styles.droneSub}>
-                        Pin: {drone.battery ?? 0}% | Trạng thái: {drone.status ?? 'Không rõ'}
-                      </Text>
+                filteredDrones.map((drone) => {
+                  const assignedOrder = orders.find((o) => o.id === drone.currentOrderId);
+                  return (
+                    <View key={drone.id} style={styles.droneCard}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.droneName}>{drone.name}</Text>
+                        <Text style={styles.droneSub}>
+                          Pin: {drone.battery ?? 0}% | Trạng thái: {drone.status ?? 'Không rõ'}
+                        </Text>
+                        {assignedOrder ? (
+                          <View style={styles.droneOrderBox}>
+                            <Text style={styles.droneOrderTitle}>Đơn #{assignedOrder.id}</Text>
+                            <Text style={styles.droneOrderSubtitle} numberOfLines={2}>
+                              {assignedOrder.customer?.address ?? 'Chưa có địa chỉ'}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+
+                      {/* FIXED: Không còn thẻ dư, không còn đóng sai */}
+                      <TouchableOpacity
+                        style={styles.droneBtn}
+                        onPress={async () => {
+                          try {
+                            const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
+                            await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
+                            Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
+                          } catch (err) {
+                            Alert.alert('Lỗi', 'Không thể cập nhật trạng thái drone.');
+                          }
+                        }}
+                      >
+                        <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
+                      </TouchableOpacity>
+
                     </View>
-                    <TouchableOpacity
-                      style={styles.droneBtn}
-                      onPress={async () => {
-                        try {
-                          const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
-                          await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
-                          Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
-                        } catch (err) {
-                          console.error(err);
-                          Alert.alert('Lỗi', 'Không thể cập nhật trạng thái drone.');
-                        }
-                      }}
-                    >
-                      <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
-                    </TouchableOpacity>
-                  </View>
-                ))
+                  );
+                })
               )}
             </View>
           ) : (
-            // Orders list
             <View style={{ marginTop: 8 }}>
               {filteredOrders.length === 0 ? (
                 <View style={styles.emptyState}>
@@ -400,7 +502,7 @@ export default function RestaurantAdminScreen() {
               ) : (
                 filteredOrders.map((order) => {
                   const assignedDrone = drones.find((d) => d.id === order.droneId);
-                  const status = order.status ?? '—';
+                  const status = order.status ?? '';
                   const canAssign = !isDeliveredStatus(status) && !isDeliveringStatus(status);
                   const canMarkDelivered = isDeliveringStatus(status);
 
@@ -444,7 +546,7 @@ export default function RestaurantAdminScreen() {
                             <View style={styles.droneTag}>
                               <Ionicons name="airplane-outline" size={16} color="#00A74F" />
                               <Text style={styles.droneTagText}>
-                                {assignedDrone.name} • {assignedDrone.battery ?? 0}% pin
+                                {assignedDrone.name} {assignedDrone.battery ?? 0}% pin
                               </Text>
                             </View>
                           ) : (
@@ -532,24 +634,21 @@ export default function RestaurantAdminScreen() {
       </Modal>
 
       {/* Modal Menu */}
-      {/* Modal Menu */}
       <Modal
         visible={menuVisible}
         transparent
         animationType="fade"
         onRequestClose={() => setMenuVisible(false)}
       >
-        {/* Overlay */}
         <Pressable
           style={styles.menuOverlay}
           onPress={() => setMenuVisible(false)}
         >
-          {/* Content – phải chặn event bubble */}
           <Pressable
             style={styles.menuContainer}
             onPress={(e) => e.stopPropagation()}
           >
-            <Text style={styles.menuTitle}>Tùy chọn</Text>
+            <Text style={styles.menuTitle}>Tuỳ chọn</Text>
 
             {menuItems.map((item) => (
               <TouchableOpacity
@@ -608,7 +707,36 @@ const styles = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.07, shadowRadius: 6, shadowOffset: { width: 0, height: 3 }, elevation: 2,
   },
 
-  /* Section Header Card (xanh nhạt) */
+  /* Search Box */
+  filterBlock: { gap: 12, marginTop: 12 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
+    color: '#1A1C1E',
+  },
+
+  /* Chips */
+  chipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: '#E5E7EB',
+  },
+  chipActive: { backgroundColor: '#007C35' },
+  chipText: { color: '#333', fontSize: 13 },
+  chipTextActive: { color: '#fff', fontWeight: '700' },
+
+  /* Section Header Card */
   sectionHeaderCard: {
     marginTop: 16,
     backgroundColor: '#E6F6EC',
@@ -636,8 +764,13 @@ const styles = StyleSheet.create({
   },
   droneName: { fontSize: 16, fontWeight: '700', color: '#1A1C1E' },
   droneSub: { color: '#6C6F75', fontSize: 13, marginTop: 4 },
+
   droneBtn: { backgroundColor: '#00A74F', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   droneBtnText: { color: '#FFF', fontWeight: '600', fontSize: 13 },
+
+  droneOrderBox: { marginTop: 10 },
+  droneOrderTitle: { fontWeight: '700', fontSize: 14, color: '#1A1C1E' },
+  droneOrderSubtitle: { fontSize: 13, color: '#6C6F75', marginTop: 2 },
 
   /* Orders list */
   orderCard: {
@@ -665,6 +798,7 @@ const styles = StyleSheet.create({
   totalValue: { marginTop: 4, fontSize: 18, fontWeight: '700', color: '#1A1C1E' },
 
   actionColumn: { alignItems: 'flex-end', gap: 10 },
+
   droneTag: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: '#E6F6EC', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6,
@@ -729,6 +863,7 @@ const styles = StyleSheet.create({
   },
   menuItemText: { fontSize: 15, fontWeight: '600', color: '#1A1C1E' },
   menuDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 8 },
+
   /* Status badges */
   statusBadge: {
     paddingHorizontal: 12,

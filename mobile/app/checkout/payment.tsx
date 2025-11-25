@@ -291,7 +291,7 @@ export default function PaymentScreen() {
     const [loadingMenu, setLoadingMenu] = useState(false);
     const [search, setSearch] = useState("");
 
-    const [payment, setPayment] = useState<PaymentMethod>("momo");
+    const [payment, setPayment] = useState<PaymentMethod>("bank");
     const [restaurantInfo, setRestaurantInfo] = useState<
         { name: string; address?: string; latitude?: number | null; longitude?: number | null }
         | null
