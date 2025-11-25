@@ -23,6 +23,11 @@ export default function RootLayout() {
           <Stack.Screen name="restaurant-admin" options={{ headerShown: false }} />
           <Stack.Screen name="restaurant-admin-products" options={{ headerShown: false }} />
           <Stack.Screen name="admin-overview" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/orders" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/users" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/restaurants" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/drones" options={{ headerShown: false }} />
+          <Stack.Screen name="admin/revenue" options={{ headerShown: false }} />
 
           {/* Auth stack (optional but recommended) */}
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
