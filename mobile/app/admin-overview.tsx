@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Alert,
   ScrollView,
   RefreshControl,
   View,
@@ -18,7 +17,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { app } from '../libs/firebase';
 import { useAuth } from '../libs/AuthContext';
 
-const formatCurrency = (value?: number | null) => `${Number(value ?? 0).toLocaleString('vi-VN')}₫`;
+type QuickMenuItem = {
+  key: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  value: string | number;
+  subtitle: string;
+  detail: string;
+  route: string;
+};
+
+const formatCurrency = (value?: number | null) =>
+  `${Number(value ?? 0).toLocaleString('vi-VN')} đ`;
 
 export default function AdminOverviewScreen() {
   const router = useRouter();
@@ -38,6 +48,7 @@ export default function AdminOverviewScreen() {
     droneIdle: 0,
     droneBusy: 0,
   });
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const loadSummary = useCallback(async () => {
     setRefreshing(true);
@@ -90,31 +101,34 @@ export default function AdminOverviewScreen() {
     loadSummary();
   }, [user, loading, loadSummary, router]);
 
-  const quickMenuItems = useMemo(
+  const quickMenuItems: QuickMenuItem[] = useMemo(
     () => [
       {
         key: 'orders',
         icon: 'receipt-outline',
         title: 'Đơn hàng',
         value: summary.orders,
-        subtitle: `Đang chờ: ${summary.processing} | Đang giao: ${summary.delivering}`,
-        detail: `Đã giao: ${summary.delivered}, đang giao: ${summary.delivering}, chờ xử lý: ${summary.processing}`,
+        subtitle: `Chờ: ${summary.processing} | Đang giao: ${summary.delivering}`,
+        detail: `Đã giao: ${summary.delivered}, Đang giao: ${summary.delivering}, Chờ xử lý: ${summary.processing}`,
+        route: '/admin/orders',
       },
       {
         key: 'users',
         icon: 'people-outline',
         title: 'Người dùng',
         value: summary.users,
-        subtitle: 'Người dùng hoạt động trên hệ thống',
-        detail: 'Thông tin người dùng đã được đồng bộ với trang chủ.',
+        subtitle: 'Tài khoản hoạt động trên hệ thống',
+        detail: 'Xem danh sách và chi tiết tài khoản.',
+        route: '/admin/users',
       },
       {
         key: 'restaurants',
         icon: 'business-outline',
         title: 'Nhà hàng',
         value: summary.restaurants,
-        subtitle: 'Số lượng đối tác đang mở bán',
-        detail: 'Số liệu khớp với danh sách hiển thị ngoài trang chủ.',
+        subtitle: 'Đối tác đang mở bán',
+        detail: 'Quản lý danh sách nhà hàng và trạng thái.',
+        route: '/admin/restaurants',
       },
       {
         key: 'drones',
@@ -122,7 +136,8 @@ export default function AdminOverviewScreen() {
         title: 'Drone',
         value: summary.drones,
         subtitle: `Rảnh: ${summary.droneIdle} | Đang giao: ${summary.droneBusy}`,
-        detail: `Sẵn sàng: ${summary.droneIdle}, đang giao hoặc bảo trì: ${summary.droneBusy}`,
+        detail: `Sẵn sàng: ${summary.droneIdle}, Đang giao/bảo trì: ${summary.droneBusy}`,
+        route: '/admin/drones',
       },
       {
         key: 'revenue',
@@ -130,38 +145,19 @@ export default function AdminOverviewScreen() {
         title: 'Doanh thu',
         value: formatCurrency(summary.revenue),
         subtitle: 'Cập nhật theo đơn đã giao',
-        detail: `Doanh thu đang hiển thị giống trang chủ: ${formatCurrency(summary.revenue)}`,
+        detail: `Doanh thu hiện tại: ${formatCurrency(summary.revenue)}`,
+        route: '/admin/revenue',
       },
     ],
     [summary]
   );
 
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  const handleMenuPress = useCallback((detail: string) => {
-    Alert.alert('Thông tin nhanh', `${detail}\nBạn có thể đối chiếu với dữ liệu ngoài trang chủ.`);
-  }, []);
-
-  const handleManage = useCallback(
-    (key: string) => {
-      switch (key) {
-        case 'orders':
-          Alert.alert('Quản lý đơn hàng', `Tổng: ${summary.orders}\nĐã giao: ${summary.delivered}\nĐang giao: ${summary.delivering}\nChờ xử lý: ${summary.processing}`);
-          break;
-        case 'users':
-          Alert.alert('Quản lý người dùng', `Có ${summary.users} tài khoản. Bạn có thể sửa, xoá hoặc chặn người dùng trong trang quản trị web.`);
-          break;
-        case 'restaurants':
-          Alert.alert('Quản lý nhà hàng', `Có ${summary.restaurants} đối tác. Cho phép tạm dừng hoặc chặn nhà hàng giống trên web.`);
-          break;
-        case 'drones':
-          Alert.alert('Quản lý drone', `Tổng: ${summary.drones}\nRảnh: ${summary.droneIdle}\nĐang giao/Bận: ${summary.droneBusy}`);
-          break;
-        default:
-          Alert.alert('Doanh thu', `Hiện tại: ${formatCurrency(summary.revenue)} (tính theo đơn đã giao).`);
-      }
+  const handleNavigate = useCallback(
+    (route: string) => {
+      setMenuVisible(false);
+      router.push(route as any);
     },
-    [summary]
+    [router]
   );
 
   const handleLogout = useCallback(async () => {
@@ -192,16 +188,16 @@ export default function AdminOverviewScreen() {
 
         <View style={styles.menuSection}>
           <Text style={styles.sectionTitle}>Menu dữ liệu</Text>
-          <Text style={styles.menuSubtitle}>Xem nhanh các chỉ số hiển thị ngoài trang chủ</Text>
+          <Text style={styles.menuSubtitle}>Chạm để đi tới màn chi tiết từng mục</Text>
           {quickMenuItems.map((item) => (
             <TouchableOpacity
               key={item.key}
               style={styles.menuItem}
-              onPress={() => handleMenuPress(item.detail)}
+              onPress={() => handleNavigate(item.route)}
               activeOpacity={0.9}
             >
               <View style={styles.menuIcon}>
-                <Ionicons name={item.icon as any} size={18} color="#0b1f15" />
+                <Ionicons name={item.icon} size={18} color="#0b1f15" />
               </View>
               <View style={styles.menuInfo}>
                 <Text style={styles.menuTitle}>{item.title}</Text>
@@ -249,41 +245,43 @@ export default function AdminOverviewScreen() {
       <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
         <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
           <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.modalTitle}>Menu quản trị</Text>
-            <Text style={styles.modalSubtitle}>Tương tự trang admin web: xem số liệu, sửa/xoá/chặn.</Text>
+            <ScrollView contentContainerStyle={styles.menuContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>Menu quản trị</Text>
+              <Text style={styles.modalSubtitle}>Đi tới màn chi tiết để xem và thao tác dữ liệu.</Text>
 
-            {quickMenuItems.map((item) => (
-              <View key={item.key} style={styles.modalItem}>
-                <View style={styles.modalItemHeader}>
-                  <View style={styles.menuIcon}>
-                    <Ionicons name={item.icon as any} size={18} color="#0b1f15" />
+              {quickMenuItems.map((item) => (
+                <View key={item.key} style={styles.modalItem}>
+                  <View style={styles.modalItemHeader}>
+                    <View style={styles.menuIcon}>
+                      <Ionicons name={item.icon} size={18} color="#0b1f15" />
+                    </View>
+                    <View style={styles.menuInfo}>
+                      <Text style={styles.menuTitle}>{item.title}</Text>
+                      <Text style={styles.menuSubtitleText}>{item.subtitle}</Text>
+                    </View>
+                    <Text style={styles.menuValue}>{item.value}</Text>
                   </View>
-                  <View style={styles.menuInfo}>
-                    <Text style={styles.menuTitle}>{item.title}</Text>
-                    <Text style={styles.menuSubtitleText}>{item.subtitle}</Text>
+
+                  <View style={styles.modalActionsRow}>
+                    <TouchableOpacity style={styles.modalActionButton} onPress={() => handleNavigate(item.route)}>
+                      <Ionicons name="eye-outline" size={16} color="#0b1f15" />
+                      <Text style={styles.modalActionText}>Xem chi tiết</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.modalActionButton} onPress={() => handleNavigate(item.route)}>
+                      <Ionicons name="create-outline" size={16} color="#0b1f15" />
+                      <Text style={styles.modalActionText}>Sửa / chặn</Text>
+                    </TouchableOpacity>
                   </View>
-                  <Text style={styles.menuValue}>{item.value}</Text>
                 </View>
+              ))}
 
-                <View style={styles.modalActionsRow}>
-                  <TouchableOpacity style={styles.modalActionButton} onPress={() => handleMenuPress(item.detail)}>
-                    <Ionicons name="eye-outline" size={16} color="#0b1f15" />
-                    <Text style={styles.modalActionText}>Xem chi tiết</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.modalActionButton} onPress={() => handleManage(item.key)}>
-                    <Ionicons name="create-outline" size={16} color="#0b1f15" />
-                    <Text style={styles.modalActionText}>Sửa / chặn</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
+              <View style={styles.menuDivider} />
 
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={[styles.modalActionButton, styles.logoutButton]} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={18} color="#E53935" />
-              <Text style={[styles.modalActionText, { color: '#E53935' }]}>Đăng xuất</Text>
-            </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalActionButton, styles.logoutButton]} onPress={handleLogout}>
+                <Ionicons name="log-out-outline" size={18} color="#E53935" />
+                <Text style={[styles.modalActionText, { color: '#E53935' }]}>Đăng xuất</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -400,15 +398,18 @@ const styles = StyleSheet.create({
   menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
   menuContainer: {
     backgroundColor: '#fff',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 12,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    gap: 12,
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 10,
     shadowOffset: { width: 0, height: -4 },
+    maxHeight: '80%',
   },
+  menuContent: { gap: 12, paddingBottom: 16 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#0b1f15' },
   modalSubtitle: { color: '#4b5d52' },
   modalItem: {
@@ -437,4 +438,3 @@ const styles = StyleSheet.create({
   logoutButton: { backgroundColor: '#fdecea', borderColor: '#f8b4ab' },
   menuDivider: { borderBottomWidth: 1, borderBottomColor: '#e0efe6', marginVertical: 4 },
 });
-
