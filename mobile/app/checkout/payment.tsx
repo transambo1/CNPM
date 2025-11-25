@@ -49,7 +49,7 @@ type Product = {
     description?: string;
 };
 
-type PaymentMethod = "momo" | "bank" | "vnpay";
+type PaymentMethod = "cod" | "qr";
 
 const VND = (v: number) =>
     (Number(v) || 0).toLocaleString("vi-VN", { minimumFractionDigits: 0 }) + "đ";
@@ -291,7 +291,7 @@ export default function PaymentScreen() {
     const [loadingMenu, setLoadingMenu] = useState(false);
     const [search, setSearch] = useState("");
 
-    const [payment, setPayment] = useState<PaymentMethod>("bank");
+    const [payment, setPayment] = useState<PaymentMethod>("cod");
     const [restaurantInfo, setRestaurantInfo] = useState<
         { name: string; address?: string; latitude?: number | null; longitude?: number | null }
         | null
@@ -529,10 +529,10 @@ export default function PaymentScreen() {
             restaurantName: it.restaurantName,
         });
         if (undoTimer.current) clearTimeout(undoTimer.current);
-        undoTimer.current = setTimeout(() => {
-            setUndoItem(null);
-            undoTimer.current = null;
-        }, 3000);
+       undoTimer.current = setTimeout(() => {
+    setUndoItem(null);
+    undoTimer.current = null;
+}, 3000) as any;
     }, [items, removeFromCart]);
 
     // Undo
@@ -944,36 +944,31 @@ export default function PaymentScreen() {
                         )}
                     </View>
 
-                    {/* Tùy chọn giao hàng (placeholder)    <Text style={styles.mutedSmall}>(Có thể cộng/trừ phí )</Text> */}
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Tùy chọn giao hàng</Text>
-                        <View style={styles.shipChoice}>
-                            <Text style={styles.shipChoiceActive}>Nhanh • 25 phút</Text>
-
-                        </View>
-                    </View>
-
+            
                     {/* Phương thức thanh toán */}
                     <View style={styles.card}>
                         <View style={styles.cardHeader}>
                             <Text style={styles.cardTitle}>Thông tin thanh toán</Text>
                             <TouchableOpacity onPress={paySheet.openSheet}>
-                                <Text style={styles.linkGreen}>Xem tất cả</Text>
+                        <Text style={styles.linkGreen}>Xem tất cả</Text> 
                             </TouchableOpacity>
                         </View>
-                        <TouchableOpacity style={styles.payMethodRow} onPress={paySheet.openSheet} activeOpacity={0.8}>
-                            <View style={styles.payMethodLeft}>
-                                <View style={styles.pmIcon}>
-                                    <Text style={styles.pmIconTxt}>
-                                        {payment === "momo" ? "Mo" : payment === "bank" ? "Ng" : "VP"}
-                                    </Text>
-                                </View>
-                                <Text style={styles.payMethodText}>
-                                    {payment === "momo" ? "MoMo" : payment === "bank" ? "Ngân hàng" : "VNPay"}
-                                </Text>
-                            </View>
-                            <Text style={styles.chev}>{">"}</Text>
-                        </TouchableOpacity>
+                       <TouchableOpacity style={styles.payMethodRow} onPress={paySheet.openSheet} activeOpacity={0.8}>
+    <View style={styles.payMethodLeft}>
+        <View style={styles.pmIcon}>
+            <Text style={styles.pmIconTxt}>
+                {payment === "cod" ? "COD" : "QR"}
+            </Text>
+        </View>
+
+        <Text style={styles.payMethodText}>
+            {payment === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Thanh toán bằng mã QR"}
+        </Text>
+    </View>
+
+   
+</TouchableOpacity>
+
                     </View>
 
                     {/* Tạm tính */}
@@ -1185,13 +1180,25 @@ export default function PaymentScreen() {
                         />
                         <View style={styles.defaultRow}>
                             <Text style={styles.defaultLabel}>Đặt làm địa chỉ mặc định</Text>
-                            <Switch
-                                value={newAddressForm.isDefault || addresses.length === 0}
-                                onValueChange={(value) => setNewAddressForm((prev) => ({ ...prev, isDefault: value }))}
-                                disabled={addresses.length === 0}
-                                trackColor={{ true: "#86EFAC", false: "#CBD5F5" }}
-                                thumbColor={newAddressForm.isDefault || addresses.length === 0 ? "#16A34A" : "#fff"}
-                            />
+                           <View style={styles.switchWrapper}>
+    <Switch
+        value={newAddressForm.isDefault || addresses.length === 0}
+        onValueChange={(value) =>
+            setNewAddressForm((prev) => ({ ...prev, isDefault: value }))
+        }
+        disabled={addresses.length === 0}
+        trackColor={{
+            true: "#ffb899",
+            false: "#ffe8d9",
+        }}
+        thumbColor={
+            newAddressForm.isDefault || addresses.length === 0
+                ? "#ff6200ff"
+                : "#fff"
+        }
+    />
+</View>
+
                         </View>
                         <TouchableOpacity
                             style={[styles.primaryBtn, { marginTop: 4 }, savingAddress && { opacity: 0.6 }]}
@@ -1250,33 +1257,44 @@ export default function PaymentScreen() {
                 </View>
             </Animated.View>
 
-            {/* Sheet: Chọn phương thức thanh toán */}
-            <Animated.View
-                style={[styles.sheet, { height: paySheet.snapHeight, transform: [{ translateY: paySheet.translateY }] }]}
-                {...paySheet.pan.panHandlers}
+          {/* Sheet: Chọn phương thức thanh toán  */}
+<Animated.View
+    style={[styles.sheet, { height: paySheet.snapHeight, transform: [{ translateY: paySheet.translateY }] }]}
+    {...paySheet.pan.panHandlers}
+>
+    <View style={styles.grabber} />
+    <View style={styles.sheetHeader}>
+        <Text style={styles.sheetTitle}>Chọn phương thức thanh toán</Text>
+        <TouchableOpacity onPress={paySheet.closeSheet}>
+            <Text style={styles.sheetClose}>Đóng</Text>
+        </TouchableOpacity>
+    </View>
+
+    <View style={{ paddingHorizontal: 16, gap: 10 }}>
+        {(["cod", "qr"] as PaymentMethod[]).map((m) => (
+            <TouchableOpacity
+                key={m}
+                style={[styles.pmRow, payment === m && { borderColor: "#16A34A" }]}
+                onPress={() => { setPayment(m); paySheet.closeSheet(); }}
+                activeOpacity={0.85}
             >
-                <View style={styles.grabber} />
-                <View style={styles.sheetHeader}>
-                    <Text style={styles.sheetTitle}>Chọn phương thức thanh toán</Text>
-                    <TouchableOpacity onPress={paySheet.closeSheet}><Text style={styles.sheetClose}>Đóng</Text></TouchableOpacity>
+                <View style={styles.pmIcon}>
+                    <Text style={styles.pmIconTxt}>
+                        {m === "cod" ? "COD" : "QR"}
+                    </Text>
                 </View>
 
-                <View style={{ paddingHorizontal: 16, gap: 10 }}>
-                    {(["momo", "bank", "vnpay"] as PaymentMethod[]).map((m) => (
-                        <TouchableOpacity
-                            key={m}
-                            style={[styles.pmRow, payment === m && { borderColor: "#16A34A" }]}
-                            onPress={() => { setPayment(m); paySheet.closeSheet(); }}
-                            activeOpacity={0.85}
-                        >
-                            <View style={styles.pmIcon}><Text style={styles.pmIconTxt}>{m === "momo" ? "Mo" : m === "bank" ? "Ng" : "VP"}</Text></View>
-                            <Text style={styles.pmLabel}>{m === "momo" ? "MoMo" : m === "bank" ? "Ngân hàng" : "VNPay"}</Text>
-                            <View style={{ flex: 1 }} />
-                            <View style={[styles.radio, payment === m && styles.radioActive]} />
-                        </TouchableOpacity>
-                    ))}
-                </View>
-            </Animated.View>
+                <Text style={styles.pmLabel}>
+                    {m === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Thanh toán bằng mã QR"}
+                </Text>
+
+                <View style={{ flex: 1 }} />
+                <View style={[styles.radio, payment === m && styles.radioActive]} />
+            </TouchableOpacity>
+        ))}
+    </View>
+</Animated.View>
+
 
             {/* Snackbar Undo */}
             {undoItem && (
@@ -1290,176 +1308,399 @@ export default function PaymentScreen() {
 }
 
 // ===== Styles =====
-const BORDER = "#F1F5F9";
-
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: "#fff" },
 
+    /* ================== HEADER ================== */
     header: {
         paddingHorizontal: 16,
         paddingVertical: 14,
         flexDirection: "row",
         alignItems: "center",
+        borderBottomWidth: 1,
+        borderBottomColor: "#ffd6b0",
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 6,
+        elevation: 3,
     },
-    headerClose: { fontSize: 18, color: "#111" },
-    headerTitle: { flex: 1, textAlign: "center", fontSize: 16, fontWeight: "800" },
+    headerClose: { fontSize: 20, color: "#1a1a1a", fontWeight: "800" },
+    headerTitle: { flex: 1, textAlign: "center", fontSize: 18, fontWeight: "800", color: "#1a1a1a" },
 
+    /* ================== CARD ================== */
     card: {
         backgroundColor: "#fff",
         marginHorizontal: 14,
         marginTop: 12,
-        borderRadius: 14,
-        padding: 14,
+        borderRadius: 16,
+        padding: 16,
         borderWidth: 1,
-        borderColor: BORDER,
+        borderColor: "#ffd6b0",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 6,
+        elevation: 2,
     },
-    cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    cardTitle: { fontSize: 16, fontWeight: "800", color: "#111" },
-    linkGreen: { color: "#00A74F", fontWeight: "700" },
-    addressSummary: { marginTop: 12, gap: 6 },
-    addressLabel: { fontSize: 13, fontWeight: "700", color: "#16A34A" },
-    addressLine: { fontSize: 15, fontWeight: "700", color: "#111" },
-    addressNote: { fontSize: 13, color: "#64748B" },
-    addressMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
-    addressMeta: { fontSize: 13, color: "#475569" },
+    cardHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 10,
+    },
+    cardTitle: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
+    linkGreen: { color: "#ff5a00", fontWeight: "800" },
 
-    muted: { color: "#64748B" },
-    mutedSmall: { color: "#94A3B8", fontSize: 12 },
-    bold: { fontWeight: "700", color: "#111" },
+    /* ================== ADDRESS ================== */
+    addressSummary: { marginTop: 6, gap: 6 },
+    addressLabel: { fontSize: 13, fontWeight: "700", color: "#ff5a00" },
+    addressLine: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
+    addressNote: { fontSize: 13, color: "#666" },
+    addressMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    addressMeta: { fontSize: 13, color: "#999" },
 
-    rowSplit: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 8 },
-    itemName: { flex: 1, marginRight: 8, fontSize: 14, fontWeight: "600", color: "#111" },
-    itemPrice: { fontSize: 14, fontWeight: "800", color: "#111" },
+    /* ================== ROW SPLIT ================== */
+    rowSplit: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingVertical: 8,
+    },
+    muted: { color: "#777" },
+    bold: { fontWeight: "800", color: "#1a1a1a" },
+    totalTxt: { fontSize: 16, fontWeight: "800", color: "#1a1a1a" },
+    totalPrice: { fontSize: 18, fontWeight: "900", color: "#ff5a00" },
 
-    // Swipe card row
-    swipeContainer: { position: "relative", overflow: "hidden", borderRadius: 12 },
+    /* ================== SWIPE ROW ================== */
+    swipeContainer: { position: "relative", overflow: "hidden", borderRadius: 16 },
     deleteBg: {
-        position: "absolute", right: 0, top: 0, bottom: 0, width: 84,
-        backgroundColor: "#EF4444", alignItems: "center", justifyContent: "center", borderRadius: 12,
+        position: "absolute",
+        right: 0,
+        top: 0,
+        bottom: 0,
+        width: 84,
+        backgroundColor: "#ff5a00",
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 16,
     },
-    deleteBtn: { paddingHorizontal: 10, paddingVertical: 8 },
-    deleteTxt: { color: "#fff", fontWeight: "800" },
-
+    deleteBtn: { paddingHorizontal: 10, paddingVertical: 6 },
+    deleteTxt: { color: "#fff", fontWeight: "800", fontSize: 14 },
     swipeRow: {
         backgroundColor: "#fff",
         flexDirection: "row",
         alignItems: "center",
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 16,
         borderWidth: 1,
-        borderColor: "#EEF2F7",
+        borderColor: "#ffd6b0",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 5,
+        elevation: 2,
     },
-    cartImg: { width: 56, height: 56, borderRadius: 10, backgroundColor: "#F1F5F9", marginRight: 10 },
-    cartName: { fontSize: 14, fontWeight: "700", color: "#111" },
-    cartSub: { fontSize: 12, color: "#64748B", marginTop: 2 },
-    cartPrice: { fontSize: 14, fontWeight: "800", color: "#111" },
+    cartImg: { width: 56, height: 56, borderRadius: 14, backgroundColor: "#fff2e8", marginRight: 12 },
+    cartName: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
+    cartSub: { fontSize: 12, color: "#777", marginTop: 2 },
+    cartPrice: { fontSize: 15, fontWeight: "800", color: "#ff5a00" },
 
-    // Ship choice
-    shipChoice: {
-        marginTop: 8,
-        borderWidth: 1,
-        borderColor: "#DCFCE7",
-        backgroundColor: "#F0FFF4",
-        borderRadius: 12,
-        padding: 12,
-        gap: 4,
-    },
-    shipChoiceActive: { color: "#16A34A", fontWeight: "700" },
-
-    // Suggestions (quick add)
+    /* ================== ADD ROW (GỢI Ý THÊM) ================== */
     addRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    addRowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1, marginRight: 12 },
-    addImg: { width: 56, height: 56, borderRadius: 10, backgroundColor: "#F1F5F9" },
-    addName: { fontSize: 14, fontWeight: "700", color: "#111" },
-    addPrice: { fontSize: 13, fontWeight: "700", color: "#00A74F", marginTop: 2 },
+    addRowLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+    addImg: { width: 56, height: 56, borderRadius: 14, backgroundColor: "#fff2e8" },
+    addName: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
+    addPrice: { fontSize: 14, fontWeight: "700", color: "#ff5a00" },
     plusBtn: {
-        width: 36, height: 36, borderRadius: 18,
-        backgroundColor: "#00A74F", alignItems: "center", justifyContent: "center",
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: "#ff7a00",
+        alignItems: "center",
+        justifyContent: "center",
     },
-    plusTxt: { color: "#fff", fontSize: 20, lineHeight: 20, fontWeight: "800" },
+    plusTxt: { color: "#fff", fontSize: 20, fontWeight: "900" },
 
-    // Footer
-    footer: {
-        position: "absolute", left: 0, right: 0, bottom: 0,
-        flexDirection: "row", justifyContent: "space-between", alignItems: "center",
-        padding: 16, borderTopWidth: 1, borderTopColor: "#EEF2F7", backgroundColor: "#fff",
+    /* ================== PAYMENT METHOD ================== */
+    payMethodRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        paddingVertical: 10,
+        paddingHorizontal: 6,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
     },
-    footerLabel: { fontSize: 12, color: "#64748B" },
-    footerTotal: { fontSize: 20, fontWeight: "900", color: "#111" },
-    primaryBtn: { backgroundColor: "#00A74F", paddingVertical: 14, paddingHorizontal: 28, borderRadius: 30 },
-    primaryTxt: { color: "#fff", fontSize: 16, fontWeight: "800" },
+    pmIcon: {
+        width: 34,
+        height: 34,
+        borderRadius: 10,
+        backgroundColor: "#fff4ec",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    pmIconTxt: { fontWeight: "800", color: "#ff5a00" },
+    payMethodText: { fontSize: 15, fontWeight: "800", color: "#1a1a1a" },
+    chev: { color: "#aaa", fontSize: 18 },
 
-    // Overlay + sheets
+    /* ================== INPUT ================== */
+    addressInput: {
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        backgroundColor: "#fff8f2",
+        color: "#1a1a1a",
+        fontSize: 15,
+    },
+
+    /* ================== SHEET ================== */
     overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: "rgba(0,0,0,0.35)" },
-    sheet: {
-        position: "absolute", left: 0, right: 0, bottom: 0,
-        backgroundColor: "#fff", borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingBottom: 12,
-    },
-    grabber: { alignSelf: "center", marginTop: 8, marginBottom: 6, width: 48, height: 5, borderRadius: 999, backgroundColor: "#E2E8F0" },
-    sheetHeader: { paddingHorizontal: 16, paddingVertical: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-    sheetTitle: { fontSize: 16, fontWeight: "800" },
-    sheetClose: { color: "#111", fontWeight: "700" },
-    searchRow: { paddingHorizontal: 16, paddingBottom: 8, paddingTop: 4 },
-    searchInput: { borderWidth: 1, borderColor: "#E2E8F0", borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: "#F8FAFC", color: "#111" },
-    sep: { height: 10 },
 
-    // Payment methods sheet
-    pmRow: { flexDirection: "row", alignItems: "center", padding: 12, borderWidth: 1, borderColor: "#E5E7EB", borderRadius: 12, backgroundColor: "#fff" },
-    pmLabel: { fontSize: 15, fontWeight: "700", color: "#111" },
-    payMethodRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6 },
-    payMethodLeft: { flexDirection: "row", alignItems: "center", gap: 10, flex: 1 },
-    pmIcon: { width: 34, height: 34, borderRadius: 8, backgroundColor: "#F1F5F9", alignItems: "center", justifyContent: "center" },
-    pmIconTxt: { fontWeight: "800", color: "#111" },
-    payMethodText: { fontSize: 15, fontWeight: "700", color: "#111" },
-    chev: { color: "#94A3B8", fontSize: 16 },
-    radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: "#CBD5E1" },
-    radioActive: { borderColor: "#16A34A", backgroundColor: "#16A34A" },
-    emptyAddressBox: { alignItems: "center", justifyContent: "center", paddingVertical: 24, gap: 12 },
+    sheet: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "#fff",
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        paddingBottom: 16,
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
+    },
+    grabber: {
+        alignSelf: "center",
+        width: 50,
+        height: 6,
+        backgroundColor: "#ffd6b0",
+        borderRadius: 999,
+        marginVertical: 10,
+    },
+    sheetHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 16,
+        paddingBottom: 10,
+    },
+    sheetTitle: { fontSize: 17, fontWeight: "800", color: "#1a1a1a" },
+    sheetClose: { color: "#ff5a00", fontWeight: "800" },
+
+    pmRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        padding: 12,
+        borderRadius: 14,
+        backgroundColor: "#fff",
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
+        marginBottom: 10,
+    },
+    pmLabel: { fontSize: 15, fontWeight: "700", color: "#1a1a1a" },
+    radio: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 2,
+        borderColor: "#ffd6b0",
+    },
+    radioActive: { borderColor: "#ff5a00", backgroundColor: "#ff5a00" },
+
+    /* ================== BUTTONS ================== */
+    primaryBtn: {
+        backgroundColor: "#ff7a00",
+        paddingVertical: 14,
+        paddingHorizontal: 26,
+        borderRadius: 30,
+    },
+    primaryTxt: { color: "#fff", fontWeight: "800", fontSize: 16 },
+
     secondaryBtn: {
         borderWidth: 1,
-        borderColor: "#16A34A",
+        borderColor: "#ff7a00",
         paddingVertical: 10,
         paddingHorizontal: 18,
         borderRadius: 999,
         alignItems: "center",
     },
-    secondaryBtnTxt: { color: "#16A34A", fontWeight: "700" },
-    addressItem: {
-        flexDirection: "row",
-        alignItems: "flex-start",
-        gap: 12,
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        borderRadius: 12,
-        padding: 12,
-        backgroundColor: "#fff",
-    },
-    addressItemActive: { borderColor: "#16A34A", backgroundColor: "#F0FFF4" },
-    addressItemLabel: { fontSize: 13, fontWeight: "700", color: "#16A34A" },
-    addressItemDetail: { fontSize: 14, fontWeight: "700", color: "#111" },
-    addressItemNote: { fontSize: 13, color: "#64748B", marginTop: 2 },
-    addressItemMetaRow: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 6 },
-    addressItemMeta: { fontSize: 12, color: "#475569" },
-    addressBadge: { marginTop: 8, fontSize: 11, fontWeight: "700", color: "#16A34A" },
-    addressInput: {
-        borderWidth: 1,
-        borderColor: "#E2E8F0",
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        backgroundColor: "#F8FAFC",
-        color: "#111",
-    },
-    defaultRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 4 },
-    defaultLabel: { fontSize: 14, color: "#111", fontWeight: "600" },
+    secondaryBtnTxt: { color: "#ff7a00", fontWeight: "800" },
 
-    // Snackbar
-    snackbar: {
-        position: "absolute", left: 12, right: 12, bottom: 86,
-        backgroundColor: "#111", borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14,
-        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    /* ================== FOOTER ================== */
+    footer: {
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 16,
+        borderTopWidth: 1,
+        borderTopColor: "#ffd6b0",
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: -3 },
+        shadowRadius: 6,
+        elevation: 4,
     },
-    snackText: { color: "#fff", fontSize: 13, marginRight: 12, flex: 1 },
-    snackUndo: { color: "#22C55E", fontWeight: "800" },
+    footerLabel: { fontSize: 13, color: "#666" },
+    footerTotal: { fontSize: 20, fontWeight: "900", color: "#ff5a00" },
+
+    /* ================== SNACKBAR ================== */
+    snackbar: {
+        position: "absolute",
+        left: 12,
+        right: 12,
+        bottom: 90,
+        backgroundColor: "#1a1a1a",
+        paddingVertical: 12,
+        paddingHorizontal: 14,
+        borderRadius: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+    },
+    snackText: { color: "#fff", fontSize: 13, flex: 1, marginRight: 10 },
+    snackUndo: { color: "#ff7a00", fontWeight: "800" },
+    
+addressItem: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
+    borderRadius: 16,
+    padding: 14,
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2,
+},
+
+addressItemActive: {
+    borderColor: "#ff7a00",
+    backgroundColor: "#fff5ec",
+},
+
+addressItemLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#ff7a00",
+    marginBottom: 3,
+},
+
+addressItemDetail: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1a1a1a",
+    marginBottom: 3,
+},
+
+addressItemNote: {
+    fontSize: 13,
+    color: "#777",
+    marginBottom: 4,
+},
+
+addressItemMetaRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 4,
+},
+
+addressItemMeta: {
+    fontSize: 12,
+    color: "#999",
+},
+
+addressBadge: {
+    marginTop: 6,
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#ff5a00",
+    backgroundColor: "#ffe6d4",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+},
+searchRow: {
+    paddingHorizontal: 16,
+    paddingTop: 6,
+    paddingBottom: 12,
+},
+
+searchInput: {
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
+    backgroundColor: "#fff8f2",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+    color: "#1a1a1a",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2,
+},
+defaultRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    marginTop: 4,
+},
+
+defaultLabel: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1a1a1a",
+},
+payMethodLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    flex: 1,
+},
+emptyAddressBox: {
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
+    backgroundColor: "#fff8f2",
+    borderRadius: 16,
+    padding: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 6,
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 3 },
+    shadowRadius: 6,
+    elevation: 2,
+},
+sep: {
+    height: 1,
+    backgroundColor: "#ffe2c7",
+    marginVertical: 4,
+},
+
+switchWrapper: {
+    padding: 2,
+    borderWidth: 2,
+    borderColor: "#ffb899",     // viền cam đậm
+    borderRadius: 20,
+},
+
 });
+
+

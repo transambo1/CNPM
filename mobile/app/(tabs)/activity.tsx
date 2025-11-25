@@ -259,124 +259,174 @@ export default function OrderHistoryScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F6F8FB',
+    backgroundColor: '#fff', // nền cam nhạt theo web
   },
+
+  /* =============================
+        HEADER
+  ==============================*/
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
-    backgroundColor: '#F6F8FB',
+    paddingHorizontal: 22,
+    paddingTop: 18,
+    paddingBottom: 10,
+    backgroundColor: '#fff',
   },
+
   headerTitle: {
-    fontSize: 24,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#111',
+    color: '#222',
   },
+
   headerSubtitle: {
-    marginTop: 6,
-    color: '#607080',
+    marginTop: 4,
+    color: '#666',
     fontSize: 14,
+    fontWeight: '500',
   },
+
+  /* =============================
+        LIST CONTENT
+  ==============================*/
   listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 20,
   },
+
+  /* =============================
+        CARD ORDER
+  ==============================*/
   card: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
+    paddingVertical: 18,
+    paddingHorizontal: 20,
+
+    // bóng giống web
+    borderWidth: 1,
+    borderColor: '#f2f2f2',
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
   },
+
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
+
   codeText: {
     fontSize: 16,
     fontWeight: '700',
-    color: '#111',
+    color: '#222',
   },
+
+  /* === Status Tag style web === */
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 4,
+    paddingVertical: 5,
     borderRadius: 999,
   },
+
   statusText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '700',
+    marginLeft: 4,
   },
+
+  /* =============================
+        CARD BODY
+  ==============================*/
   cardBody: {
-    gap: 6,
+    gap: 8,
   },
+
   rowBetween: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   rowCenter: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+
   restaurantName: {
     fontSize: 15,
-    fontWeight: '600',
-    color: '#111',
-    maxWidth: 180,
-  },
-  totalText: {
-    fontSize: 16,
     fontWeight: '700',
-    color: '#00A74F',
+    color: '#222',
+    maxWidth: 200,
   },
+
+  totalText: {
+    fontSize: 17,
+    fontWeight: '800',
+    color: '#ff5400', // cam tươi giống web
+  },
+
   metaText: {
     fontSize: 13,
-    color: '#54606F',
+    color: '#666',
+    fontWeight: '500',
   },
+
   timeText: {
     fontSize: 13,
-    color: '#54606F',
+    color: '#666',
+    fontWeight: '500',
   },
+
   addressText: {
     fontSize: 13,
-    color: '#54606F',
+    color: '#666',
     flex: 1,
+    marginLeft: 2,
   },
+
+  /* =============================
+        CARD FOOTER
+  ==============================*/
   cardFooter: {
-    marginTop: 14,
+    marginTop: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+
   footerHint: {
     fontSize: 12,
-    color: '#00A74F',
-    fontWeight: '600',
+    color: '#ff7a00',
+    fontWeight: '700',
   },
+
+  /* =============================
+        EMPTY STATE
+  ==============================*/
   emptyState: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 40,
   },
+
   emptyTitle: {
     marginTop: 12,
     fontSize: 18,
     fontWeight: '700',
-    color: '#111',
+    color: '#222',
   },
+
   emptySubtitle: {
     marginTop: 6,
     fontSize: 14,
-    color: '#607080',
+    color: '#666',
     textAlign: 'center',
     lineHeight: 20,
   },

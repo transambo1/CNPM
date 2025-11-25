@@ -604,127 +604,526 @@ async function buildDerivedStats(
  *          STYLES
  *  ========================= */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  headerSafeArea: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' },
-  addressHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, paddingTop: 10, paddingBottom: 10 },
-  addressBox: { flex: 1, marginHorizontal: 10 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  cartButton: { padding: 4 },
-  cartBadge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
-  cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
-  addressTitle: { fontSize: 12, color: '#555', fontWeight: 'bold' },
-  addressRow: { flexDirection: 'row', alignItems: 'center' },
-  addressText: { fontSize: 16, fontWeight: 'bold', color: '#222', marginRight: 5 },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f5f5f5', borderRadius: 20, marginHorizontal: 15, paddingHorizontal: 15, height: 40, marginBottom: 15 },
-  searchIcon: { marginRight: 8 },
-  searchInput: { flex: 1, fontSize: 14, fontWeight: '500' },
-
-  listHeaderContainer: { backgroundColor: '#fff' },
-  bannerContainer: { height: 100, backgroundColor: '#006443', marginHorizontal: 15, marginTop: 15, borderRadius: 10, padding: 15, justifyContent: 'center' },
-  bannerTitle: { fontSize: 18, fontWeight: 'bold', color: '#fff' },
-  bannerSubtitle: { fontSize: 14, color: '#fff' },
-  segmentContainer: { flexDirection: 'row', backgroundColor: '#eee', marginHorizontal: 15, borderRadius: 20, height: 40, padding: 4, marginTop: 15 },
-  segmentButton: { flex: 1, justifyContent: 'center', alignItems: 'center', borderRadius: 16 },
-  segmentButtonActive: { backgroundColor: '#fff' },
-  segmentText: { fontSize: 14, fontWeight: 'bold', color: '#555' },
-  segmentTextActive: { color: '#000' },
-
-  quickFilterSection: { marginTop: 22, paddingLeft: 15, paddingRight: 5 },
-  sectionLabel: { fontSize: 14, fontWeight: '700', color: '#222', marginBottom: 12 },
-  filterChip: {
-    flexDirection: 'row', alignItems: 'center',
-    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20,
-    borderWidth: 1, borderColor: '#E2E8F0', backgroundColor: '#fff', marginRight: 10
+  /* =========================
+   * ROOT / HEADER
+   * ======================= */
+  container: {
+    flex: 1,
+    backgroundColor: '#fff', // nền cam nhạt giống web
   },
-  filterChipActive: { backgroundColor: '#00A74F', borderColor: '#00A74F' },
-  filterChipText: { fontSize: 13, fontWeight: '600', color: '#111' },
-  filterChipTextActive: { color: '#fff' },
-  activeFilterRow: {
+
+  headerSafeArea: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3d7c3', // viền cam nhạt
+  },
+
+  addressHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    marginTop: 14,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
-  activeFilterChip: {
+
+  addressBox: {
+    flex: 1,
+    marginHorizontal: 10,
+  },
+
+  headerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E6F7EF',
-    borderRadius: 18,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#C8EAD8',
-    gap: 8,
+    gap: 6,
   },
-  activeFilterText: { color: '#0f5132', fontWeight: '700', fontSize: 13 },
-  clearAllFilters: {
+
+  cartButton: {
+    padding: 4,
+  },
+
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#ff5400', // cam đậm
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  addressTitle: {
+    fontSize: 12,
+    color: '#888',
+    fontWeight: '700',
+  },
+
+  addressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  addressText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#222',
+    marginRight: 5,
+  },
+
+  /* =========================
+   * SEARCH BAR
+   * ======================= */
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    borderRadius: 22,
+    marginHorizontal: 16,
+    paddingHorizontal: 14,
+    height: 42,
+    marginBottom: 14,
     borderWidth: 1,
-    borderColor: '#C8EAD8',
+    borderColor: '#ffe0c2', // viền cam nhạt giống web
+    shadowColor: '#000',
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
   },
-  clearAllFiltersText: { color: '#0f5132', fontWeight: '700', fontSize: 12 },
 
-  categoryScroll: { marginTop: 16, paddingLeft: 15 },
-  categoryItem: { alignItems: 'center', marginRight: 15, width: 80 },
-  categoryImage: { width: 60, height: 60, borderRadius: 15, backgroundColor: '#f5f5f5', marginBottom: 8 },
-  categoryText: { fontSize: 12, textAlign: 'center', fontWeight: '500', color: '#444' },
-
-  suggestionScroll: { marginTop: 20, paddingLeft: 15 },
-  suggestionCard: { width: 120, height: 160, marginRight: 10, borderRadius: 10, backgroundColor: '#f5f5f5', overflow: 'hidden' },
-  suggestionImage: { width: '100%', height: 110, backgroundColor: '#eee' },
-  suggestionText: { fontWeight: 'bold', padding: 10 },
-
-  footerBannerContainer: { backgroundColor: '#FF6F00', padding: 15, borderRadius: 12, marginHorizontal: 15, marginTop: 25 },
-  footerText: { color: '#fff', fontWeight: 'bold', fontSize: 15 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', marginTop: 25, marginBottom: 10, marginLeft: 15 },
-
-  restaurantCard: {
-    flexDirection: 'row', alignItems: 'center', padding: 14, marginHorizontal: 15, marginBottom: 12,
-    borderRadius: 16, backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 }, elevation: 3
+  searchIcon: {
+    marginRight: 8,
   },
-  restaurantImage: { width: 80, height: 80, borderRadius: 12, backgroundColor: '#f2f2f2', marginRight: 12 },
-  restaurantInfo: { flex: 1 },
-  restaurantHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  restaurantName: { fontSize: 16, fontWeight: '700', color: '#1F2937', flex: 1, marginRight: 8 },
-  promoBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#00A74F', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12 },
-  promoBadgeText: { color: '#fff', fontSize: 11, fontWeight: '600' },
-  restaurantAddress: { fontSize: 13, color: '#64748B', marginTop: 4 },
-  restaurantMetaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
-  metaItem: { flexDirection: 'row', alignItems: 'center' },
-  metaPrimary: { fontSize: 13, fontWeight: '700', color: '#111' },
-  metaSecondary: { fontSize: 13, fontWeight: '600', color: '#475569' },
-  metaSeparator: { width: 1, height: 16, backgroundColor: '#E2E8F0', marginHorizontal: 12 },
-  restaurantPromoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10, backgroundColor: '#F0FFF4', paddingVertical: 8, paddingHorizontal: 10, borderRadius: 12 },
-  restaurantPromoText: { color: '#047857', fontSize: 12, fontWeight: '600', flex: 1 },
 
-  emptyFilterState: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, paddingTop: 40 },
-  emptyTitle: { marginTop: 12, fontSize: 18, fontWeight: '700', color: '#1F2937' },
-  emptySubtitle: { marginTop: 8, fontSize: 14, color: '#64748B', textAlign: 'center', lineHeight: 20 },
-  clearFiltersButton: { marginTop: 18, flexDirection: 'row', alignItems: 'center', borderRadius: 20, borderWidth: 1, borderColor: '#00A74F', paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#E6F7EF' },
-  clearFiltersText: { color: '#007A3B', fontSize: 13, fontWeight: '600' },
+  searchInput: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#222',
+  },
+
+  /* =========================
+   * LIST HEADER (BANNER + FILTER)
+   * ======================= */
+  listHeaderContainer: {
+    backgroundColor: '#fff',
+    paddingBottom: 8,
+  },
+
+  // Banner nhà hàng nổi bật
+  bannerContainer: {
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 18,
+    backgroundColor: '#ff7a00',
+    padding: 18,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    shadowColor: '#ff7a00',
+    shadowOpacity: 0.18,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
 
   bannerImage: {
     width: '100%',
     height: '100%',
-    borderRadius: 10,
+    borderRadius: 18,
   },
+
   bannerOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     backgroundColor: 'rgba(0,0,0,0.35)',
-    padding: 10,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
   },
 
+  bannerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+
+  bannerSubtitle: {
+    marginTop: 2,
+    fontSize: 13,
+    color: '#ffeede',
+    fontWeight: '500',
+  },
+
+  /* (segmentContainer cũ – vẫn giữ, nếu sau này xài lại) */
+  segmentContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fbe3d1',
+    marginHorizontal: 16,
+    borderRadius: 22,
+    height: 40,
+    padding: 4,
+    marginTop: 14,
+  },
+  segmentButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 18,
+  },
+  segmentButtonActive: {
+    backgroundColor: '#fff',
+  },
+  segmentText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#a26a3f',
+  },
+  segmentTextActive: {
+    color: '#222',
+  },
+
+  /* =========================
+   * QUICK FILTER + CATEGORY
+   * ======================= */
+  quickFilterSection: {
+    marginTop: 22,
+    paddingLeft: 16,
+    paddingRight: 8,
+  },
+
+  sectionLabel: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#222',
+    marginBottom: 10,
+  },
+
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ffd3aa',
+    backgroundColor: '#fff',
+    marginRight: 10,
+  },
+
+  filterChipActive: {
+    backgroundColor: '#ff7a00',
+    borderColor: '#ff7a00',
+  },
+
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#222',
+  },
+
+  filterChipTextActive: {
+    color: '#fff',
+  },
+
+  activeFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    marginTop: 14,
+  },
+
+  activeFilterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffe8d4',
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#ffc89d',
+    gap: 6,
+  },
+
+  activeFilterText: {
+    color: '#8b4513',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+
+  clearAllFilters: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: '#ffc89d',
+  },
+
+  clearAllFiltersText: {
+    color: '#8b4513',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+
+  /* CATEGORY CARDS */
+  categoryScroll: {
+    marginTop: 16,
+    paddingLeft: 16,
+  },
+
+  categoryItem: {
+    alignItems: 'center',
+    marginRight: 16,
+    width: 80,
+  },
+
+  categoryImage: {
+    width: 62,
+    height: 62,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#ffe0c2',
+  },
+
+  categoryText: {
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '600',
+    color: '#444',
+  },
+
+  /* SUGGESTION CARDS */
+  suggestionScroll: {
+    marginTop: 20,
+    paddingLeft: 16,
+  },
+
+  suggestionCard: {
+    width: 130,
+    height: 170,
+    marginRight: 12,
+    borderRadius: 16,
+    backgroundColor: '#fff',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ffe0c2',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+  },
+
+  suggestionImage: {
+    width: '100%',
+    height: 115,
+    backgroundColor: '#f5f5f5',
+  },
+
+  suggestionText: {
+    fontWeight: '700',
+    paddingHorizontal: 10,
+    paddingTop: 6,
+    fontSize: 13,
+    color: '#222',
+  },
+
+  /* NẾU SAU NÀY DÙNG LẠI FOOTER BANNER */
+  footerBannerContainer: {
+    backgroundColor: '#ff7a00',
+    padding: 15,
+    borderRadius: 14,
+    marginHorizontal: 16,
+    marginTop: 22,
+  },
+
+  footerText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 15,
+  },
+
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginTop: 24,
+    marginBottom: 10,
+    marginLeft: 16,
+    color: '#222',
+  },
+
+  /* =========================
+   * RESTAURANT CARD
+   * ======================= */
+  restaurantCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    marginHorizontal: 16,
+    marginBottom: 12,
+    borderRadius: 18,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ffe0c2',
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 3,
+  },
+
+  restaurantImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 14,
+    backgroundColor: '#f2f2f2',
+    marginRight: 12,
+  },
+
+  restaurantInfo: {
+    flex: 1,
+  },
+
+  restaurantHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+
+  restaurantName: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#222',
+    flex: 1,
+    marginRight: 8,
+  },
+
+  promoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ff5400',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
+
+  promoBadgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+
+  restaurantAddress: {
+    fontSize: 13,
+    color: '#666',
+    marginTop: 4,
+  },
+
+  restaurantMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  metaPrimary: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#222',
+  },
+
+  metaSecondary: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#555',
+  },
+
+  metaSeparator: {
+    width: 1,
+    height: 16,
+    backgroundColor: '#e5e7eb',
+    marginHorizontal: 12,
+  },
+
+  restaurantPromoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+    backgroundColor: '#fff3e0',
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+
+  restaurantPromoText: {
+    color: '#c05621',
+    fontSize: 12,
+    fontWeight: '600',
+    flex: 1,
+  },
+
+  /* =========================
+   * EMPTY FILTER STATE
+   * ======================= */
+  emptyFilterState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 40,
+    paddingTop: 40,
+  },
+
+  emptyTitle: {
+    marginTop: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#222',
+  },
+
+  emptySubtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  clearFiltersButton: {
+    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#ff7a00',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#fff',
+  },
+
+  clearFiltersText: {
+    color: '#ff7a00',
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });

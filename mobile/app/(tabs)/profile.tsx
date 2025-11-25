@@ -144,7 +144,7 @@ export default function ProfilePage() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.backButton} onPress={() => setShowDetails(false)}>
-              <Ionicons name="arrow-back" size={20} color="#00A74F" />
+              <Ionicons name="arrow-back" size={20} color="#ff7a00" />
               <Text style={styles.backText}>Quay lại</Text>
             </TouchableOpacity>
           </View>
@@ -205,136 +205,272 @@ export default function ProfilePage() {
 
 // --- Styles ---
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f0f2f5' },
-  scrollContainer: { paddingBottom: 30 },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#222',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+  container: {
+    flex: 1,
+    backgroundColor: "#fff", // nền cam nhạt theo web
   },
+
+  scrollContainer: { paddingBottom: 30 },
+
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: "#222",
+    paddingHorizontal: 22,
+    paddingTop: 25,
+    paddingBottom: 15,
+  },
+
+  /* ===========================
+        PROFILE CARD 
+  ============================*/
   profileCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 22,
     marginHorizontal: 20,
     marginBottom: 20,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: "#f2f2f2",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
+
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#00A74F',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "#ff7a00",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 18,
   },
+
   profileInfo: { flex: 1 },
-  profileName: { fontSize: 20, fontWeight: 'bold', color: '#222' },
-  profilePhone: { fontSize: 16, color: '#555' },
-  profileAddress: { fontSize: 14, color: '#777', marginTop: 4 },
+
+  profileName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#222",
+  },
+
+  profilePhone: {
+    fontSize: 15,
+    color: "#666",
+    marginTop: 4,
+  },
+
+  profileAddress: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+
+  /* ===========================
+        MENU BOX
+  ============================*/
   menuSection: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderRadius: 16,
     marginHorizontal: 20,
-    overflow: 'hidden',
+    marginBottom: 20,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#f2f2f2",
+  },
+
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f2f2f2",
+  },
+
+  menuIcon: { marginRight: 15 },
+
+  menuText: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#222",
+  },
+
+  /* ===========================
+        DETAIL PANEL
+  ============================*/
+  infoCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 22,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#f2f2f2",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f2f5',
+
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#222",
+    marginBottom: 10,
   },
-  menuIcon: { marginRight: 15 },
-  menuText: { flex: 1, fontSize: 16, color: '#333', fontWeight: '500' },
-  infoCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginHorizontal: 20,
-    marginBottom: 20,
+
+  label: {
+    color: "#666",
+    fontSize: 14,
+    marginTop: 12,
   },
-  sectionTitle: { fontSize: 22, fontWeight: '700', marginBottom: 10, color: '#222' },
-  label: { color: '#666', fontSize: 15, marginTop: 10 },
-  value: { color: '#222', fontSize: 17, fontWeight: '500', marginTop: 3 },
+
+  value: {
+    fontSize: 17,
+    fontWeight: "600",
+    color: "#222",
+    marginTop: 4,
+  },
+
+  /* ===========================
+        BUTTONS
+  ============================*/
   editButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#00A74F',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     paddingVertical: 12,
     borderRadius: 10,
     marginTop: 20,
+    backgroundColor: "#ff7a00",
+    shadowColor: "#ff7a00",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
   },
-  editText: { color: '#fff', fontWeight: '600', marginLeft: 8, fontSize: 16 },
+
+  editText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    marginLeft: 8,
+  },
+
   backButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 15,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: 16,
   },
-  backText: { color: '#00A74F', fontSize: 15, marginLeft: 6, fontWeight: '500' },
+
+  backText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#ff7a00",
+    marginLeft: 6,
+  },
+
   logoutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    borderRadius: 14,
     paddingVertical: 16,
     marginHorizontal: 20,
     marginTop: 30,
     elevation: 2,
+    borderWidth: 1,
+    borderColor: "#f2f2f2",
   },
-  logoutIcon: { marginRight: 8 },
-  logoutButtonText: { color: '#E53935', fontSize: 16, fontWeight: 'bold' },
 
-  // ✅ modal
+  logoutButtonText: {
+    color: "#E53935",
+    fontWeight: "700",
+    fontSize: 16,
+    marginLeft: 6,
+  },
+
+  logoutIcon: { marginRight: 6 },
+
+  /* ===========================
+        MODAL
+  ============================*/
   modalContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
   },
+
   modalContent: {
-    width: '85%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: "#f2f2f2",
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, textAlign: 'center' },
+
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#222",
+    textAlign: "center",
+    marginBottom: 12,
+  },
+
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 10,
-    marginTop: 10,
-    fontSize: 16,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 12,
+    backgroundColor: "#fff",
+    fontSize: 15,
   },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
+
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 20,
+  },
+
   saveButton: {
     flex: 1,
-    backgroundColor: '#00A74F',
+    backgroundColor: "#ff7a00",
     padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginRight: 5,
+    borderRadius: 10,
+    alignItems: "center",
+    marginRight: 6,
   },
+
+  saveText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+  },
+
   cancelButton: {
     flex: 1,
-    backgroundColor: '#ddd',
+    backgroundColor: "#eee",
     padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginLeft: 5,
+    borderRadius: 10,
+    alignItems: "center",
+    marginLeft: 6,
   },
-  saveText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  cancelText: { color: '#333', fontWeight: '500', fontSize: 16 },
+
+  cancelText: {
+    color: "#444",
+    fontWeight: "600",
+    fontSize: 15,
+  },
 });
