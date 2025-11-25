@@ -322,10 +322,14 @@ export default function RestaurantAdminProducts() {
       <Modal visible={formVisible} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{modalMode === 'edit' ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</Text>
+            <Text style={styles.modalTitle}>
+              {modalMode === 'edit' ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}
+            </Text>
+
             <Text style={styles.modalSubtitle}>
               {modalMode === 'edit' ? editingProduct?.name : 'Điền thông tin sản phẩm mới'}
             </Text>
+
             <TextInput
               style={styles.modalInput}
               value={nameInput}
@@ -333,6 +337,7 @@ export default function RestaurantAdminProducts() {
               placeholder="Tên sản phẩm"
               placeholderTextColor="#9ca3af"
             />
+
             <TextInput
               style={styles.modalInput}
               keyboardType="numeric"
@@ -341,6 +346,7 @@ export default function RestaurantAdminProducts() {
               placeholder="Giá"
               placeholderTextColor="#9ca3af"
             />
+
             <TextInput
               style={styles.modalInput}
               value={categoryInput}
@@ -348,6 +354,7 @@ export default function RestaurantAdminProducts() {
               placeholder="Danh mục"
               placeholderTextColor="#9ca3af"
             />
+
             <TextInput
               style={[styles.modalInput, { height: 80 }]}
               value={descInput}
@@ -356,6 +363,7 @@ export default function RestaurantAdminProducts() {
               placeholderTextColor="#9ca3af"
               multiline
             />
+
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancel}
@@ -366,13 +374,15 @@ export default function RestaurantAdminProducts() {
               >
                 <Text style={styles.modalCancelText}>Hủy</Text>
               </TouchableOpacity>
+
               <TouchableOpacity style={styles.modalSave} onPress={handleSaveProduct}>
                 <Text style={styles.modalSaveText}>Lưu</Text>
               </TouchableOpacity>
             </View>
-          </Pressable>
-        </Pressable>
+          </View>
+        </View>
       </Modal>
+
     </SafeAreaView>
   );
 }
