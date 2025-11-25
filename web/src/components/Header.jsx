@@ -1,20 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUserCircle, FaMotorcycle } from "react-icons/fa";
-import { IoLocationSharp } from "react-icons/io5";
-import { useAuth } from "../context/AuthContext";
+import { FaUserCircle } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext"; // đã có sẵn
 import "./Header.css";
 
 function Header({ cartCount }) {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
+
+  // 🔹 Lấy currentUser từ context
   const { currentUser, logout } = useAuth();
   if (currentUser === undefined) return null;
 
   useEffect(() => {
     console.log("Header currentUser:", currentUser);
   }, [currentUser]);
-
   const categories = [
     { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
     { key: "Sushi", label: "Sushi", img: "/Images/Sushi.jpg" },
@@ -28,7 +28,7 @@ function Header({ cartCount }) {
 
   const handleLogout = async () => {
     if (logout) {
-      await logout();
+      await logout(); // Đăng xuất Firebase
       navigate("/login");
     }
   };
@@ -42,87 +42,73 @@ function Header({ cartCount }) {
   };
 
   return (
-    <header className="grab-header">
-      <div className="grab-header__bar">
-        <div className="grab-location">
-          <IoLocationSharp size={18} />
-          <div>
-            <p className="grab-location__label">Giao đến</p>
-            <span className="grab-location__value">Hồ Chí Minh • Nhanh trong 30 phút</span>
-          </div>
-        </div>
-        <div className="grab-cta" onClick={() => navigate("/restaurant")}> 
-          <FaMotorcycle size={16} />
-          <span>Khám phá quán gần bạn</span>
-        </div>
+    <header className="header">
+      <div className="header-left">
+        <Link to="/">
+          <img src="/Images/Logo.png" alt="MEOWCHICK Logo" />
+        </Link>
       </div>
 
-      <div className="grab-header__main">
-        <div className="grab-header-left">
-          <Link to="/">
-            <img src="/Images/Logo.png" alt="MEOWCHICK Logo" className="grab-logo" />
-          </Link>
-        </div>
+      <div className="header-center">
+        <form className="search-form" onSubmit={handleSearch}>
+          <input
+            type="text"
+            placeholder="Tìm món ăn..."
+            value={searchValue}
+            onChange={(e) => setSearchValue(e.target.value)}
+          />
+          <button type="submit">
+            <img src="/Images/search.png" alt="SEARCH" />
+          </button>
+        </form>
+      </div>
 
-        <div className="grab-header-center">
-          <form className="grab-search-form" onSubmit={handleSearch}>
-            <input
-              type="text"
-              placeholder="Tìm món ăn, nhà hàng..."
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
-            />
-            <button type="submit">Tìm</button>
-          </form>
-          <div className="grab-quick-links">
-            <button onClick={() => navigate("/menu/All")}>Ưu đãi</button>
-            <button onClick={() => navigate("/restaurant")}>Gần tôi</button>
-            <button onClick={() => navigate("/menu/Đồ Uống ")}>Thức uống</button>
-          </div>
-        </div>
+      <div className="header-right">
+        <button onClick={() => navigate("/")}>Trang chủ</button>
 
-        <div className="grab-header-right">
-          <div className="grab-menu-wrapper">
-            <button className="grab-nav-btn">Danh mục</button>
-            <div className="grab-menu-dropdown">
-              {categories.map((c) => (
-                <Link key={c.key} to={`/menu/${c.key}`} className="grab-menu-item">
-                  <img src={c.img} alt={c.label} />
-                  <span>{c.label}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <button className="grab-nav-btn" onClick={() => navigate("/restaurant")}>Nhà hàng</button>
-
-          <Link to="/Cart" className="grab-cart-btn">
-            <span className="grab-cart-count">{cartCount > 0 ? cartCount : 0}</span>
-            Giỏ hàng
-          </Link>
-
-          <div className="grab-user-section">
-            {currentUser ? (
-              <div className="grab-user-menu">
-                <div className="grab-user-trigger">
-                  <FaUserCircle size={24} />
-                  <div className="grab-user-meta">
-                    <span className="grab-user-name">{currentUser.firstname} {currentUser.lastname}</span>
-                    <small>Thành viên Grab</small>
-                  </div>
-                </div>
-
-                <div className="grab-user-dropdown">
-                  <button onClick={() => navigate("/order-history")}>Lịch sử đơn hàng</button>
-                  <button onClick={handleLogout}>Đăng xuất</button>
-                </div>
-              </div>
-            ) : (
-              <Link to="/login" className="grab-login-btn">
-                Đăng nhập
+        <div className="menu-dropdown">
+          <button onClick={() => navigate("/menu/All")}>Thực đơn</button>
+          <div className="dropdown-content">
+            {categories.map((c) => (
+              <Link key={c.key} to={`/menu/${c.key}`}>
+                <img src={c.img} alt={c.label} />
+                <span>{c.label}</span>
               </Link>
-            )}
+            ))}
           </div>
+        </div>
+
+        <button onClick={() => navigate("/restaurant")}>Nhà hàng</button>
+
+
+        <Link to="/Cart" className="cart-button">
+          Giỏ hàng ({cartCount > 0 ? cartCount : 0})
+        </Link>
+
+        <div className="user-actions">
+          {currentUser ? (
+            <div className="user-menu">
+              <div className="user-menu-trigger">
+                <FaUserCircle size={22} />
+                <span>{currentUser.firstname} {currentUser.lastname}</span>
+              </div>
+              <div className="dropdown-menu">
+                <button
+                  className="dropdown-item"
+                  onClick={() => navigate("/order-history")}
+                >
+                  Lịch sử đơn hàng
+                </button>
+                <button className="dropdown-item" onClick={handleLogout}>
+                  Đăng xuất
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Link to="/login" className="login-button">
+              Đăng nhập
+            </Link>
+          )}
         </div>
       </div>
     </header>

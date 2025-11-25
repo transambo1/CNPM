@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { collection, doc, getDocs, getFirestore, query, updateDoc, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, query, updateDoc, where } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
 import { app } from '../libs/firebase';
@@ -25,6 +25,7 @@ type ProductRecord = {
   img?: string;
   isActive?: boolean;
   category?: string | null;
+  description?: string;
 };
 
 export default function RestaurantAdminProducts() {
@@ -37,7 +38,12 @@ export default function RestaurantAdminProducts() {
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null);
+  const [modalMode, setModalMode] = useState<'edit' | 'create'>('edit');
+  const [nameInput, setNameInput] = useState('');
   const [priceInput, setPriceInput] = useState('');
+  const [categoryInput, setCategoryInput] = useState('');
+  const [descInput, setDescInput] = useState('');
+  const [formVisible, setFormVisible] = useState(false);
 
   const fetchProducts = useCallback(async () => {
     if (!user?.restaurantId) {
@@ -58,6 +64,7 @@ export default function RestaurantAdminProducts() {
           img: val.img ?? val.image ?? '',
           isActive: val.isActive ?? val.available ?? true,
           category: val.category ?? val.categoryId ?? null,
+          description: val.description ?? val.desc ?? '',
         } as ProductRecord;
       });
       data.sort((a, b) => {
@@ -93,7 +100,8 @@ export default function RestaurantAdminProducts() {
       if (!term) return true;
       return (
         (p.name ?? '').toLowerCase().includes(term) ||
-        (p.category ?? '').toString().toLowerCase().includes(term)
+        (p.category ?? '').toString().toLowerCase().includes(term) ||
+        (p.description ?? '').toLowerCase().includes(term)
       );
     });
   }, [products, search]);
@@ -115,28 +123,99 @@ export default function RestaurantAdminProducts() {
     [db, fetchProducts]
   );
 
-  const openEditPrice = useCallback((product: ProductRecord) => {
+  const openEditProduct = useCallback((product: ProductRecord) => {
+    setModalMode('edit');
     setEditingProduct(product);
+    setNameInput(product.name ?? '');
     setPriceInput(String(product.price ?? ''));
+    setCategoryInput(String(product.category ?? ''));
+    setDescInput(product.description ?? '');
+    setFormVisible(true);
   }, []);
 
-  const handleSavePrice = useCallback(async () => {
-    if (!editingProduct) return;
-    const parsed = Number(priceInput);
-    if (Number.isNaN(parsed) || parsed < 0) {
-      Alert.alert('Giá không hợp lệ', 'Vui lòng nhập số lớn hơn hoặc bằng 0.');
+  const openCreateProduct = useCallback(() => {
+    setModalMode('create');
+    setEditingProduct(null);
+    setNameInput('');
+    setPriceInput('');
+    setCategoryInput('');
+    setDescInput('');
+    setFormVisible(true);
+  }, []);
+
+  const handleSaveProduct = useCallback(async () => {
+    const trimmedName = nameInput.trim();
+    const trimmedCategory = categoryInput.trim();
+    const trimmedDesc = descInput.trim();
+    const parsedPrice = Number(priceInput);
+
+    if (!trimmedName) {
+      Alert.alert('Thiếu tên', 'Nhập tên sản phẩm.');
       return;
     }
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
+      Alert.alert('Giá không hợp lí', 'Vui lòng nhập số lớn hơn hoặc bằng 0.');
+      return;
+    }
+
     try {
-      await updateDoc(doc(db, 'products', editingProduct.id), { price: parsed });
-      Alert.alert('Đã lưu', 'Giá sản phẩm đã được cập nhật.');
+      if (modalMode === 'edit' && editingProduct) {
+        await updateDoc(doc(db, 'products', editingProduct.id), {
+          name: trimmedName,
+          price: parsedPrice,
+          category: trimmedCategory || null,
+          description: trimmedDesc,
+        });
+        Alert.alert('Đã lưu', 'Sản phẩm đã được cập nhật.');
+      } else if (user?.restaurantId) {
+        await addDoc(collection(db, 'products'), {
+          restaurantId: user.restaurantId,
+          name: trimmedName,
+          price: parsedPrice,
+          category: trimmedCategory || null,
+          description: trimmedDesc,
+          isActive: true,
+          available: true,
+          createdAt: Date.now(),
+        });
+        Alert.alert('Đã thêm', 'Sản phẩm mới đã được thêm.');
+      } else {
+        Alert.alert('Thiếu thông tin', 'Không tìm thấy mã nhà hàng.');
+      }
       setEditingProduct(null);
+      setNameInput('');
+      setPriceInput('');
+      setCategoryInput('');
+      setDescInput('');
+      setFormVisible(false);
       fetchProducts();
     } catch (error) {
-      console.error('update price error', error);
-      Alert.alert('Lỗi', 'Không thể cập nhật giá sản phẩm.');
+      console.error('save product error', error);
+      Alert.alert('Lỗi', 'Không thể lưu sản phẩm.');
     }
-  }, [db, editingProduct, priceInput, fetchProducts]);
+  }, [db, modalMode, editingProduct, nameInput, priceInput, categoryInput, descInput, fetchProducts, user?.restaurantId]);
+
+  const handleDeleteProduct = useCallback(
+    async (product: ProductRecord) => {
+      Alert.alert('Xóa sản phẩm', `Bạn chắc muốn xóa ${product.name ?? 'sản phẩm'}?`, [
+        { text: 'Hủy', style: 'cancel' },
+        {
+          text: 'Xóa',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, 'products', product.id));
+              fetchProducts();
+            } catch (error) {
+              console.error('delete product error', error);
+              Alert.alert('Lỗi', 'Không thể xóa sản phẩm .');
+            }
+          },
+        },
+      ]);
+    },
+    [db, fetchProducts]
+  );
 
   if (loading || pageLoading) {
     return (
@@ -161,7 +240,7 @@ export default function RestaurantAdminProducts() {
       <View style={styles.searchRow}>
         <Ionicons name="search" size={16} color="#4b5563" style={{ marginRight: 8 }} />
         <TextInput
-          placeholder="Tìm kiếm theo tên hoặc danh mục"
+          placeholder="T?m ki?m theo t?n ho?c danh m?c"
           style={styles.searchInput}
           value={search}
           onChangeText={setSearch}
@@ -169,6 +248,10 @@ export default function RestaurantAdminProducts() {
         />
         <TouchableOpacity onPress={fetchProducts} style={styles.refreshButton}>
           <Ionicons name="refresh" size={16} color="#0b1f15" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={openCreateProduct} style={styles.addButton}>
+          <Ionicons name="add" size={16} color="#fff" />
+          <Text style={styles.addButtonText}>Th?m</Text>
         </TouchableOpacity>
       </View>
 
@@ -191,13 +274,16 @@ export default function RestaurantAdminProducts() {
 
             <View style={styles.productMetaRow}>
               <Ionicons name="pricetag-outline" size={16} color="#4b5563" />
-              <Text style={styles.productPrice}>{Number(item.price ?? 0).toLocaleString('vi-VN')}₫</Text>
+              <Text style={styles.productPrice}>{Number(item.price ?? 0).toLocaleString('vi-VN')}?</Text>
             </View>
+            {item.description ? (
+              <Text style={styles.productDesc}>{item.description}</Text>
+            ) : null}
 
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => openEditPrice(item)}>
+              <TouchableOpacity style={styles.secondaryButton} onPress={() => openEditProduct(item)}>
                 <Ionicons name="create-outline" size={16} color="#0b1f15" style={{ marginRight: 6 }} />
-                <Text style={styles.secondaryText}>Cập nhật giá</Text>
+                <Text style={styles.secondaryText}>Chỉnh sửa</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.primaryButton, !item.isActive && styles.outlineButton]}
@@ -210,8 +296,11 @@ export default function RestaurantAdminProducts() {
                   style={{ marginRight: 6 }}
                 />
                 <Text style={[styles.primaryText, !item.isActive && styles.outlineText]}>
-                  {item.isActive ? 'Ẩn khỏi menu' : 'Mở bán lại'}
+                  {item.isActive ? '?n kh?i menu' : 'M? b?n l?i'}
                 </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteProduct(item)}>
+                <Ionicons name="trash-outline" size={16} color="#B91C1C" />
               </TouchableOpacity>
             </View>
           </View>
@@ -221,7 +310,7 @@ export default function RestaurantAdminProducts() {
           <View style={styles.emptyState}>
             <Ionicons name="cube-outline" size={48} color="#9ca3af" />
             <Text style={styles.emptyTitle}>Chưa có sản phẩm phù hợp</Text>
-            <Text style={styles.emptySubtitle}>Kiểm tra lại bộ lọc hoặc thêm sản phẩm mới trên web.</Text>
+            <Text style={styles.emptySubtitle}>Kiểm tra lại bộ lọc hoặc thêm sản phẩm mới.</Text>
           </View>
         }
         refreshing={refreshing}
@@ -229,24 +318,54 @@ export default function RestaurantAdminProducts() {
         showsVerticalScrollIndicator={false}
       />
 
-      <Modal visible={!!editingProduct} transparent animationType="fade">
+      <Modal visible={formVisible} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Cập nhật giá</Text>
-            <Text style={styles.modalSubtitle}>{editingProduct?.name}</Text>
+            <Text style={styles.modalTitle}>{modalMode === 'edit' ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm'}</Text>
+            <Text style={styles.modalSubtitle}>
+              {modalMode === 'edit' ? editingProduct?.name : 'Điền thông tin sản phẩm mới'}
+            </Text>
+            <TextInput
+              style={styles.modalInput}
+              value={nameInput}
+              onChangeText={setNameInput}
+              placeholder="Tên sản phẩm"
+              placeholderTextColor="#9ca3af"
+            />
             <TextInput
               style={styles.modalInput}
               keyboardType="numeric"
               value={priceInput}
               onChangeText={setPriceInput}
-              placeholder="Nhập giá mới"
+              placeholder="Giá"
               placeholderTextColor="#9ca3af"
             />
+            <TextInput
+              style={styles.modalInput}
+              value={categoryInput}
+              onChangeText={setCategoryInput}
+              placeholder="Danh mục"
+              placeholderTextColor="#9ca3af"
+            />
+            <TextInput
+              style={[styles.modalInput, { height: 80 }]}
+              value={descInput}
+              onChangeText={setDescInput}
+              placeholder="Mô tả"
+              placeholderTextColor="#9ca3af"
+              multiline
+            />
             <View style={styles.modalActions}>
-              <TouchableOpacity style={styles.modalCancel} onPress={() => setEditingProduct(null)}>
+              <TouchableOpacity
+                style={styles.modalCancel}
+                onPress={() => {
+                  setFormVisible(false);
+                  setEditingProduct(null);
+                }}
+              >
                 <Text style={styles.modalCancelText}>Hủy</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.modalSave} onPress={handleSavePrice}>
+              <TouchableOpacity style={styles.modalSave} onPress={handleSaveProduct}>
                 <Text style={styles.modalSaveText}>Lưu</Text>
               </TouchableOpacity>
             </View>
@@ -283,6 +402,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
     marginBottom: 14,
+    gap: 8,
   },
   searchInput: { flex: 1, fontSize: 14, color: '#111827' },
   refreshButton: {
@@ -293,6 +413,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  addButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#00A74F',
+    gap: 6,
+  },
+  addButtonText: { color: '#fff', fontWeight: '700' },
   productCard: {
     backgroundColor: '#fff',
     borderRadius: 14,
@@ -320,6 +450,7 @@ const styles = StyleSheet.create({
   statusTextInactive: { color: '#6b7280', fontWeight: '700' },
   productMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 },
   productPrice: { fontSize: 16, fontWeight: '800', color: '#0b1f15' },
+  productDesc: { color: '#4b5563', marginBottom: 12 },
   actionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   secondaryButton: {
     flexDirection: 'row',
@@ -351,6 +482,15 @@ const styles = StyleSheet.create({
   },
   primaryText: { color: '#fff', fontWeight: '700' },
   outlineText: { color: '#0b1f15' },
+  deleteButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#FDECEC',
+    borderWidth: 1,
+    borderColor: '#FBC5BF',
+    justifyContent: 'center',
+  },
   emptyList: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingVertical: 40 },
   emptyState: { alignItems: 'center', gap: 12 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#0b1f15' },

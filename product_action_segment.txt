@@ -1,0 +1,21 @@
+<View style={styles.actionRow}>
+              <TouchableOpacity style={styles.secondaryButton} onPress={() => openEditPrice(item)}>
+                <Ionicons name="create-outline" size={16} color="#0b1f15" style={{ marginRight: 6 }} />
+                <Text style={styles.secondaryText}>Cập nhật giá</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryButton, !item.isActive && styles.outlineButton]}
+                onPress={() => handleToggleActive(item)}
+              >
+                <Ionicons
+                  name={item.isActive ? 'eye-off-outline' : 'eye-outline'}
+                  size={16}
+                  color={item.isActive ? '#fff' : '#0b1f15'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.primaryText, !item.isActive && styles.outlineText]}>
+                  {item.isActive ? 'Ẩn khỏi menu' : 'Mở bán lại'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>

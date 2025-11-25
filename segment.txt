@@ -1,0 +1,40 @@
+drones.map((drone) => {
+                  const assignedOrder = orders.find((o) => o.id === drone.currentOrderId);
+                  return (
+                    <View key={drone.id} style={styles.droneCard}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.droneName}>{drone.name}</Text>
+                        <Text style={styles.droneSub}>
+                          Pin: {drone.battery ?? 0}% | Tr?ng th?i: {drone.status ?? 'Kh?ng r?'}
+                        </Text>
+                        {assignedOrder ? (
+                          <View style={styles.droneOrderBox}>
+                            <Text style={styles.droneOrderTitle}>??n #{assignedOrder.id}</Text>
+                            <Text style={styles.droneOrderSubtitle} numberOfLines={2}>
+                              {assignedOrder.customer?.address ?? 'Ch?a c? ??a ch?'}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <TouchableOpacity
+                        style={styles.droneBtn}
+                        onPress={async () => {
+                          try {
+                            const newStatus = isDroneIdle(drone.status) ? '?ang b?o tr?' : 'R?nh';
+                            await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
+                            Alert.alert('C?p nh?t', f"Tr?ng th?i drone ?? ??i th?nh "{newStatus}"");
+                          } catch (err) {
+                            print(err)
+                            Alert.alert('L?i', 'Kh?ng th? c?p nh?t tr?ng th?i drone.');
+                          }
+                        }}
+                      >
+                        <Text style={styles.droneBtnText}>??i tr?ng th?i</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          ) : (
+            
