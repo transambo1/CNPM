@@ -7,6 +7,8 @@ import "./App.css";
 import { Modal, message } from "antd";
 
 /* USER PAGES */
+import Profile from "./components/Profile";
+import OrderDetail from "./components/OrderDetail";
 import ProductList from "./components/ProductList";
 import ProductDetail from "./components/ProductDetail";
 import Cart from "./components/Cart";
@@ -27,7 +29,7 @@ import RestaurantLayout from "./layouts/RestaurantLayout";
 import Dashboard from "./admin/pages/Dashboard";
 import Orders from "./admin/pages/Orders";
 import Users from "./admin/pages/Users";
-import OrderDetail from "./admin/components/OrdersDetail";
+import AdminOrderDetail from "./admin/components/OrdersDetail";
 import Products from "./admin/pages/Products";
 import AdminCreateRestaurant from "./admin/pages/AdminCreateRestaurant";
 import AdminDroneManager from "./admin/pages/AdminDroneManager";
@@ -162,7 +164,9 @@ function App() {
             element={
               <UserLayout cartCount={cart.reduce((s, i) => s + i.quantity, 0)} />
             }
-          >
+          > 
+            <Route path="/menu/:categoryKey" element={<ProductList />} />
+            <Route path="profile" element={<Profile />} />
             <Route index element={<ProductList onAdd={handleAdd} />} />
             <Route path="login" element={<Login />} />
             <Route path="register" element={<Register />} />
@@ -170,6 +174,7 @@ function App() {
             <Route path="cart" element={<Cart cart={cart} setCart={setCart} />} />
             <Route path="checkout" element={<Checkout cart={cart} setCart={setCart} />} />
             <Route path="order-history" element={<OrderHistory />} />
+            <Route path="order/:id" element={<OrderDetail />} />
             <Route path="waiting/:orderId" element={<WaitingForConfirmation />} />
             <Route path="restaurant" element={<RestaurantList />} />
             <Route path="restaurant/:id" element={<RestaurantDetail onAdd={handleAdd} />} />
@@ -187,7 +192,7 @@ function App() {
                 <Route index element={<Navigate to="/admin/dashboards" />} />
     <Route path="dashboards" element={<Dashboard />} />
             <Route path="orders" element={<Orders />} />
-            <Route path="orders/:id" element={<OrderDetail />} />
+            <Route path="orders/:id" element={<AdminOrderDetail />} />
             <Route path="products" element={<Products />} />
             <Route path="users" element={<Users />} />
             <Route path="create-restaurant" element={<AdminCreateRestaurant />} />

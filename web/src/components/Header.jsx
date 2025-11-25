@@ -1,54 +1,75 @@
+// src/components/Header.jsx
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FaUserCircle } from "react-icons/fa";
-import { useAuth } from "../context/AuthContext"; // đã có sẵn
+import { useAuth } from "../context/AuthContext";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
+
 import "./Header.css";
 
 function Header({ cartCount }) {
   const navigate = useNavigate();
   const [searchValue, setSearchValue] = useState("");
 
-  // 🔹 Lấy currentUser từ context
   const { currentUser, logout } = useAuth();
   if (currentUser === undefined) return null;
 
+  // 🔥 State chứa danh mục động từ Firestore
+  const [categories, setCategories] = useState([]);
+
+  // 🧷 Load categories từ Firestore
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const snap = await getDocs(collection(db, "products"));
+        const list = snap.docs.map((d) => d.data());
+
+        const all = [...new Set(list.map((p) => p.category?.trim()))]
+          .filter((c) => c && c !== "");
+
+        setCategories(all);
+      } catch (err) {
+        console.error("🔥 Lỗi load category:", err);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  // 🟦 Debug user
   useEffect(() => {
     console.log("Header currentUser:", currentUser);
   }, [currentUser]);
-  const categories = [
-    { key: "All", label: "Tất cả", img: "/Images/Hambur.jpg" },
-    { key: "Sushi", label: "Sushi", img: "/Images/Sushi.jpg" },
-    { key: "Burger", label: "Burger", img: "/Images/Hambur.jpg" },
-    { key: "BBQ Hàn", label: "BBQ Hàn", img: "/Images/thit.jpeg" },
-    { key: "Tacos", label: "Tacos", img: "/Images/tacos.jpg" },
-    { key: "Đồ Uống ", label: "Đồ uống", img: "/Images/latte.jpg" },
-    { key: "Pasta", label: "Pasta", img: "/Images/mi.jpg" },
-    { key: "Lẩu", label: "Lẩu", img: "/Images/tomyum.jpg" },
-  ];
 
   const handleLogout = async () => {
     if (logout) {
-      await logout(); // Đăng xuất Firebase
+      await logout();
       navigate("/login");
     }
   };
 
+  // 🔎 SEARCH FUNCTION
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchValue.trim() !== "") {
-      navigate(`/menu/All?search=${encodeURIComponent(searchValue)}`);
+      const searchQuery = encodeURIComponent(searchValue.trim());
+      navigate(`/menu/All?search=${searchQuery}`);
       setSearchValue("");
+      window.scrollTo(0, 0);
     }
   };
 
   return (
     <header className="header">
+      {/* LEFT - LOGO */}
       <div className="header-left">
         <Link to="/">
           <img src="/Images/Logo.png" alt="MEOWCHICK Logo" />
         </Link>
       </div>
 
+      {/* CENTER - SEARCH BAR */}
       <div className="header-center">
         <form className="search-form" onSubmit={handleSearch}>
           <input
@@ -63,16 +84,27 @@ function Header({ cartCount }) {
         </form>
       </div>
 
+      {/* RIGHT - NAVIGATION / ACCOUNT */}
       <div className="header-right">
         <button onClick={() => navigate("/")}>Trang chủ</button>
 
+        {/* 🔥 MENU DROPDOWN — CATEGORIES FROM FIRESTORE */}
         <div className="menu-dropdown">
           <button onClick={() => navigate("/menu/All")}>Thực đơn</button>
+
           <div className="dropdown-content">
+
+            {/* Luôn có "Tất cả" */}
+            <Link to="/menu/All">
+            
+              <span>Tất cả</span>
+            </Link>
+
+            {/* Render category động */}
             {categories.map((c) => (
-              <Link key={c.key} to={`/menu/${c.key}`}>
-                <img src={c.img} alt={c.label} />
-                <span>{c.label}</span>
+              <Link key={c} to={`/menu/${c}`}>
+           
+                <span>{c}</span>
               </Link>
             ))}
           </div>
@@ -80,25 +112,38 @@ function Header({ cartCount }) {
 
         <button onClick={() => navigate("/restaurant")}>Nhà hàng</button>
 
-
+        {/* CART */}
         <Link to="/Cart" className="cart-button">
           Giỏ hàng ({cartCount > 0 ? cartCount : 0})
         </Link>
 
+        {/* USER MENU */}
         <div className="user-actions">
           {currentUser ? (
             <div className="user-menu">
               <div className="user-menu-trigger">
                 <FaUserCircle size={22} />
-                <span>{currentUser.firstname} {currentUser.lastname}</span>
+                <span>
+                  {currentUser.firstname} {currentUser.lastname}
+                </span>
               </div>
+
+              {/* ACCOUNT DROPDOWN */}
               <div className="dropdown-menu">
+                <button
+                  className="dropdown-item"
+                  onClick={() => navigate("/profile")}
+                >
+                  Tài khoản của tôi
+                </button>
+
                 <button
                   className="dropdown-item"
                   onClick={() => navigate("/order-history")}
                 >
                   Lịch sử đơn hàng
                 </button>
+
                 <button className="dropdown-item" onClick={handleLogout}>
                   Đăng xuất
                 </button>
