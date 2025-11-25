@@ -4,6 +4,7 @@ import {
   Alert,
   FlatList,
   Modal,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
@@ -59,7 +60,7 @@ export default function RestaurantAdminProducts() {
         const val = d.data() as any;
         return {
           id: d.id,
-          name: val.name ?? 'Sản phẩm',
+          name: val.name ?? 'San pham',
           price: Number(val.price ?? 0),
           img: val.img ?? val.image ?? '',
           isActive: val.isActive ?? val.available ?? true,
@@ -74,7 +75,7 @@ export default function RestaurantAdminProducts() {
       setProducts(data);
     } catch (error) {
       console.error('fetch products error', error);
-      Alert.alert('Lỗi', 'Không thể tải sản phẩm. Kiểm tra kết nối Firestore.');
+      Alert.alert('Loi', 'Khong the tai san pham. Kiem tra ket noi Firestore.');
     } finally {
       setPageLoading(false);
       setRefreshing(false);
@@ -113,11 +114,11 @@ export default function RestaurantAdminProducts() {
           isActive: !product.isActive,
           available: !product.isActive,
         });
-        Alert.alert('Đã cập nhật', `${!product.isActive ? 'Đã mở bán' : 'Đã ẩn'} ${product.name ?? 'món ăn'}.`);
+        Alert.alert('Da cap nhat', `${!product.isActive ? 'Da mo ban' : 'Da an'} ${product.name ?? 'mon an'}.`);
         fetchProducts();
       } catch (error) {
         console.error('toggle product error', error);
-        Alert.alert('Lỗi', 'Không thể cập nhật trạng thái sản phẩm.');
+        Alert.alert('Loi', 'Khong the cap nhat trang thai san pham.');
       }
     },
     [db, fetchProducts]
@@ -232,8 +233,8 @@ export default function RestaurantAdminProducts() {
           <Ionicons name="arrow-back" size={22} color="#0b1f15" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>Sản phẩm của nhà hàng</Text>
-          <Text style={styles.subtitle}>Quản lý giá, trạng thái hiển thị giống phiên bản web.</Text>
+          <Text style={styles.title}>San pham cua nha hang</Text>
+          <Text style={styles.subtitle}>Quan ly gia va trang thai hien thi.</Text>
         </View>
       </View>
 
@@ -263,11 +264,11 @@ export default function RestaurantAdminProducts() {
             <View style={styles.productHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.productName}>{item.name}</Text>
-                <Text style={styles.productCategory}>{item.category ?? 'Chưa có danh mục'}</Text>
+                <Text style={styles.productCategory}>{item.category ?? 'Chua co danh muc'}</Text>
               </View>
               <View style={[styles.statusTag, item.isActive ? styles.statusActive : styles.statusInactive]}>
                 <Text style={item.isActive ? styles.statusTextActive : styles.statusTextInactive}>
-                  {item.isActive ? 'Đang mở bán' : 'Đang ẩn'}
+                  {item.isActive ? 'Dang mo ban' : 'Dang an'}
                 </Text>
               </View>
             </View>
@@ -369,8 +370,8 @@ export default function RestaurantAdminProducts() {
                 <Text style={styles.modalSaveText}>Lưu</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </SafeAreaView>
   );

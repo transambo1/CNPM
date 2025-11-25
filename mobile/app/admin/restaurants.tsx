@@ -84,7 +84,7 @@ export default function AdminRestaurantsScreen() {
           <View style={styles.empty}>
             <Ionicons name="business-outline" size={42} color="#7c8a80" />
             <Text style={styles.emptyTitle}>Chưa có nhà hàng</Text>
-            <Text style={styles.emptySubtitle}>Kéo để làm mới hoặc thử lại sau.</Text>
+            <Text style={styles.emptySubtitle}>Kéo xuống để làm mới hoặc thử lại sau.</Text>
           </View>
         ) : null}
       </ScrollView>

@@ -43,12 +43,12 @@ export default function AdminRevenueScreen() {
         const raw = d.data() as any;
         const status = (raw.status || '').toLowerCase();
         const total = Number(raw.total ?? raw.totalPrice ?? 0);
-        if (status.includes('đã giao')) {
+        if (status.includes('đã giao') || status.includes('da giao')) {
           deliveredCount += 1;
           totalRevenue += total;
-        } else if (status.includes('đang giao')) {
+        } else if (status.includes('đang giao') || status.includes('dang giao')) {
           deliveringCount += 1;
-        } else if (status.includes('chờ') || status.includes('processing')) {
+        } else if (status.includes('chờ') || status.includes('cho') || status.includes('processing')) {
           processingCount += 1;
         }
       });
@@ -109,7 +109,7 @@ export default function AdminRevenueScreen() {
         <View style={styles.infoCard}>
           <Ionicons name="information-circle-outline" size={20} color="#0b1f15" />
           <Text style={styles.infoText}>
-            Doanh thu được tính theo những đơn có trạng thái "đã giao". Kiểm tra chi tiết từng đơn trong danh sách.
+            Doanh thu được tính theo những đơn có trạng thái "Đã giao". Kiểm tra chi tiết từng đơn trong danh sách.
           </Text>
         </View>
       </ScrollView>

@@ -63,14 +63,14 @@ export default function AdminOverviewScreen() {
       const orders = ordersSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       const drones = dronesSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
 
-      const delivered = orders.filter((o) => (o.status || '').toLowerCase().includes('đã giao')).length;
-      const delivering = orders.filter((o) => (o.status || '').toLowerCase().includes('đang giao')).length;
-      const processing = orders.filter((o) => (o.status || '').toLowerCase().includes('chờ')).length;
+      const delivered = orders.filter((o) => (o.status || '').toLowerCase().includes('đã giao') || (o.status || '').toLowerCase().includes('da giao')).length;
+      const delivering = orders.filter((o) => (o.status || '').toLowerCase().includes('đang giao') || (o.status || '').toLowerCase().includes('dang giao')).length;
+      const processing = orders.filter((o) => (o.status || '').toLowerCase().includes('chờ') || (o.status || '').toLowerCase().includes('cho')).length;
       const revenue = orders
-        .filter((o) => (o.status || '').toLowerCase().includes('đã giao'))
+        .filter((o) => (o.status || '').toLowerCase().includes('đã giao') || (o.status || '').toLowerCase().includes('da giao'))
         .reduce((sum, o) => sum + Number(o.total || o.totalPrice || 0), 0);
 
-      const droneIdle = drones.filter((d) => ['rảnh', 'idle', 'available', ''].includes((d.status || '').toLowerCase())).length;
+      const droneIdle = drones.filter((d) => ['rảnh', 'ranh', 'idle', 'available', ''].includes((d.status || '').toLowerCase())).length;
       const droneBusy = drones.length - droneIdle;
 
       setSummary({
@@ -269,7 +269,7 @@ export default function AdminOverviewScreen() {
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.modalActionButton} onPress={() => handleNavigate(item.route)}>
                       <Ionicons name="create-outline" size={16} color="#0b1f15" />
-                      <Text style={styles.modalActionText}>Sửa / chặn</Text>
+                      <Text style={styles.modalActionText}>Sửa / chỉnh</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
