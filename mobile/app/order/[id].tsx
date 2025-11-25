@@ -521,7 +521,7 @@ export default function OrderTrackingScreen() {
       if (!order) return;
       const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
-        status: "completed",
+        status: "Đã giao",
         statusText: "Đơn hàng đã hoàn tất",
         updatedAt: serverTimestamp(),
       });
@@ -657,7 +657,7 @@ export default function OrderTrackingScreen() {
                 }}
               >
                 <Ionicons name="checkmark-done" size={22} color="#fff" />
-                <Text style={styles.confirmBtnText}>Xác nhận đơn</Text>
+
               </TouchableOpacity>
             );
           }
@@ -671,7 +671,7 @@ export default function OrderTrackingScreen() {
                   try {
                     const orderRef = doc(db, "orders", order.id);
                     await updateDoc(orderRef, {
-                      status: "completed",
+                      status: "Đã giao",
                       statusText: "Đơn hàng đã được giao thành công",
                       updatedAt: serverTimestamp(),
                     });

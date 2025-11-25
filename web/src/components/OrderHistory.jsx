@@ -36,7 +36,7 @@ function OrderHistory() {
           date: doc.data().createdAt?.toDate(),
         }));
 
-        // ✅ Đẩy các đơn Chờ xác nhận & Đang giao lên đầu
+        // Ưu tiên hiển thị trạng thái
         userOrders = userOrders.sort((a, b) => {
           const priority = { "Chờ xác nhận": 1, "Đang giao": 2, "Đã giao": 3 };
           return priority[a.status] - priority[b.status];
@@ -64,43 +64,91 @@ function OrderHistory() {
       ) : (
         <ul className="orders-list">
           {orders.map((order) => (
-            <li key={order.id} className="order-card">
+            <li
+              key={order.id}
+              className="order-card"
+              onClick={() => {
+                if (order.status === "Đang giao" || order.status === "Chờ xác nhận") {
+                  navigate(`/waiting/${order.id}`);
+                } else {
+                  navigate(`/order/${order.id}`);
+                }
+              }}
+              style={{ cursor: "pointer" }}
+            >
               <div className="order-header">
                 <h3>Đơn hàng #{order.id.substring(0, 6)}...</h3>
-                <span>{order.date ? order.date.toLocaleDateString("vi-VN") : "N/A"}</span>
+                <span>
+                  {order.date ? order.date.toLocaleDateString("vi-VN") : "N/A"}
+                </span>
               </div>
 
               <div className="order-body">
                 <ul className="order-items-list">
-                  {order.items?.map((item, index) => (
-                    <li key={`${order.id}-${index}`} className="order-item">
-                      <span>{item.quantity}x {item.name}</span>
-                      <span>{(item.price * item.quantity).toLocaleString()}₫</span>
-                    </li>
-                  ))}
-                </ul>
+  {order.items?.map((item, index) => (
+    <li
+      key={`${order.id}-${index}`}
+      className="order-item clickable-item"
+      onClick={(e) => {
+        e.stopPropagation();       // tránh trigger click vào order-card
+        navigate(`/product-detail/${item.id}`);
+      }}
+    >
+      <span>{item.quantity}x {item.name}</span>
+      <span>{(item.price * item.quantity).toLocaleString()}₫</span>
+    </li>
+  ))}
+</ul>
               </div>
 
               <div className="order-footer">
                 <div className="order-total">
-                 <strong>
-  Tổng tiền: {order?.total ? order.total.toLocaleString() + "₫" : "Đang cập nhật"}
-</strong>
+                  <strong>
+                    Tổng tiền:{" "}
+                    {order?.total
+                      ? order.total.toLocaleString() + "₫"
+                      : "Đang cập nhật"}
+                  </strong>
                 </div>
 
                 <div className="order-status">
-                  Trạng thái: <span className={`status-tag ${order.status?.replace(/\s+/g, "-").toLowerCase()}`}>{order.status}</span>
+                  Trạng thái:
+                  <span
+                    className={`status-tag ${order.status
+                      ?.replace(/\s+/g, "-")
+                      .toLowerCase()}`}
+                  >
+                    {order.status}
+                  </span>
                 </div>
 
-                {/* ✅ NÚT THEO DÕI ĐƠN - CHỈ HIỆN NẾU CHỜ XÁC NHẬN HOẶC ĐANG GIAO */}
-                {(order.status === "Chờ xác nhận" || order.status === "Đang giao") && (
+                {/* Nút theo dõi đơn */}
+                {(order.status === "Chờ xác nhận" ||
+                  order.status === "Đang giao") && (
                   <button
                     className="track-btn"
-                    onClick={() => navigate(`/waiting/${order.id}`)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/waiting/${order.id}`);
+                    }}
                   >
                     Theo dõi đơn
                   </button>
                 )}
+
+                {/* Nút xem chi tiết */}
+                {order.status !== "Đang giao" &&
+                  order.status !== "Chờ xác nhận" && (
+                    <button
+                      className="detail-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/order/${order.id}`);
+                      }}
+                    >
+                      Xem chi tiết
+                    </button>
+                  )}
               </div>
             </li>
           ))}

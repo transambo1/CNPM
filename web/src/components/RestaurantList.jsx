@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase"; // 🔥 import file cấu hình Firestore
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { db } from "../firebase"; 
 import "./RestaurantList.css";
 
 function RestaurantList() {
@@ -14,8 +14,19 @@ function RestaurantList() {
     useEffect(() => {
         const fetchRestaurants = async () => {
             try {
-                const querySnapshot = await getDocs(collection(db, "restaurants"));
-                const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                // ⛔ Trước đây: getDocs(collection(db, "restaurants"))
+                // ✅ Bây giờ: chỉ lấy nhà hàng active
+                const q = query(
+                    collection(db, "restaurants"),
+                    where("status", "==", "active")
+                );
+
+                const querySnapshot = await getDocs(q);
+                const data = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+
                 setRestaurants(data);
             } catch (error) {
                 console.error("Lỗi khi lấy danh sách nhà hàng:", error);

@@ -29,7 +29,6 @@ function Product({ product, onAdd }) {
                     <p className="prd-restaurant">🏠 {restaurant}</p>
                 </div>
             </Link>
-
             <div className="prd-actions">
                 <button
                     className="prd-add-btn"

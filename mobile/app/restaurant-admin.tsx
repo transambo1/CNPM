@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Pressable,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
   TextInput, // ⬅️ FIX: Bổ sung import
@@ -50,7 +51,6 @@ type DroneRecord = {
 
 type ViewMode = 'all' | 'processing' | 'delivering' | 'delivered' | 'drones';
 type TimeFilter = 'all' | '24h' | '7d' | '30d';
-type DroneFilter = 'delivering' | 'idle' | 'maintaining';
 
 /* ========= HELPERS ========= */
 const normalizeStatus = (value?: string | null) => (value ?? '').toLowerCase();
@@ -128,7 +128,6 @@ export default function RestaurantAdminScreen() {
   const [markingOrderId, setMarkingOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [droneFilter, setDroneFilter] = useState<DroneFilter>('idle');
 
   // View control
   const [viewMode, setViewMode] = useState<ViewMode>('all');
@@ -224,18 +223,38 @@ export default function RestaurantAdminScreen() {
   }, [drones, droneFilter]);
 
   const filteredOrders = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const now = Date.now();
+    const inRange = (createdAt?: Date | null) => {
+      if (!createdAt) return true;
+      const diff = now - createdAt.getTime();
+      if (timeFilter === '24h') return diff <= 24 * 60 * 60 * 1000;
+      if (timeFilter === '7d') return diff <= 7 * 24 * 60 * 60 * 1000;
+      if (timeFilter === '30d') return diff <= 30 * 24 * 60 * 60 * 1000;
+      return true;
+    };
+    const matchesText = (o: OrderRecord) => {
+      if (!term) return true;
+      return (
+        o.id.toLowerCase().includes(term) ||
+        (o.customer?.name ?? '').toLowerCase().includes(term) ||
+        (o.customer?.address ?? '').toLowerCase().includes(term)
+      );
+    };
+
+    const list = orders.filter((o) => matchesText(o) && inRange(o.createdAt));
     switch (viewMode) {
       case 'processing':
-        return orders.filter((o) => isProcessingStatus(o.status));
+        return list.filter((o) => isProcessingStatus(o.status));
       case 'delivering':
-        return orders.filter((o) => isDeliveringStatus(o.status));
+        return list.filter((o) => isDeliveringStatus(o.status));
       case 'delivered':
-        return orders.filter((o) => isDeliveredStatus(o.status));
+        return list.filter((o) => isDeliveredStatus(o.status));
       case 'all':
       default:
-        return orders;
+        return list;
     }
-  }, [orders, viewMode]);
+  }, [orders, viewMode, search, timeFilter]);
 
   const isLoading = loading || !ordersLoaded || !dronesLoaded;
 
@@ -372,7 +391,7 @@ export default function RestaurantAdminScreen() {
               >
                 <Text style={[styles.chipText, viewMode === v && styles.chipTextActive]}>
                   {v === 'all'
-                    ? 'Tất cả đơn'
+                    ? 'Tổng đơn'
                     : v === 'processing'
                       ? 'Đang xử lý'
                       : v === 'delivering'
@@ -449,41 +468,39 @@ export default function RestaurantAdminScreen() {
                   </Text>
                 </View>
               ) : (
-                filteredDrones.map((drone) => {
+                drones.map((drone) => {
                   const assignedOrder = orders.find((o) => o.id === drone.currentOrderId);
                   return (
                     <View key={drone.id} style={styles.droneCard}>
                       <View style={{ flex: 1 }}>
                         <Text style={styles.droneName}>{drone.name}</Text>
                         <Text style={styles.droneSub}>
-                          Pin: {drone.battery ?? 0}% | Trạng thái: {drone.status ?? 'Không rõ'}
+                          Pin: {drone.battery ?? 0}% | Tr?ng th?i: {drone.status ?? 'Kh?ng r?'}
                         </Text>
                         {assignedOrder ? (
                           <View style={styles.droneOrderBox}>
-                            <Text style={styles.droneOrderTitle}>Đơn #{assignedOrder.id}</Text>
+                            <Text style={styles.droneOrderTitle}>??n #{assignedOrder.id}</Text>
                             <Text style={styles.droneOrderSubtitle} numberOfLines={2}>
-                              {assignedOrder.customer?.address ?? 'Chưa có địa chỉ'}
+                              {assignedOrder.customer?.address ?? 'Ch?a c? ??a ch?'}
                             </Text>
                           </View>
                         ) : null}
                       </View>
-
-                      {/* FIXED: Không còn thẻ dư, không còn đóng sai */}
                       <TouchableOpacity
                         style={styles.droneBtn}
                         onPress={async () => {
                           try {
-                            const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
+                            const newStatus = isDroneIdle(drone.status) ? 'Đang bảo tr?' : 'R?nh';
                             await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
-                            Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
+                            Alert.alert('C?p nh?t', `Tr?ng th?i drone ?? ??i th?nh "${newStatus}"`);
                           } catch (err) {
-                            Alert.alert('Lỗi', 'Không thể cập nhật trạng thái drone.');
+                            console.error(err);
+                            Alert.alert('L?i', 'Kh?ng th? c?p nh?t tr?ng th?i drone.');
                           }
                         }}
                       >
-                        <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
+                        <Text style={styles.droneBtnText}>??i tr?ng th?i</Text>
                       </TouchableOpacity>
-
                     </View>
                   );
                 })
@@ -764,7 +781,17 @@ const styles = StyleSheet.create({
   },
   droneName: { fontSize: 16, fontWeight: '700', color: '#1A1C1E' },
   droneSub: { color: '#6C6F75', fontSize: 13, marginTop: 4 },
-
+  droneOrderBox: {
+    marginTop: 8,
+    backgroundColor: '#F0F4FF',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#E0E7FF',
+    gap: 4,
+  },
+  droneOrderTitle: { fontWeight: '700', color: '#111827' },
+  droneOrderSubtitle: { color: '#4B5563', fontSize: 13 },
   droneBtn: { backgroundColor: '#00A74F', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   droneBtnText: { color: '#FFF', fontWeight: '600', fontSize: 13 },
 
@@ -863,7 +890,32 @@ const styles = StyleSheet.create({
   },
   menuItemText: { fontSize: 15, fontWeight: '600', color: '#1A1C1E' },
   menuDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 8 },
-
+  filterBlock: { marginTop: 12, gap: 10 },
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: '#1A1C1E' },
+  chipRow: { gap: 8 },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: '#DDE5DD',
+    backgroundColor: '#fff',
+    marginRight: 8,
+  },
+  chipActive: { backgroundColor: '#E6F6EC', borderColor: '#00A74F' },
+  chipText: { color: '#1A1C1E', fontWeight: '600' },
+  chipTextActive: { color: '#007C35' },
   /* Status badges */
   statusBadge: {
     paddingHorizontal: 12,

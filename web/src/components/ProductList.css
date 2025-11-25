@@ -267,3 +267,27 @@
 .pagination button:last-child:hover {
   background: linear-gradient(90deg, #ff6600, #ff8800);
 }
+.main-home {
+  margin-top: 40px;   /* bạn có thể tăng lên 50-60px nếu muốn nhiều hơn */
+}
+/* ============================= */
+/* THÔNG BÁO KHÔNG TÌM THẤY SP  */
+/* ============================= */
+.no-results {
+  font-size: 1.3em;
+  font-weight: 700;
+  color: #d2191a;
+  text-align: center;
+  padding: 30px 10px;
+  margin-top: 20px;
+  background: #ffeaea;
+  border: 1px solid #ffb5b5;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(255, 80, 80, 0.15);
+  animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

@@ -76,11 +76,7 @@ function ProductDetail({ onAdd }) {
             <div className="productDetail__container">
                 <div className="productDetail__image">
                     <img src={product.img} alt={product.name} />
-                    <div className="productDetail__chips">
-                        <span className="chip">Ưu đãi Grab</span>
-                        <span className="chip">Freeship 15k</span>
-                        <span className="chip">Giao nhanh 25'</span>
-                    </div>
+                   
                 </div>
 
                 <div className="productDetail__info">
@@ -104,20 +100,16 @@ function ProductDetail({ onAdd }) {
                         )}
                     </div>
 
-                    <div className="productDetail__meta">
-                        <span className="meta-pill">Đã bán {product.sold || 230}+</span>
-                        <span className="meta-pill">Chuẩn bị trong 15 phút</span>
-                        <span className="meta-pill">An toàn vệ sinh</span>
-                    </div>
+               
 
                     {restaurant && (
                         <div className="productDetail__restaurantCard">
                             <div>
-                                <p className="restaurant-label">Nhà hàng đối tác</p>
+                             
                                 <h4>{restaurant.name}</h4>
                                 {restaurant.address && <p className="restaurant-address">{restaurant.address}</p>}
                             </div>
-                            <div className="restaurant-badge">Grab</div>
+                          
                         </div>
                     )}
 
@@ -147,20 +139,9 @@ function ProductDetail({ onAdd }) {
                         >
                             🛒 Thêm vào giỏ hàng
                         </button>
-                        <Link to="/" className="productDetail__backLink">
-                            ⬅ Quay lại menu
-                        </Link>
+                    
                     </div>
 
-                    <div className="productDetail__progress">
-                        <div className="progress__header">
-                            <span>Đặt nhanh kẻo hết ưu đãi</span>
-                            <span className="progress__claimed">84% đã bán</span>
-                        </div>
-                        <div className="progress__bar">
-                            <div className="progress__fill" style={{ width: "84%" }}></div>
-                        </div>
-                    </div>
                 </div>
             </div>
 

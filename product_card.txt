@@ -1,0 +1,47 @@
+<View style={styles.productCard}>
+            <View style={styles.productHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productCategory}>{item.category ?? 'Chưa có danh mục'}</Text>
+              </View>
+              <View style={[styles.statusTag, item.isActive ? styles.statusActive : styles.statusInactive]}>
+                <Text style={item.isActive ? styles.statusTextActive : styles.statusTextInactive}>
+                  {item.isActive ? 'Đang mở bán' : 'Đang ẩn'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.productMetaRow}>
+              <Ionicons name="pricetag-outline" size={16} color="#4b5563" />
+              <Text style={styles.productPrice}>{Number(item.price ?? 0).toLocaleString('vi-VN')}₫</Text>
+            </View>
+
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.secondaryButton} onPress={() => openEditPrice(item)}>
+                <Ionicons name="create-outline" size={16} color="#0b1f15" style={{ marginRight: 6 }} />
+                <Text style={styles.secondaryText}>Cập nhật giá</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.primaryButton, !item.isActive && styles.outlineButton]}
+                onPress={() => handleToggleActive(item)}
+              >
+                <Ionicons
+                  name={item.isActive ? 'eye-off-outline' : 'eye-outline'}
+                  size={16}
+                  color={item.isActive ? '#fff' : '#0b1f15'}
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={[styles.primaryText, !item.isActive && styles.outlineText]}>
+                  {item.isActive ? 'Ẩn khỏi menu' : 'Mở bán lại'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+        contentContainerStyle={filteredProducts.length === 0 ? styles.emptyList : { paddingBottom: 40 }}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="cube-outline" size={48} color="#9ca3af" />
+            <Text style={styles.emptyTitle}>Chưa có sản phẩm phù hợp</Text>
+            <Text style={styles.emptySubtitle}>Kiểm tra lại bộ lọc hoặc thêm sản phẩm mới trên web.</Text>
+          
