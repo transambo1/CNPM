@@ -182,26 +182,7 @@ const FoodScreenListHeader = ({
       </View>
 */}
 
-      <View style={styles.quickFilterSection}>
-        <Text style={styles.sectionLabel}>Thực đơn hôm nay</Text>
-        {/* Categories */}
-        <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}
-          style={styles.categoryScroll} contentContainerStyle={{ paddingRight: 20 }}>
-
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat.id}
-              style={styles.categoryItem}
-              onPress={() => onSelectCategory({ id: cat.id, name: cat.name })}
-              onLongPress={() => router.push({ pathname: '/category/[name]', params: { name: cat.name } } as never)}
-            >
-
-              <Image source={{ uri: cat.image }} style={styles.categoryImage} />
-              <Text style={styles.categoryText}>{cat.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
+   
       {/* Suggestions */}
       <ScrollView horizontal nestedScrollEnabled showsHorizontalScrollIndicator={false}
         style={styles.suggestionScroll} contentContainerStyle={{ paddingRight: 15 }}>
@@ -225,7 +206,7 @@ const FoodScreenListHeader = ({
               key={f.id}
               style={[styles.filterChip, activeQuickFilters.includes(f.id) && styles.filterChipActive]}
               onPress={() => onQuickFilterToggle(f.id)}
-            >
+            > 
               <Ionicons
                 name={f.icon}
                 size={16}
@@ -239,6 +220,37 @@ const FoodScreenListHeader = ({
           ))}
         </ScrollView>
       </View>
+{/* Danh mục chỉ chữ, không hình — giống Web */}
+<View style={{ marginTop: 16, paddingLeft: 16 }}>
+  <Text style={styles.sectionLabel}>Danh mục</Text>
+  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    {categories.map((cat) => (
+      <TouchableOpacity
+        key={cat.id}
+        onPress={() => onSelectCategory({ id: cat.id, name: cat.name })}
+        style={{
+          paddingVertical: 8,
+          paddingHorizontal: 14,
+          backgroundColor: selectedCategory.id === cat.id ? '#ff7a00' : '#fff',
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: '#ffd3aa',
+          marginRight: 10,
+        }}
+      >
+        <Text
+          style={{
+            color: selectedCategory.id === cat.id ? '#fff' : '#222',
+            fontWeight: '600',
+            fontSize: 13,
+          }}
+        >
+          {cat.name}
+        </Text>
+      </TouchableOpacity>
+    ))}
+  </ScrollView>
+</View>
 
       {activeFilterPills.length > 0 && (
         <View style={styles.activeFilterRow}>
@@ -337,11 +349,23 @@ export default function HomePage() {
           setFeaturedRestaurant(available[randomIndex]);
         }
 
-        /** Categories */
-        try {
-          const catSnap = await getDocs(query(collection(db, 'categories')));
-          setCategories(catSnap.docs.map(d => ({ id: d.id, ...d.data() })) as Category[]);
-        } catch { setCategories([]); }
+    /** Categories lấy từ products giống web */
+try {
+  const prodSnap = await getDocs(query(collection(db, "products")));
+  const list = prodSnap.docs.map(d => d.data());
+
+  const unique = [...new Set(list.map(p => String(p.category ?? "").trim()))]
+    .filter(c => c && c !== "")
+    .map((c) => ({
+      id: c,
+      name: c,
+      image: `https://source.unsplash.com/100x100/?${encodeURIComponent(c)}`
+    }));
+
+  setCategories(unique);
+} catch {
+  setCategories([]);
+}
 
         /** Suggestions */
         try {
