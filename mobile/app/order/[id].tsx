@@ -236,7 +236,7 @@ export default function OrderTrackingScreen() {
           statusText: data.statusText ?? data.status_text,
           code: data.code,
           totalPrice: Number(data.totalPrice ?? data.total ?? 0),
-          paymentMethod: data.paymentMethod ?? 'Chuyển khoản ',
+          paymentMethod: data.paymentMethod ?? 'Quét mã QR ',
           createdAt,
           restaurantName:
             data.restaurantName ?? data.storeName ?? data.restaurant?.name ?? 'Nhà hàng',

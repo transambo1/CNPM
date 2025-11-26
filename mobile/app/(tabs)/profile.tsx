@@ -69,12 +69,7 @@ export default function ProfilePage() {
     );
   }
 
-  const formatCreatedAt = () => {
-    const c: any = (user as any)?.createdAt;
-    if (!c) return 'Không rõ';
-    const seconds = c.seconds || c._seconds;
-    return seconds ? new Date(seconds * 1000).toLocaleDateString('vi-VN') : 'Không rõ';
-  };
+
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -126,8 +121,7 @@ export default function ProfilePage() {
               {user.firstname} {user.lastname}
             </Text>
 
-            <Text style={styles.label}>Email</Text>
-            <Text style={styles.value}>{user.email || 'Chưa có email'}</Text>
+         
 
             <Text style={styles.label}>Số điện thoại</Text>
             <Text style={styles.value}>{user.phonenumber || 'Chưa cập nhật'}</Text>
@@ -135,9 +129,7 @@ export default function ProfilePage() {
             <Text style={styles.label}>Địa chỉ</Text>
             <Text style={styles.value}>{user.address || 'Chưa có địa chỉ'}</Text>
 
-            <Text style={styles.label}>Ngày tạo tài khoản</Text>
-            <Text style={styles.value}>{formatCreatedAt()}</Text>
-
+     
             <TouchableOpacity style={styles.editButton} onPress={() => setShowEdit(true)}>
               <Ionicons name="create-outline" size={20} color="#fff" />
               <Text style={styles.editText}>Chỉnh sửa thông tin</Text>
