@@ -271,10 +271,15 @@ export default function WaitingForConfirmation() {
             <p className="wfc-section-title">Tổng tiền: <strong>{order.total?.toLocaleString()}₫</strong></p>
 
 
-            <h3 className="wfc-tracking-details">Theo dõi trực tiếp</h3>
-            {drone && <p><strong>Drone:</strong> {drone?.name}</p>}
-            <p><strong>Khoảng cách còn lại:</strong> {formatDistance(remainingDistance)}</p>
-            <p><strong>Thời gian còn lại:</strong> {formatTime(remainingTime)}</p>
+            {(order.status === "Đang giao" || order.status === "Đang giao bằng drone") && (
+              <>
+                <h3 className="wfc-tracking-details">Theo dõi trực tiếp</h3>
+                {drone && <p><strong>Drone:</strong> {drone?.name}</p>}
+                <p><strong>Khoảng cách còn lại:</strong> {formatDistance(remainingDistance)}</p>
+                <p><strong>Thời gian còn lại:</strong> {formatTime(remainingTime)}</p>
+              </>
+            )}
+
 
             {(order.status.includes("Đang giao") &&
               remainingDistance !== null &&
