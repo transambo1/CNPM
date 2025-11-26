@@ -946,30 +946,29 @@ export default function PaymentScreen() {
 
             
                     {/* Phương thức thanh toán */}
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <Text style={styles.cardTitle}>Thông tin thanh toán</Text>
-                            <TouchableOpacity onPress={paySheet.openSheet}>
-                        <Text style={styles.linkGreen}>Xem tất cả</Text> 
-                            </TouchableOpacity>
-                        </View>
-                       <TouchableOpacity style={styles.payMethodRow} onPress={paySheet.openSheet} activeOpacity={0.8}>
-    <View style={styles.payMethodLeft}>
-        <View style={styles.pmIcon}>
-            <Text style={styles.pmIconTxt}>
-                {payment === "cod" ? "COD" : "QR"}
+                  {/* ===== PHƯƠNG THỨC THANH TOÁN — CHỈ HIỆN COD ===== */}
+<View style={styles.card}>
+    <View style={styles.cardHeader}>
+        <Text style={styles.cardTitle}>Thông tin thanh toán</Text>
+        {/* đã xóa nút "Xem tất cả" */}
+    </View>
+
+    <View style={[styles.payMethodRow, { opacity: 1 }]}>
+        <View style={styles.payMethodLeft}>
+            <View style={styles.pmIcon}>
+                <Text style={styles.pmIconTxt}>COD</Text>
+            </View>
+
+            <Text style={styles.payMethodText}>
+                Thanh toán khi nhận hàng (COD)
             </Text>
         </View>
 
-        <Text style={styles.payMethodText}>
-            {payment === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Thanh toán bằng mã QR"}
-        </Text>
+        {/* Radio chọn cố định */}
+        <View style={[styles.radio, styles.radioActive]} />
     </View>
+</View>
 
-   
-</TouchableOpacity>
-
-                    </View>
 
                     {/* Tạm tính */}
                     <View style={styles.card}>
@@ -977,10 +976,7 @@ export default function PaymentScreen() {
                             <Text style={styles.muted}>Tạm tính</Text>
                             <Text style={styles.bold}>{VND(totalPrice)}</Text>
                         </View>
-                        <View style={styles.rowSplit}>
-                            <Text style={styles.muted}>Phí giao hàng</Text>
-                            <Text style={styles.bold}>Miễn phí</Text>
-                        </View>
+                      
                         <View style={[styles.rowSplit, { marginTop: 8 }]}>
                             <Text style={styles.totalTxt}>Tổng cộng</Text>
                             <Text style={styles.totalPrice}>{VND(total)}</Text>
