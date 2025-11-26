@@ -291,7 +291,7 @@ export default function PaymentScreen() {
     const [loadingMenu, setLoadingMenu] = useState(false);
     const [search, setSearch] = useState("");
 
-    const [payment, setPayment] = useState<PaymentMethod>("cod");
+    const [payment, setPayment] = useState<PaymentMethod>("qr");
     const [restaurantInfo, setRestaurantInfo] = useState<
         { name: string; address?: string; latitude?: number | null; longitude?: number | null }
         | null
@@ -311,7 +311,9 @@ export default function PaymentScreen() {
     });
     const [savingAddress, setSavingAddress] = useState(false);
     const [placingOrder, setPlacingOrder] = useState(false);
-
+const [showQR, setShowQR] = useState(false);
+const [qrPaid, setQrPaid] = useState(false);
+const [qrProcessing, setQrProcessing] = useState(false);
     // Undo snackbar
     const [undoItem, setUndoItem] = useState<null | {
         id: string; name: string; img: string; price: number; quantity: number; restaurantId: string; restaurantName?: string;
@@ -704,7 +706,10 @@ export default function PaymentScreen() {
             openAddressSheet();
             return;
         }
-
+if (payment === "qr" && !qrPaid && !qrProcessing) {
+    setShowQR(true);
+    return;
+}
         const addressDetail = sanitizeAddressDetail(selectedAddress.detail);
         if (!addressDetail) {
             Alert.alert("Thiếu địa chỉ", "Địa chỉ giao hàng không hợp lệ. Vui lòng cập nhật lại.");
@@ -833,6 +838,8 @@ export default function PaymentScreen() {
             const docRef = await addDoc(ordersRef, newOrder);
 
             clearCart(activeRestaurantId ?? undefined);
+     setQrPaid(false);        // 🔥 reset để lần sau QR hoạt động đúng
+setQrProcessing(false); 
             router.replace(`/order/${docRef.id}` as never);
         } catch (error) {
             console.error("Không thể đặt đơn:", error);
@@ -860,6 +867,12 @@ export default function PaymentScreen() {
     ]);
 
     const total = totalPrice;
+const confirmQRPayment = async () => {
+    setShowQR(false);   // tắt popup QR
+    setQrPaid(true);    // đánh dấu đã thanh toán
+
+    await handleOrder();  // tiến hành tạo đơn
+};
 
     return (
         <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -956,11 +969,11 @@ export default function PaymentScreen() {
     <View style={[styles.payMethodRow, { opacity: 1 }]}>
         <View style={styles.payMethodLeft}>
             <View style={styles.pmIcon}>
-                <Text style={styles.pmIconTxt}>COD</Text>
+                <Text style={styles.pmIconTxt}>QR</Text>
             </View>
 
             <Text style={styles.payMethodText}>
-                Thanh toán khi nhận hàng (COD)
+                Thanh toán bằng mã QR
             </Text>
         </View>
 
@@ -1014,7 +1027,9 @@ export default function PaymentScreen() {
                     </View>
                     <TouchableOpacity
                         style={[styles.primaryBtn, (items.length === 0 || placingOrder) && { opacity: 0.5 }]}
-                        onPress={handleOrder}
+       onPress={handleOrder}
+
+
                         disabled={items.length === 0 || placingOrder}
                     >
                         {placingOrder ? (
@@ -1299,6 +1314,34 @@ export default function PaymentScreen() {
                     <TouchableOpacity onPress={undoDelete}><Text style={styles.snackUndo}>HOÀN TÁC</Text></TouchableOpacity>
                 </View>
             )}
+            {showQR && (
+    <View style={styles.qrOverlay}>
+        <View style={styles.qrBox}>
+            <Text style={styles.qrTitle}>Quét mã để thanh toán</Text>
+
+            <Image
+                source={{
+                    uri: `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=PAY-${total}`,
+                }}
+                style={{ width: 220, height: 220, marginTop: 10 }}
+            />
+
+            <Text style={styles.qrAmount}>
+                Bạn cần thanh toán:{" "}
+                <Text style={{ color: "#ff6200", fontWeight: "800" }}>{VND(total)}</Text>
+            </Text>
+
+            <TouchableOpacity style={styles.qrConfirmBtn} onPress={confirmQRPayment}>
+                <Text style={styles.qrConfirmTxt}>Tôi đã thanh toán</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.qrCancel} onPress={() => setShowQR(false)}>
+                <Text style={styles.qrCancelTxt}>Đóng</Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+)}
+
         </SafeAreaView>
     );
 }
@@ -1695,6 +1738,65 @@ switchWrapper: {
     borderWidth: 2,
     borderColor: "#ffb899",     // viền cam đậm
     borderRadius: 20,
+},
+qrOverlay: {
+  ...StyleSheet.absoluteFillObject,
+  backgroundColor: "rgba(0,0,0,0.45)",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 20,
+  zIndex: 999,
+},
+
+qrBox: {
+  width: "100%",
+  backgroundColor: "#fff",
+  borderRadius: 20,
+  padding: 20,
+  alignItems: "center",
+  elevation: 8,
+  shadowColor: "#000",
+  shadowOpacity: 0.15,
+  shadowOffset: { width: 0, height: 6 },
+  shadowRadius: 12,
+},
+
+qrTitle: {
+  fontSize: 18,
+  fontWeight: "800",
+  color: "#1a1a1a",
+},
+
+qrAmount: {
+  marginTop: 20,
+  fontSize: 16,
+  color: "#333",
+  fontWeight: "600",
+},
+
+qrConfirmBtn: {
+  backgroundColor: "#ff7a00",
+  paddingVertical: 14,
+  paddingHorizontal: 24,
+  borderRadius: 14,
+  marginTop: 24,
+  width: "100%",
+  alignItems: "center",
+},
+
+qrConfirmTxt: {
+  color: "#fff",
+  fontWeight: "800",
+  fontSize: 16,
+},
+
+qrCancel: {
+  marginTop: 12,
+},
+
+qrCancelTxt: {
+  color: "#888",
+  fontWeight: "700",
 },
 
 });
