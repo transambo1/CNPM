@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, Table, Tag, Button } from "antd";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase";
 import "./OrdersDetail.css";
 
 export default function OrderDetail() {
@@ -9,13 +11,29 @@ export default function OrderDetail() {
     const [order, setOrder] = useState(null);
 
     useEffect(() => {
-        fetch(`http://localhost:5002/orders/${id}`)
-            .then((res) => res.json())
-            .then((data) => setOrder(data))
-            .catch((err) => console.error("Lỗi tải chi tiết:", err));
+        async function fetchOrder() {
+            try {
+                const ref = doc(db, "orders", id);
+                const snap = await getDoc(ref);
+
+                if (snap.exists()) {
+                    const data = snap.data();
+                    setOrder({
+                        id,
+                        ...data,
+                        createdAt: data.createdAt?.seconds
+                            ? new Date(data.createdAt.seconds * 1000)
+                            : null,
+                    });
+                }
+            } catch (e) {
+                console.error("Lỗi tải chi tiết:", e);
+            }
+        }
+        fetchOrder();
     }, [id]);
 
-    if (!order) return <div className="loading">Đang tải chi tiết đơn hàng...</div>;
+    if (!order) return <div className="loading">Đang tải chi tiết...</div>;
 
     const columns = [
         { title: "Tên sản phẩm", dataIndex: "name", key: "name" },
@@ -23,67 +41,60 @@ export default function OrderDetail() {
         {
             title: "Đơn giá",
             dataIndex: "price",
-            key: "price",
-            render: (v) => `${v.toLocaleString()}đ`,
+            render: (v) => `${Number(v).toLocaleString()}₫`,
         },
         {
             title: "Thành tiền",
-            key: "total",
-            render: (_, r) => `${(r.price * r.quantity).toLocaleString()}đ`,
+            render: (_, r) => `${(r.price * r.quantity).toLocaleString()}₫`,
         },
     ];
 
-    const statusColor = (status) => {
-        switch (status) {
-            case "Đã giao":
-                return "green";
-            case "Đang giao bằng drone":
-                return "blue";
-            case "Đang xử lý":
-                return "orange";
-            default:
-                return "volcano";
-        }
+    const statusColor = (s) => {
+        const ss = s.toLowerCase();
+        if (ss.includes("đã giao")) return "green";
+        if (ss.includes("đang giao")) return "blue";
+        if (ss.includes("đang xử lý")) return "orange";
+        return "volcano";
     };
 
     return (
         <div className="order-detail-page">
-            <Button onClick={() => navigate(-1)} className="back-btn">← Quay lại</Button>
+            <Button onClick={() => navigate(-1)} className="back-btn">
+                ← Quay lại
+            </Button>
 
-            <Card title={`Chi tiết đơn hàng #${order.id}`} bordered={false} className="order-card">
-                <h3> Khách hàng:</h3>
+            <Card title={`Chi tiết đơn hàng `} className="order-card">
+                <h3>Mã đơn hàng: #{order.id}</h3>
+                <h3>Khách hàng</h3>
                 <p><b>Tên:</b> {order.customer?.name}</p>
-                <p><b> SĐT:</b> {order.customer?.phone}</p>
-                <p><b> Email:</b> {order.customer?.email}</p>
-                <p><b> Địa chỉ:</b> {order.customer?.address}</p>
+                <p><b>SĐT:</b> {order.customer?.phone}</p>
+                <p><b>Địa chỉ:</b> {order.customer?.address}</p>
 
-                <h3> Nhà hàng giao:</h3>
+                <h3>Nhà hàng giao:</h3>
                 <p>{order.restaurantName}</p>
 
                 {order.droneId && (
                     <>
-                        <h3> Drone giao hàng:</h3>
+                        <h3>Drone giao hàng:</h3>
                         <p>ID Drone: {order.droneId}</p>
                     </>
                 )}
 
-                <h3>🗓 Ngày đặt:</h3>
-                <p>{order.date}</p>
+                <h3>Ngày đặt:</h3>
+                <p>{order.createdAt?.toLocaleString("vi-VN")}</p>
 
-                <h3>📌 Trạng thái:</h3>
+                <h3>Trạng thái:</h3>
                 <Tag color={statusColor(order.status)}>{order.status}</Tag>
 
                 <Table
                     columns={columns}
                     dataSource={order.items || []}
-                    rowKey="id"
                     pagination={false}
-                    className="order-items-table"
                     style={{ marginTop: 20 }}
                 />
 
-                <div className="total-section" style={{ marginTop: 20, fontWeight: "bold", fontSize: 16 }}>
-                    Tổng cộng: <span>{order.total?.toLocaleString()}đ</span>
+                <div className="total-section">
+                    Tổng cộng: <b>{order.total?.toLocaleString()}₫</b>
                 </div>
             </Card>
         </div>

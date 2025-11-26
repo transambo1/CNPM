@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { message } from "antd";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../firebase";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import "./Dashboard.css";
+import {
+  collection,
+  getDocs,
+  doc,
+  query,
+  where,
+} from "firebase/firestore";
+import { db } from "../../firebase";
+import { useAuth } from "../../context/AuthContext";
+import { message } from "antd";
+
 import {
   LineChart,
   Line,
@@ -16,165 +24,276 @@ import {
   Legend,
 } from "recharts";
 
-export default function AdminDashboard() {
-  const [loading, setLoading] = useState(true);
+export default function RestaurantDashboard() {
+  const { currentUser } = useAuth();
+
   const [orders, setOrders] = useState([]);
-  const [users, setUsers] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
+
+  const [loading, setLoading] = useState(true);
+
+  // === FILTER STATE (new) ===
+  const [restaurantFilter, setRestaurantFilter] = useState("all");
+  const [timeFilter, setTimeFilter] = useState("all");
+
+  // === CHART STATE ===
+  const [chartData, setChartData] = useState([]);     // revenue
+  const [orderChart, setOrderChart] = useState([]);    // order count
+
+  // === DASHBOARD COUNTER ===
   const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalRestaurants: 0,
     totalOrders: 0,
+    delivered: 0,
+    delivering: 0,
+    processing: 0,
     totalRevenue: 0,
   });
-  const [chartData, setChartData] = useState([]);
-  const [restaurantMap, setRestaurantMap] = useState({});
+
+  // ================================
+  // 🔥 FETCH DATA
+  // ================================
+  const fetchAll = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Fetch restaurants
+      const restaurantsSnap = await getDocs(collection(db, "restaurants"));
+      const restaurantList = restaurantsSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+      setRestaurants(restaurantList);
+
+      // Fetch orders
+      const ordersSnap = await getDocs(collection(db, "orders"));
+      const oData = ordersSnap.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      }));
+
+      let filteredOrders = oData;
+
+      // If filter by restaurant
+      if (restaurantFilter !== "all") {
+        filteredOrders = filteredOrders.filter(
+          (o) => String(o.restaurantId) === String(restaurantFilter)
+        );
+      }
+
+      setOrders(filteredOrders);
+
+      // === STATS ===
+      const delivered = filteredOrders.filter((o) =>
+        (o.status || "").toLowerCase().includes("đã giao")
+      );
+      const delivering = filteredOrders.filter((o) =>
+        (o.status || "").toLowerCase().includes("đang giao")
+      );
+      const processing = filteredOrders.filter((o) =>
+        (o.status || "").toLowerCase().includes("xử lý")
+      );
+
+      const totalRevenue = delivered.reduce(
+        (sum, o) => sum + Number(o.total || o.totalPrice || 0),
+        0
+      );
+
+      setStats({
+        totalOrders: filteredOrders.length,
+        delivered: delivered.length,
+        delivering: delivering.length,
+        processing: processing.length,
+        totalRevenue,
+      });
+    } catch (err) {
+      console.error("Lỗi:", err);
+      message.error("Không thể tải dữ liệu Dashboard");
+    } finally {
+      setLoading(false);
+    }
+  }, [restaurantFilter]);
 
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [orderSnap, userSnap, restSnap] = await Promise.all([
-          getDocs(collection(db, "orders")),
-          getDocs(collection(db, "users")),
-          getDocs(collection(db, "restaurants")),
-        ]);
+    fetchAll();
+  }, [fetchAll]);
 
-        const orderData = orderSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const userData = userSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        const restData = restSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-        setOrders(orderData);
-        setUsers(userData);
-        setRestaurants(restData);
+  // ================================
+  // 🔥 CHART PROCESSING
+  // ================================
+  useEffect(() => {
+    if (orders.length === 0) {
+      setChartData([]);
+      setOrderChart([]);
+      return;
+    }
 
-        // 🔹 Map id → name để hiển thị tên nhà hàng
-        const restMap = {};
-        restData.forEach((r) => (restMap[r.id] = r.name));
-        setRestaurantMap(restMap);
+    const daily = {};
+    const now = Date.now();
 
-        // ✅ Thống kê tổng quan
-        const doneOrders = orderData.filter((o) =>
-          (o.status || "").toLowerCase().includes("đã giao")
-        );
-        const totalRevenue = doneOrders.reduce((sum, o) => sum + (o.total || 0), 0);
-
-        setStats({
-          totalUsers: userData.length,
-          totalRestaurants: restData.length,
-          totalOrders: orderData.length,
-          totalRevenue,
-        });
-
-        // ✅ Gom nhóm doanh thu theo ngày (fix chuẩn lỗi sort)
-        const dailyStats = {};
-        doneOrders.forEach((o) => {
-          let dateObj;
-
-          if (o.createdAt?.seconds) {
-            dateObj = new Date(o.createdAt.seconds * 1000);
-          } else if (o.date) {
-            const [day, month, year] = o.date.split("/").map(Number);
-            dateObj = new Date(year, month - 1, day);
-          } else {
-            dateObj = new Date();
-          }
-
-          const dateKey = dateObj.toLocaleDateString("vi-VN");
-          const timestamp = dateObj.getTime();
-
-          if (!dailyStats[dateKey]) {
-            dailyStats[dateKey] = {
-              date: dateKey,
-              revenue: 0,
-              count: 0,
-              timestamp,
-            };
-          }
-
-          dailyStats[dateKey].revenue += o.total || 0;
-          dailyStats[dateKey].count += 1;
-        });
-
-        setChartData(
-          Object.values(dailyStats).sort((a, b) => a.timestamp - b.timestamp)
-        );
-      } catch (err) {
-        console.error("🔥 Lỗi tải dữ liệu Dashboard:", err);
-        message.error("Không thể tải dữ liệu Dashboard");
-      } finally {
-        setLoading(false);
-      }
+    const toMillis = (createdAt) => {
+      if (!createdAt) return 0;
+      if (createdAt.seconds) return createdAt.seconds * 1000;
+      const ms = new Date(createdAt).getTime();
+      return Number.isFinite(ms) ? ms : 0;
     };
 
-    loadData();
-  }, []);
+    orders.forEach((o) => {
+      const ms = toMillis(o.createdAt);
+      if (!ms) return;
 
-  if (loading) return <div className="loading">⏳ Đang tải dữ liệu...</div>;
+      // Time filter
+      if (timeFilter === "24h" && ms < now - 24 * 3600 * 1000) return;
+      if (timeFilter === "3d" && ms < now - 3 * 24 * 3600 * 1000) return;
+      if (timeFilter === "7d" && ms < now - 7 * 24 * 3600 * 1000) return;
+      if (timeFilter === "30d" && ms < now - 30 * 24 * 3600 * 1000) return;
 
+      const date = new Date(ms).toLocaleDateString("vi-VN");
+
+      if (!daily[date]) {
+        daily[date] = {
+          date,
+          timestamp: ms,
+          revenue: 0,
+          count: 0,
+        };
+      }
+
+      // Revenue only for delivered orders
+      if ((o.status || "").toLowerCase().includes("đã giao")) {
+        daily[date].revenue += Number(o.total || o.totalPrice || 0);
+      }
+
+      daily[date].count += 1;
+    });
+
+    const sorted = Object.values(daily).sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
+
+    setChartData(sorted);
+    setOrderChart(sorted);
+  }, [orders, timeFilter, restaurantFilter]);
+
+
+  if (loading) return <p>⏳ Đang tải dữ liệu...</p>;
+
+  // ================================
+  // 🔥 UI
+  // ================================
   return (
-    <div className="dashboard">
-      <h1>📊 BẢNG QUẢN TRỊ HỆ THỐNG</h1>
+    <div className="restaurant-dashboard">
+      <h2>Dashboard Nhà hàng</h2>
 
-      {/* ==== THẺ THỐNG KÊ ==== */}
+      {/* SUMMARY CARDS */}
       <div className="cards">
         <div className="card purple">
-          <h2>{stats.totalUsers}</h2>
-          <p>Tổng người dùng</p>
-        </div>
-        <div className="card orange">
-          <h2>{stats.totalRestaurants}</h2>
-          <p>Tổng số nhà hàng</p>
-        </div>
-        <div className="card green">
           <h2>{stats.totalOrders}</h2>
-          <p>Tổng số đơn hàng</p>
+          <p>Tổng đơn hàng</p>
         </div>
+
+        <div className="card orange">
+          <h2>{stats.processing}</h2>
+          <p>Đang xử lý</p>
+        </div>
+
+        <div className="card green">
+          <h2>{stats.delivering}</h2>
+          <p>Đang giao</p>
+        </div>
+
         <div className="card blue">
           <h2>{stats.totalRevenue.toLocaleString()}₫</h2>
           <p>Tổng doanh thu</p>
         </div>
       </div>
 
-      {/* ==== BIỂU ĐỒ ==== */}
-      <div className="charts">
-        <div className="chart-container">
-          <h3>💰 Doanh thu theo ngày</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip formatter={(v) => `${v.toLocaleString()}₫`} />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="revenue"
-                stroke="#4f46e5"
-                strokeWidth={3}
-                name="Doanh thu"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+      {/* FILTER BAR */}
+      <div className="filter-bar">
+
+        <div className="filter-item">
+          <label>Nhà hàng</label>
+          <select
+            value={restaurantFilter}
+            onChange={(e) => setRestaurantFilter(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            {restaurants.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.name}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div className="chart-container">
-          <h3>📦 Số đơn hàng theo ngày</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar
-                dataKey="count"
-                fill="#10b981"
-                name="Số đơn hàng"
-                barSize={40}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="filter-item">
+          <label>Thời gian</label>
+          <select
+            value={timeFilter}
+            onChange={(e) => setTimeFilter(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            <option value="24h">24 giờ qua</option>
+            <option value="3d">3 ngày qua</option>
+            <option value="7d">7 ngày qua</option>
+            <option value="30d">30 ngày qua</option>
+          </select>
         </div>
+
+        <button
+          className="btn reset"
+          onClick={() => {
+            setRestaurantFilter("all");
+            setTimeFilter("all");
+          }}
+        >
+          Xóa lọc
+        </button>
+      </div>
+
+      {/* =======================
+          CHART REVENUE
+      ========================= */}
+      <div className="chart-container">
+        <h3>💰 Doanh thu theo ngày</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip formatter={(v) => `${v.toLocaleString()}₫`} />
+            <Legend />
+            <Line
+              type="monotone"
+              dataKey="revenue"
+              stroke="#4f46e5"
+              strokeWidth={3}
+              name="Doanh thu"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* =======================
+          CHART ORDER COUNT
+      ========================= */}
+      <div className="chart-container">
+        <h3>📦 Số đơn theo ngày</h3>
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={orderChart}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Bar
+              dataKey="count"
+              fill="#10b981"
+              barSize={40}
+              name="Số đơn"
+            />
+          </BarChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );

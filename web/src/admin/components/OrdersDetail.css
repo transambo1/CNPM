@@ -1,116 +1,105 @@
-/* ========== TOÀN TRANG ========== */
+/* src/admin/pages/OrdersDetail.css */
+
 .order-detail-page {
-    max-width: 1200px;
-    height: fit-content;
-    margin: 50px auto;
-    background: linear-gradient(180deg, #ffffff, #f9f9f9);
-    padding: 40px 50px;
-    border-radius: 20px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-    font-family: 'Poppins', sans-serif;
-    transition: all 0.3s ease;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 25px 20px;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f7f5;
+    min-height: 100vh;
 }
 
-/* Nút quay lại */
-.order-detail-page button {
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: white;
+.back-btn {
+    margin-bottom: 20px;
+    background-color: #0b3c23;
+    color: #fff;
     border: none;
+    padding: 10px 18px;
     border-radius: 8px;
-    padding: 8px 20px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.2s ease-in-out;
 }
 
-.order-detail-page button:hover {
-    background: linear-gradient(135deg, #2575fc, #6a11cb);
-    transform: translateY(-2px);
+.back-btn:hover {
+    background-color: #14532d;
 }
 
-/* Card thông tin chính */
-.ant-card {
-    border-radius: 16px !important;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
-    background: white;
-    padding: 20px 10px;
+.order-card {
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 28px 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border: none;
 }
 
-.ant-card-head-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: #333;
-    text-align: center;
-}
-
-/* Thông tin khách hàng */
-.order-detail-page p {
-    font-size: 15px;
-    margin: 8px 0;
-    color: #444;
-}
-
-.order-detail-page b {
-    color: #111;
-}
-
-/* Tag trạng thái */
-.ant-tag {
-    font-size: 14px;
-    padding: 5px 10px;
-    border-radius: 8px;
+.order-card h3 {
+    margin-top: 18px;
+    font-size: 18px;
     font-weight: 600;
+    color: #0b2f1a;
 }
 
-/* Bảng sản phẩm */
-.ant-table {
-    margin-top: 20px;
-    border-radius: 12px !important;
+.order-card p {
+    margin: 5px 0;
+    font-size: 15px;
+    color: #4b5d52;
+}
+
+.order-card b {
+    font-weight: 600;
+    color: #0b2f1a;
+}
+
+.order-items-table .ant-table {
+    border-radius: 10px;
     overflow: hidden;
 }
 
-.ant-table-thead>tr>th {
-    background: #f0f5ff !important;
-    color: #003a8c !important;
+.order-items-table .ant-table-thead>tr>th {
+    background-color: #e3f4ea;
     font-weight: 600;
+    color: #0b2f1a;
     text-align: center;
 }
 
-.ant-table-tbody>tr>td {
+.order-items-table .ant-table-tbody>tr>td {
     text-align: center;
-    font-size: 15px;
-    padding: 12px 8px;
+    font-size: 14px;
+    color: #333;
 }
 
-.ant-table-tbody>tr:hover>td {
-    background: #f9fbff !important;
+.order-items-table .ant-table-tbody>tr:hover {
+    background-color: #daf3df;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 }
 
-/* Tổng cộng */
 .total-section {
-    margin-top: 25px;
+    margin-top: 28px;
     font-size: 18px;
-    text-align: right;
-    padding-top: 15px;
-    border-top: 2px solid #eee;
-}
-
-.total-section span {
-    color: #2b6ef3;
     font-weight: 700;
-    font-size: 20px;
+    text-align: right;
+    color: #0b2f1a;
+    padding-right: 10px;
 }
 
-/* Loading */
-.loading {
-    text-align: center;
-    font-size: 18px;
-    color: #888;
-    margin-top: 100px;
-    font-style: italic;
-}
+/* Responsive */
+@media screen and (max-width: 768px) {
+    .order-detail-page {
+        padding: 15px;
+    }
 
-/* Hiệu ứng khi hover toàn card */
-.order-detail-page:hover {
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    .order-card {
+        padding: 20px;
+    }
+
+    .order-items-table .ant-table-thead>tr>th,
+    .order-items-table .ant-table-tbody>tr>td {
+        font-size: 12px;
+    }
+
+    .total-section {
+        font-size: 16px;
+    }
 }

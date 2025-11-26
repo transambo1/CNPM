@@ -30,29 +30,27 @@ export default function RestaurantLayout() {
         <nav className="restaurant-nav">
           <Link
             to="/restaurantadmin"
-            className={`restaurant-link ${
-              location.pathname === "/restaurantadmin" ? "active" : ""
-            }`}
+            className={`restaurant-link ${location.pathname === "/restaurantadmin" ? "active" : ""
+              }`}
           >
             📊 Tổng quan
           </Link>
 
-      
+
+
 
           <Link
             to="/restaurantadmin/products"
-            className={`restaurant-link ${
-              location.pathname.includes("/products") ? "active" : ""
-            }`}
+            className={`restaurant-link ${location.pathname.includes("/products") ? "active" : ""
+              }`}
           >
             🍔 Sản phẩm
           </Link>
 
           <Link
             to="/restaurantadmin/drones"
-            className={`restaurant-link ${
-              location.pathname.includes("/drones") ? "active" : ""
-            }`}
+            className={`restaurant-link ${location.pathname.includes("/drones") ? "active" : ""
+              }`}
           >
             🚁 Quản lý Drones
           </Link>

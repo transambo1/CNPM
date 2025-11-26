@@ -36,6 +36,7 @@ import AdminDroneManager from "./admin/pages/AdminDroneManager";
 
 /* RESTAURANT ADMIN */
 import RestaurantDashboard from "./components/RestaurantDashboard";
+import RestaurantOrderDetail from "./components/RestaurantOrderDetail";
 import RestaurantProducts from "./components/RestaurantProducts";
 import DroneList from "./components/DroneList";
 
@@ -164,7 +165,7 @@ function App() {
             element={
               <UserLayout cartCount={cart.reduce((s, i) => s + i.quantity, 0)} />
             }
-          > 
+          >
             <Route path="/menu/:categoryKey" element={<ProductList />} />
             <Route path="profile" element={<Profile />} />
             <Route index element={<ProductList onAdd={handleAdd} />} />
@@ -189,8 +190,8 @@ function App() {
               </AdminRoute>
             }
           >
-                <Route index element={<Navigate to="/admin/dashboards" />} />
-    <Route path="dashboards" element={<Dashboard />} />
+            <Route index element={<Navigate to="/admin/dashboards" />} />
+            <Route path="dashboards" element={<Dashboard />} />
             <Route path="orders" element={<Orders />} />
             <Route path="orders/:id" element={<AdminOrderDetail />} />
             <Route path="products" element={<Products />} />
@@ -210,6 +211,7 @@ function App() {
           >
             <Route index element={<RestaurantDashboard />} />
             <Route path="products" element={<RestaurantProducts />} />
+            <Route path="order/:id" element={<RestaurantOrderDetail />} />
             <Route path="drones" element={<DroneList />} />
           </Route>
         </Routes>

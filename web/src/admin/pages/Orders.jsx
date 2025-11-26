@@ -1,6 +1,7 @@
 // src/admin/pages/OrdersList.jsx
 import { useEffect, useState, useMemo } from "react";
 import { Input, Table, Tag, Select } from "antd";
+import { useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 import "./Orders.css";
@@ -11,6 +12,8 @@ export default function OrdersList() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
   const [restaurantFilter, setRestaurantFilter] = useState("all");
+
+  const navigate = useNavigate();
 
   // 🔥 Fetch Orders
   useEffect(() => {
@@ -74,40 +77,104 @@ export default function OrdersList() {
 
   // ===== Table Columns =====
   const columns = [
-    { title: "Mã ĐH", dataIndex: "id", key: "id" },
-    { title: "Khách hàng", dataIndex: ["customer", "name"], key: "customer" },
-    { title: "SĐT", dataIndex: ["customer", "phone"], key: "phone" },
+    {
+      title: "Mã ĐH",
+      dataIndex: "id",
+      key: "id",
+      render: (text, record) => (
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate(`/admin/orders/${record.id}`)}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "Khách hàng",
+      dataIndex: ["customer", "name"],
+      key: "customer",
+      render: (text, record) => (
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate(`/admin/orders/${record.id}`)}
+        >
+          {text}
+        </span>
+      ),
+    },
+    {
+      title: "SĐT",
+      dataIndex: ["customer", "phone"],
+      key: "phone",
+      render: (text, record) => (
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate(`/admin/orders/${record.id}`)}
+        >
+          {text}
+        </span>
+      ),
+    },
     {
       title: "Nhà hàng",
       dataIndex: "restaurantName",
       key: "restaurantName",
-      render: (_, record) =>
-        record.restaurantName || record.restaurant?.name || "—",
+      render: (_, record) => (
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate(`/admin/orders/${record.id}`)}
+        >
+          {record.restaurantName || record.restaurant?.name || "—"}
+        </span>
+      ),
     },
     {
       title: "Ngày đặt",
       dataIndex: "createdAt",
       key: "createdAt",
-      render: (val) => (val ? val.toLocaleString("vi-VN") : "—"),
+      render: (val, record) => (
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate(`/admin/orders/${record.id}`)}
+        >
+          {val ? val.toLocaleString("vi-VN") : "—"}
+        </span>
+      ),
     },
     {
       title: "Thành tiền",
       dataIndex: "total",
       key: "total",
-      render: (val) => `${Number(val || 0).toLocaleString("vi-VN")}₫`,
+      render: (val, record) => (
+        <span
+          style={{ cursor: "pointer" }}
+          onClick={() => navigate(`/admin/orders/${record.id}`)}
+        >
+          {`${Number(val || 0).toLocaleString("vi-VN")}₫`}
+        </span>
+      ),
     },
     {
       title: "Trạng thái",
       dataIndex: "status",
       key: "status",
-      render: (status = "") => {
+      render: (status = "", record) => {
         const s = status.toLowerCase();
         let color = "blue";
         if (s.includes("đã giao")) color = "green";
         else if (s.includes("đang xử lý") || s.includes("chờ xác nhận"))
           color = "orange";
         else if (s.includes("đang giao")) color = "geekblue";
-        return <Tag color={color}>{status}</Tag>;
+        return (
+          <Tag
+            color={color}
+            style={{ cursor: "pointer" }}
+            onClick={() => navigate(`/admin/orders/${record.id}`)}
+          >
+            {status}
+          </Tag>
+        );
       },
     },
   ];

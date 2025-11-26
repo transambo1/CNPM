@@ -23,20 +23,21 @@ import {
   Bar,
   Legend,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
 
 export default function RestaurantDashboard() {
+  const navigate = useNavigate();
   const { currentUser } = useAuth();
+
   const [orders, setOrders] = useState([]);
   const [drones, setDrones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedDrone, setSelectedDrone] = useState({});
 
-  // --- FILTER STATE ---
   const [statusFilter, setStatusFilter] = useState("all");
   const [droneFilter, setDroneFilter] = useState("all");
   const [timeFilter, setTimeFilter] = useState("all");
 
-  // === DATA FOR DASHBOARD & CHARTS ===
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -44,6 +45,7 @@ export default function RestaurantDashboard() {
     processing: 0,
     delivered: 0,
   });
+
   const [chartData, setChartData] = useState([]);
 
   const fetchAll = useCallback(async () => {
@@ -88,7 +90,6 @@ export default function RestaurantDashboard() {
       setOrders(filteredOrders);
       setDrones(filteredDrones);
 
-      // === STATS ===
       const delivered = filteredOrders.filter((o) =>
         (o.status || "").toLowerCase().includes("đã giao")
       );
@@ -112,7 +113,6 @@ export default function RestaurantDashboard() {
         delivered: delivered.length,
       });
 
-      // === CHART DATA (đã fix lỗi sắp xếp ngày) ===
       const dailyStats = {};
       delivered.forEach((o) => {
         let dateObj;
@@ -167,7 +167,6 @@ export default function RestaurantDashboard() {
     return Number.isFinite(t) ? t : null;
   };
 
-  // --- FILTER & PAGINATION ---
   const filteredOrders = useMemo(() => {
     const now = Date.now();
 
@@ -276,27 +275,26 @@ export default function RestaurantDashboard() {
 
   return (
     <div className="restaurant-dashboard">
-      <h2>
-        Dashboard Nhà hàng{" "}
-        {currentUser?.role === "restaurant" && currentUser?.name
-          ? `- ${currentUser.name}`
-          : ""}
-      </h2>
 
-      {/* === DASHBOARD CARDS === */}
+      <h2>Dashboard Nhà hàng</h2>
+
+      {/* === CARDS === */}
       <div className="cards">
         <div className="card purple">
           <h2>{stats.totalOrders}</h2>
           <p>Tổng đơn hàng</p>
         </div>
+
         <div className="card orange">
           <h2>{stats.processing}</h2>
           <p>Đang xử lý</p>
         </div>
+
         <div className="card green">
           <h2>{stats.delivering}</h2>
           <p>Đang giao</p>
         </div>
+
         <div className="card blue">
           <h2>{stats.totalRevenue.toLocaleString()}₫</h2>
           <p>Tổng doanh thu</p>
@@ -334,25 +332,17 @@ export default function RestaurantDashboard() {
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar
-                dataKey="count"
-                fill="#10b981"
-                name="Số đơn hàng"
-                barSize={40}
-              />
+              <Bar dataKey="count" fill="#10b981" barSize={40} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* === FILTER + TABLE === */}
+      {/* === FILTER BAR === */}
       <div className="filter-bar">
         <div className="filter-item">
           <label>Trạng thái</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
+          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">Tất cả</option>
             <option value="processing">Đang xử lý</option>
             <option value="delivering">Đang giao</option>
@@ -363,25 +353,17 @@ export default function RestaurantDashboard() {
 
         <div className="filter-item">
           <label>Drone</label>
-          <select
-            value={droneFilter}
-            onChange={(e) => setDroneFilter(e.target.value)}
-          >
+          <select value={droneFilter} onChange={(e) => setDroneFilter(e.target.value)}>
             <option value="all">Tất cả</option>
             {drones.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name} ({d.battery}%)
-              </option>
+              <option key={d.id} value={d.id}>{d.name} ({d.battery}%)</option>
             ))}
           </select>
         </div>
 
         <div className="filter-item">
           <label>Thời gian</label>
-          <select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-          >
+          <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)}>
             <option value="all">Tất cả</option>
             <option value="24h">24 giờ qua</option>
             <option value="3d">3 ngày qua</option>
@@ -401,32 +383,35 @@ export default function RestaurantDashboard() {
         </button>
       </div>
 
-      {/* === TABLE === */}
+      {/* === TABLE META === */}
       <div className="table-meta">
         <span>
           Hiển thị: <b>{paginatedOrders.length}</b> / {filteredOrders.length} đơn
         </span>
       </div>
 
+      {/* === TABLE === */}
       <table className="orders-table">
         <thead>
           <tr>
             <th>Mã</th>
             <th>Khách</th>
             <th>Địa chỉ</th>
-            <th>Nhà hàng</th>
+            <th>Sản phẩm</th>
             <th>Thời gian</th>
             <th>Trạng thái</th>
             <th>Drone</th>
             <th>Hành động</th>
           </tr>
         </thead>
+
         <tbody>
           {paginatedOrders.map((order) => {
             const oStatus = order.status || "";
             const assignedDrone = order.droneId
               ? findDroneById(order.droneId)
               : null;
+
             const createdAtMs = toMillis(order.createdAt);
             const createdAtTxt = createdAtMs
               ? new Date(createdAtMs).toLocaleString()
@@ -434,48 +419,77 @@ export default function RestaurantDashboard() {
 
             return (
               <tr key={order.id}>
-                <td>#{order.id}</td>
+
+                {/* MÃ ĐƠN */}
+                <td
+                  className="order-link"
+                  onClick={() => navigate(`/restaurantadmin/order/${order.id}`)}
+                >
+                  #{order.id}
+                </td>
+
+                {/* KHÁCH */}
                 <td>
                   <div className="cust-name">{order.customer?.name}</div>
                   <div className="small">{order.customer?.phone}</div>
                 </td>
-                <td>{order.customer?.address}</td>
-                <td>
-                  {order.restaurantName ||
-                    order.items?.[0]?.restaurant ||
-                    "—"}
-                </td>
-                <td>{createdAtTxt}</td>
-                <td>{formatStatusBadge(oStatus)}</td>
-                <td>
-  {oStatus === "Đã giao" || oStatus === "Đang giao" ? (
-    assignedDrone ? (
-      <strong>{assignedDrone.name}</strong>
-    ) : (
-      <span>—</span>
-    )
-  ) : (
-    <select
-      value={selectedDrone[order.id] || ""}
-      onChange={(e) =>
-        setSelectedDrone((prev) => ({
-          ...prev,
-          [order.id]: e.target.value,
-        }))
-      }
-    >
-      <option value="">Chọn drone</option>
-      {drones
-        .filter((d) => d.status === "Rảnh")
-        .map((d) => (
-          <option key={d.id} value={d.id}>
-            {d.name} ({d.battery}%)
-          </option>
-        ))}
-    </select>
-  )}
-</td>
 
+                {/* ĐỊA CHỈ */}
+                <td>{order.customer?.address}</td>
+
+                {/* ⭐⭐⭐ SẢN PHẨM + GIÁ ⭐⭐⭐ */}
+                <td>
+                  <ul className="product-list">
+                    {order.items?.map((item) => (
+                      <li key={item.id}>
+                        <div>
+                          <strong>{item.name}</strong> × {item.quantity}
+                        </div>
+                        <span className="prod-price">
+                          {(item.price * item.quantity).toLocaleString()}₫
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+
+                {/* THỜI GIAN */}
+                <td>{createdAtTxt}</td>
+
+                {/* STATUS BADGE */}
+                <td>{formatStatusBadge(oStatus)}</td>
+
+                {/* DRONE */}
+                <td>
+                  {oStatus === "Đã giao" || oStatus === "Đang giao" ? (
+                    assignedDrone ? (
+                      <strong>{assignedDrone.name}</strong>
+                    ) : (
+                      <span>—</span>
+                    )
+                  ) : (
+                    <select
+                      value={selectedDrone[order.id] || ""}
+                      onChange={(e) =>
+                        setSelectedDrone((prev) => ({
+                          ...prev,
+                          [order.id]: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="">Chọn drone</option>
+                      {drones
+                        .filter((d) => d.status === "Rảnh")
+                        .map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} ({d.battery}%)
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                </td>
+
+                {/* ACTION BUTTON */}
                 <td>
                   {oStatus === "Đã giao" ? (
                     <button className="btn disabled" disabled>
@@ -489,7 +503,7 @@ export default function RestaurantDashboard() {
                       onClick={() => handleAssignDrone(order.id)}
                       disabled={!selectedDrone[order.id]}
                     >
-                      Giao bằng drone
+                      Giao drone
                     </button>
                   )}
                 </td>
@@ -499,6 +513,7 @@ export default function RestaurantDashboard() {
         </tbody>
       </table>
 
+      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="orders-pagination">
           <button
@@ -512,7 +527,8 @@ export default function RestaurantDashboard() {
           {[...Array(totalPages)].map((_, i) => (
             <button
               key={i}
-              className={`orders-page-btn ${currentPage === i + 1 ? "active" : ""}`}
+              className={`orders-page-btn ${currentPage === i + 1 ? "active" : ""
+                }`}
               onClick={() => setCurrentPage(i + 1)}
             >
               {i + 1}

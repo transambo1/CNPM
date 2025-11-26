@@ -1,9 +1,7 @@
-// app/admin-orders.tsx  (ví dụ route)
+// app/admin/orders.tsx
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  SafeAreaView,
-} from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   ScrollView,
   View,
@@ -11,6 +9,7 @@ import {
   TouchableOpacity,
   RefreshControl,
   StyleSheet,
+  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -29,31 +28,21 @@ type OrderItem = {
   total: number;
   customerName: string;
   createdAt?: any;
+  restaurantId?: string;
 };
 
 const formatCurrency = (value?: number | null) =>
   `${Number(value ?? 0).toLocaleString('vi-VN')} đ`;
 
-/** Chuẩn hoá status từ string → StatusKey */
+/** Chuẩn hoá status */
 const normalizeStatus = (status?: string): StatusKey => {
   const s = (status ?? '').toLowerCase();
 
   if (!s) return 'pending';
-  if (s.includes('hủy') || s.includes('huy') || s.includes('cancel')) return 'cancelled';
-  if (
-    s.includes('đã giao') ||
-    s.includes('da giao') ||
-    s.includes('delivered') ||
-    s.includes('completed') ||
-    s.includes('done')
-  )
+  if (s.includes('huy') || s.includes('cancel')) return 'cancelled';
+  if (s.includes('đã giao') || s.includes('delivered') || s.includes('done'))
     return 'delivered';
-  if (
-    s.includes('đang giao') ||
-    s.includes('dang giao') ||
-    s.includes('delivering') ||
-    s.includes('in_transit')
-  )
+  if (s.includes('đang giao') || s.includes('delivering'))
     return 'delivering';
 
   return 'pending';
@@ -66,7 +55,6 @@ const STATUS_META: Record<StatusKey, { label: string; badge: any }> = {
   cancelled: { label: 'Đã hủy', badge: { backgroundColor: '#fdecea' } },
 };
 
-/** Convert createdAt trong Firestore về Date */
 const getCreatedAtDate = (createdAt: any): Date | null => {
   if (!createdAt) return null;
   if (createdAt instanceof Date) return createdAt;
@@ -75,6 +63,76 @@ const getCreatedAtDate = (createdAt: any): Date | null => {
   return null;
 };
 
+/* =============================================
+      MINI DROPDOWN NHÀ HÀNG (Không tạo file mới)
+   ============================================= */
+function RestaurantDropdown({
+  value,
+  onChange,
+  restaurants,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  restaurants: any[];
+}) {
+  const [open, setOpen] = React.useState(false);
+
+  return (
+    <View style={{ marginHorizontal: 16, marginTop: 10, zIndex: 10 }}>
+      <Text style={{ fontSize: 14, fontWeight: '700', marginBottom: 6 }}>
+        Lọc theo nhà hàng
+      </Text>
+
+      <TouchableOpacity
+        style={styles.dropdownBox}
+        onPress={() => setOpen(!open)}
+      >
+        <Text style={styles.dropdownValue}>
+          {value === 'all'
+            ? 'Tất cả'
+            : restaurants.find((r) => r.id === value)?.name || '—'}
+        </Text>
+        <Ionicons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color="#0b1f15"
+        />
+      </TouchableOpacity>
+
+      {open && (
+        <View style={styles.dropdownList}>
+          <TouchableOpacity
+            onPress={() => {
+              onChange('all');
+              setOpen(false);
+            }}
+            style={styles.dropdownItem}
+          >
+            <Text style={{ fontWeight: '500' }}>Tất cả</Text>
+          </TouchableOpacity>
+
+          {restaurants.map((r) => (
+            <TouchableOpacity
+              key={r.id}
+              onPress={() => {
+                onChange(r.id);
+                setOpen(false);
+              }}
+              style={styles.dropdownItem}
+            >
+              <Text style={{ fontWeight: '500' }}>{r.name}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+}
+
+/* ==========================================
+              MAIN PAGE
+   ========================================== */
+
 export default function AdminOrdersScreen() {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -82,15 +140,25 @@ export default function AdminOrdersScreen() {
 
   const [refreshing, setRefreshing] = useState(false);
   const [orders, setOrders] = useState<OrderItem[]>([]);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+
   const [statusFilter, setStatusFilter] = useState<'all' | StatusKey>('all');
   const [timeFilter, setTimeFilter] = useState<TimeFilterKey>('all');
+  const [restaurantFilter, setRestaurantFilter] = useState('all');
+  const [searchText, setSearchText] = useState('');
 
-  /** LOAD ĐƠN */
+  /** LOAD DATA */
   const loadOrders = useCallback(async () => {
     setRefreshing(true);
     try {
-      const snap = await getDocs(collection(db, 'orders'));
-      const data: OrderItem[] = snap.docs.map((d) => {
+      const orderSnap = await getDocs(collection(db, 'orders'));
+      const restaurantSnap = await getDocs(collection(db, 'restaurants'));
+
+      setRestaurants(
+        restaurantSnap.docs.map((d) => ({ id: d.id, ...d.data() }))
+      );
+
+      const data: OrderItem[] = orderSnap.docs.map((d) => {
         const raw = d.data() as any;
 
         return {
@@ -100,10 +168,10 @@ export default function AdminOrdersScreen() {
           total: Number(raw.total ?? raw.totalPrice ?? 0),
           customerName: raw.customer?.name ?? raw.customerName ?? 'Khách lẻ',
           createdAt: raw.createdAt,
+          restaurantId: raw.restaurantId ?? '',
         };
       });
 
-      // sort mới nhất lên trên
       data.sort((a, b) => {
         const da = getCreatedAtDate(a.createdAt)?.getTime() ?? 0;
         const dbb = getCreatedAtDate(b.createdAt)?.getTime() ?? 0;
@@ -118,29 +186,32 @@ export default function AdminOrdersScreen() {
     }
   }, [db]);
 
-  /** CHECK ADMIN + load */
   useEffect(() => {
     if (loading) return;
-
     if (!user || user.role !== 'admin') {
       router.replace('/');
       return;
     }
-
     loadOrders();
   }, [user, loading, loadOrders]);
 
-  /** Áp dụng filter theo status + thời gian */
+  /** FILTER LOGIC */
   const filteredOrders = useMemo(() => {
     const now = new Date();
 
     return orders.filter((o) => {
-      // filter status
-      if (statusFilter !== 'all' && o.normalizedStatus !== statusFilter) {
+      if (statusFilter !== 'all' && o.normalizedStatus !== statusFilter)
         return false;
-      }
 
-      // filter thời gian
+      if (restaurantFilter !== 'all' && o.restaurantId !== restaurantFilter)
+        return false;
+
+      if (
+        searchText.trim() &&
+        !o.customerName.toLowerCase().includes(searchText.toLowerCase())
+      )
+        return false;
+
       const createdDate = getCreatedAtDate(o.createdAt);
       if (!createdDate) return timeFilter === 'all';
 
@@ -153,18 +224,18 @@ export default function AdminOrdersScreen() {
       }
 
       if (timeFilter === '7d') {
-        const diff = now.getTime() - createdDate.getTime();
-        return diff <= 7 * 24 * 60 * 60 * 1000;
+        return now.getTime() - createdDate.getTime() <= 7 * 24 * 60 * 60 * 1000;
       }
 
       if (timeFilter === '30d') {
-        const diff = now.getTime() - createdDate.getTime();
-        return diff <= 30 * 24 * 60 * 60 * 1000;
+        return (
+          now.getTime() - createdDate.getTime() <= 30 * 24 * 60 * 60 * 1000
+        );
       }
 
-      return true; // 'all'
+      return true;
     });
-  }, [orders, statusFilter, timeFilter]);
+  }, [orders, statusFilter, timeFilter, restaurantFilter, searchText]);
 
   if (loading || !user || user.role !== 'admin') return null;
 
@@ -187,7 +258,19 @@ export default function AdminOrdersScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      {/* FILTER STATUS */}
+      {/* SEARCH */}
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={18} color="#85928a" />
+        <TextInput
+          placeholder="Tìm khách hàng..."
+          placeholderTextColor="#85928a"
+          style={styles.searchInput}
+          value={searchText}
+          onChangeText={setSearchText}
+        />
+      </View>
+
+      {/* STATUS FILTER */}
       <View style={styles.filterRow}>
         {(['all', 'pending', 'delivering', 'delivered'] as const).map((key) => {
           const meta = key === 'all' ? { label: 'Tất cả' } : STATUS_META[key];
@@ -211,7 +294,7 @@ export default function AdminOrdersScreen() {
         })}
       </View>
 
-      {/* FILTER THỜI GIAN */}
+      {/* TIME FILTER */}
       <View style={[styles.filterRow, { marginTop: 4 }]}>
         {([
           { key: 'all', label: 'Tất cả' },
@@ -242,6 +325,13 @@ export default function AdminOrdersScreen() {
         })}
       </View>
 
+      {/* RESTAURANT DROPDOWN */}
+      <RestaurantDropdown
+        value={restaurantFilter}
+        onChange={setRestaurantFilter}
+        restaurants={restaurants}
+      />
+
       {/* LIST */}
       <ScrollView
         refreshControl={
@@ -250,7 +340,17 @@ export default function AdminOrdersScreen() {
         contentContainerStyle={styles.listContent}
       >
         {filteredOrders.map((order) => (
-          <View key={order.id} style={styles.card}>
+          <TouchableOpacity
+            key={order.id}
+            style={styles.card}
+            activeOpacity={0.8}
+            onPress={() =>
+              router.push({
+                pathname: '/admin/orders/[id]',
+                params: { id: order.id },
+              } as never)
+            }
+          >
             <View style={styles.row}>
               <View>
                 <Text style={styles.cardTitle}>Đơn #{order.id}</Text>
@@ -275,20 +375,7 @@ export default function AdminOrdersScreen() {
                 {formatCurrency(order.total)}
               </Text>
             </View>
-
-            <TouchableOpacity
-              style={styles.linkRow}
-              onPress={() =>
-                router.push({
-                  pathname: '/order/[id]',
-                  params: { id: order.id },
-                } as never)
-              }
-            >
-              <Ionicons name="open-outline" size={16} color="#0b1f15" />
-              <Text style={styles.linkText}>Mở theo dõi đơn</Text>
-            </TouchableOpacity>
-          </View>
+          </TouchableOpacity>
         ))}
 
         {filteredOrders.length === 0 && (
@@ -296,7 +383,7 @@ export default function AdminOrdersScreen() {
             <Ionicons name="receipt-outline" size={42} color="#7c8a80" />
             <Text style={styles.emptyTitle}>Không có đơn phù hợp</Text>
             <Text style={styles.emptySubtitle}>
-              Thử đổi bộ lọc trạng thái hoặc thời gian khác.
+              Thử điều chỉnh bộ lọc hoặc tìm kiếm.
             </Text>
           </View>
         )}
@@ -305,8 +392,9 @@ export default function AdminOrdersScreen() {
   );
 }
 
-/* -------------------------- STYLES -------------------------- */
-
+/* ==========================================
+              STYLES
+   ========================================== */
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f6fffa' },
 
@@ -330,7 +418,21 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#0b1f15' },
 
-  /* Filter rows */
+  searchBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    marginHorizontal: 16,
+    marginTop: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderColor: '#d9e9df',
+    borderWidth: 1,
+    gap: 8,
+  },
+  searchInput: { flex: 1, fontSize: 14, color: '#0b1f15' },
+
   filterRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -339,7 +441,6 @@ const styles = StyleSheet.create({
     paddingBottom: 4,
   },
 
-  /* Status chips */
   filterChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -356,7 +457,6 @@ const styles = StyleSheet.create({
   filterChipText: { fontWeight: '700', color: '#0b1f15' },
   filterChipTextActive: { color: '#007045' },
 
-  /* Time chips */
   timeChip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -372,6 +472,32 @@ const styles = StyleSheet.create({
   },
   timeChipText: { fontWeight: '700', color: '#0b1f15' },
   timeChipTextActive: { color: '#c97a00' },
+
+  dropdownBox: {
+    borderWidth: 1,
+    borderColor: '#d9e9df',
+    borderRadius: 12,
+    padding: 12,
+    backgroundColor: '#fff',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownValue: { color: '#0b1f15', fontWeight: '600' },
+  dropdownList: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#d9e9df',
+    borderRadius: 12,
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eef2f1',
+  },
 
   listContent: { padding: 16, paddingBottom: 40, gap: 12 },
 
@@ -397,9 +523,6 @@ const styles = StyleSheet.create({
 
   badge: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 },
   badgeText: { fontWeight: '700', color: '#0b1f15' },
-
-  linkRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12 },
-  linkText: { color: '#0b1f15', fontWeight: '700' },
 
   empty: { alignItems: 'center', padding: 20, gap: 8 },
   emptyTitle: { fontWeight: '700', color: '#0b1f15' },

@@ -262,7 +262,7 @@ export default function RestaurantAdminScreen() {
         onPress: async () => {
           try {
             await logout();
-            setTimeout(() => router.replace('/(auth)/login'), 100);
+
           } catch (err) { }
         },
       },
@@ -482,13 +482,23 @@ export default function RestaurantAdminScreen() {
                   filteredOrders.map((order) => {
                     const assignedDrone = drones.find((d) => d.id === order.droneId);
                     const status = order.status ?? '';
-                    const canAssign = !isDeliveredStatus(status) && !isDeliveringStatus(status);
+                    const canAssign =
+                      !isDeliveredStatus(status) && !isDeliveringStatus(status);
 
                     return (
-                      <View key={order.id} style={styles.orderCard}>
+                      <TouchableOpacity
+                        key={order.id}
+                        activeOpacity={0.8}
+                        onPress={() =>
+                          router.push(`/admin/restaurant/orderID?id=${order.id}`)
+                        }
+                        style={styles.orderCard}
+                      >
+                        {/* HEADER */}
                         <View style={styles.orderHeaderRow}>
                           <View>
-                            <Text style={styles.orderCode}>Đơn #{order.id}</Text>
+                            <Text style={styles.orderCode}>Đơn hàng </Text>
+                            <Text style={styles.orderCode}>#{order.id}</Text>
                             <Text style={styles.orderDate}>{formatDateTime(order.createdAt)}</Text>
                           </View>
 
@@ -497,6 +507,7 @@ export default function RestaurantAdminScreen() {
                           </View>
                         </View>
 
+                        {/* CUSTOMER */}
                         <View style={styles.orderInfoRow}>
                           <Ionicons name="person-outline" size={18} color="#555" />
                           <View style={styles.orderInfoText}>
@@ -505,6 +516,7 @@ export default function RestaurantAdminScreen() {
                           </View>
                         </View>
 
+                        {/* ADDRESS */}
                         <View style={styles.orderInfoRow}>
                           <Ionicons name="location-outline" size={18} color="#555" />
                           <View style={styles.orderInfoText}>
@@ -512,6 +524,7 @@ export default function RestaurantAdminScreen() {
                           </View>
                         </View>
 
+                        {/* FOOTER */}
                         <View style={styles.orderFooter}>
                           <View>
                             <Text style={styles.totalLabel}>Tổng tiền</Text>
@@ -532,43 +545,12 @@ export default function RestaurantAdminScreen() {
                                 <Text style={styles.droneMutedText}>Chưa có drone</Text>
                               </View>
                             )}
-
-                            {canAssign ? (
-                              <TouchableOpacity
-                                style={styles.primaryButton}
-                                onPress={() => setPickerOrder(order)}
-                                disabled={assigningOrderId === order.id}
-                              >
-                                {assigningOrderId === order.id ? (
-                                  <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                  <Text style={styles.primaryButtonText}>
-                                    Giao bằng drone
-                                  </Text>
-                                )}
-                              </TouchableOpacity>
-                            ) : isDeliveringStatus(status) ? (
-                              <TouchableOpacity
-                                style={[styles.primaryButton, styles.successButton]}
-                                onPress={() => handleMarkDelivered(order)}
-                                disabled={markingOrderId === order.id}
-                              >
-                                {markingOrderId === order.id ? (
-                                  <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                  <Text style={styles.primaryButtonText}>Đã giao xong</Text>
-                                )}
-                              </TouchableOpacity>
-                            ) : (
-                              <View style={styles.disabledButton}>
-                                <Text style={styles.disabledButtonText}>Đơn đã xử lý</Text>
-                              </View>
-                            )}
                           </View>
                         </View>
-                      </View>
+                      </TouchableOpacity>
                     );
                   })
+
                 )}
               </View>
             </FadeIn>
@@ -623,26 +605,39 @@ export default function RestaurantAdminScreen() {
 
                           {assignedOrder && (
                             <View style={styles.droneOrderBox}>
-                              <Text style={styles.droneOrderTitle}>Đơn #{assignedOrder.id}</Text>
+                              <Text style={styles.droneOrderTitle}>Đơn hàng </Text>
+                              <Text style={styles.droneOrderTitle}> #{assignedOrder.id}</Text>
                               <Text numberOfLines={2} style={styles.droneOrderSubtitle}>
-                                {assignedOrder.customer?.address ?? 'Không rõ địa chỉ'}
+                                Điểm đến {assignedOrder.customer?.address ?? 'Không rõ địa chỉ'}
                               </Text>
                             </View>
                           )}
                         </View>
 
                         <TouchableOpacity
-                          style={styles.droneBtn}
+                          disabled={isDroneDelivering(drone.status)}  // ⛔ KHÔNG CHO NHẤN
+                          style={[
+                            styles.droneBtn,
+                            isDroneDelivering(drone.status) && { backgroundColor: '#C5C5C5' }, // làm mờ nút
+                          ]}
                           onPress={async () => {
+                            if (isDroneDelivering(drone.status)) return; // thêm check phòng lỗi
+
                             try {
-                              const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
+                              const newStatus = isDroneIdle(drone.status)
+                                ? 'Đang bảo trì'
+                                : 'Rảnh';
+
                               await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
                               Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
                             } catch { }
                           }}
                         >
-                          <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
+                          <Text style={[styles.droneBtnText, isDroneDelivering(drone.status) && { color: '#888' }]}>
+                            Đổi trạng thái
+                          </Text>
                         </TouchableOpacity>
+
                       </View>
                     );
                   })
