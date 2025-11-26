@@ -30,7 +30,7 @@ import { useAuth } from '../../libs/AuthContext';
 type UserItem = {
   id: string;
   name?: string;
-  email?: string;
+
   phone?: string;
   status?: string;
   role?: string;
@@ -38,11 +38,19 @@ type UserItem = {
 };
 
 type StatusFilter = 'all' | 'active' | 'banned';
+type RoleFilter = 'all' | 'customer' | 'restaurant' | 'admin';
 
 const STATUS_META: Record<StatusFilter, { label: string; badge: any }> = {
   all: { label: 'Tất cả', badge: {} },
-  active: { label: 'Đang hoạt động', badge: { backgroundColor: '#e8f8ef' } },
-  banned: { label: 'Đã khóa', badge: { backgroundColor: '#fdecec' } },
+  active: { label: 'Active', badge: { backgroundColor: '#e8f8ef' } },
+  banned: { label: 'Banned', badge: { backgroundColor: '#fdecec' } },
+};
+
+const ROLE_META: Record<RoleFilter, { label: string }> = {
+  all: { label: 'Tất cả' },
+  customer: { label: 'customer' },
+  restaurant: { label: 'restaurant' },
+  admin: { label: 'admin' },
 };
 
 export default function AdminUsersScreen() {
@@ -53,20 +61,28 @@ export default function AdminUsersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [users, setUsers] = useState<UserItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
+
   const [editingUser, setEditingUser] = useState<UserItem | null>(null);
   const [nameInput, setNameInput] = useState('');
-  const [emailInput, setEmailInput] = useState('');
+
   const [phoneInput, setPhoneInput] = useState('');
   const [saving, setSaving] = useState(false);
 
+  /** LỌC USER THEO STATUS + ROLE */
   const filteredUsers = useMemo(
     () =>
-      users.filter(
-        (u) => statusFilter === 'all' || (u.status ?? 'active') === statusFilter
-      ),
-    [users, statusFilter]
+      users.filter((u) => {
+        const st = (u.status ?? 'active') as StatusFilter;
+        const rl = (u.role ?? 'customer') as RoleFilter;
+        const okStatus = statusFilter === 'all' || st === statusFilter;
+        const okRole = roleFilter === 'all' || rl === roleFilter;
+        return okStatus && okRole;
+      }),
+    [users, statusFilter, roleFilter]
   );
 
+  /** LOAD USERS */
   const loadUsers = useCallback(async () => {
     setRefreshing(true);
     try {
@@ -82,10 +98,10 @@ export default function AdminUsersScreen() {
         return {
           id: d.id,
           name,
-          email: raw.email ?? '',
+
           phone: raw.phonenumber ?? raw.phone ?? '',
           status: raw.status ?? 'active',
-          role: raw.role ?? 'user',
+          role: raw.role ?? 'customer',
           restaurantId: raw.restaurantId ?? raw.restaurant?.id ?? null,
         } as UserItem;
       });
@@ -105,12 +121,12 @@ export default function AdminUsersScreen() {
       return;
     }
     loadUsers();
-  }, [user, loading, loadUsers]);
+  }, [user, loading, loadUsers, router]);
 
   const openEditUser = useCallback((target: UserItem) => {
     setEditingUser(target);
     setNameInput(target.name ?? '');
-    setEmailInput(target.email ?? '');
+
     setPhoneInput(target.phone ?? '');
   }, []);
 
@@ -163,7 +179,7 @@ export default function AdminUsersScreen() {
   const handleSaveUser = useCallback(async () => {
     if (!editingUser) return;
     const trimmedName = nameInput.trim();
-    const trimmedEmail = emailInput.trim();
+
     const trimmedPhone = phoneInput.trim();
 
     if (!trimmedName) {
@@ -177,7 +193,7 @@ export default function AdminUsersScreen() {
         name: trimmedName,
         fullName: trimmedName,
         username: trimmedName,
-        email: trimmedEmail,
+
         phonenumber: trimmedPhone,
         phone: trimmedPhone,
       });
@@ -194,12 +210,13 @@ export default function AdminUsersScreen() {
     } finally {
       setSaving(false);
     }
-  }, [db, editingUser, nameInput, emailInput, phoneInput, loadUsers]);
+  }, [db, editingUser, nameInput, phoneInput, loadUsers]);
 
   if (loading || !user || user.role !== 'admin') return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() =>
@@ -214,12 +231,9 @@ export default function AdminUsersScreen() {
         <View style={{ width: 32 }} />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterRow}
-      >
-        {(['all', 'active', 'banned'] as const).map((key) => (
+      {/* FILTER STATUS */}
+      <View style={styles.filterRow}>
+        {(['all', 'active', 'banned'] as StatusFilter[]).map((key) => (
           <TouchableOpacity
             key={key}
             style={[
@@ -238,8 +252,34 @@ export default function AdminUsersScreen() {
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
+      {/* FILTER ROLE */}
+      <View style={[styles.filterRow, { marginTop: 8 }]}>
+        {(['all', 'customer', 'restaurant', 'admin'] as RoleFilter[]).map(
+          (key) => (
+            <TouchableOpacity
+              key={key}
+              style={[
+                styles.filterChip,
+                roleFilter === key && styles.filterChipRoleActive,
+              ]}
+              onPress={() => setRoleFilter(key)}
+            >
+              <Text
+                style={[
+                  styles.filterChipText,
+                  roleFilter === key && styles.filterChipTextRoleActive,
+                ]}
+              >
+                {ROLE_META[key].label}
+              </Text>
+            </TouchableOpacity>
+          )
+        )}
+      </View>
+
+      {/* LIST USERS */}
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={loadUsers} />
@@ -254,13 +294,11 @@ export default function AdminUsersScreen() {
               </View>
 
               <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardSubtitle}>
-                  {item.email || 'Chưa có email'}
-                </Text>
+                <Text style={styles.cardTitle}>Tên: {item.name}</Text>
+
 
                 {item.phone ? (
-                  <Text style={styles.cardSubtitle}>{item.phone}</Text>
+                  <Text style={styles.cardSubtitle}>Số điện thoại: {item.phone}</Text>
                 ) : null}
               </View>
 
@@ -343,6 +381,7 @@ export default function AdminUsersScreen() {
         )}
       </ScrollView>
 
+      {/* MODAL EDIT USER */}
       <Modal
         visible={!!editingUser}
         transparent
@@ -367,14 +406,7 @@ export default function AdminUsersScreen() {
               placeholderTextColor="#9ca3af"
             />
 
-            <TextInput
-              style={styles.modalInput}
-              value={emailInput}
-              onChangeText={setEmailInput}
-              placeholder="Email"
-              placeholderTextColor="#9ca3af"
-              keyboardType="email-address"
-            />
+
 
             <TextInput
               style={styles.modalInput}
@@ -410,6 +442,7 @@ export default function AdminUsersScreen() {
   );
 }
 
+/* ------- styles giữ nguyên như bạn gửi, chỉ dùng với View thay vì ScrollView horizontal ------- */
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#f6fffa' },
 
@@ -440,20 +473,22 @@ const styles = StyleSheet.create({
   },
 
   filterRow: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 5,
     paddingTop: 10,
     paddingBottom: 4,
-    gap: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 
   filterChip: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: '#d9e9df',
     backgroundColor: '#fff',
-    marginRight: 8,
+    marginRight: 3,
+    alignSelf: 'center',
   },
 
   filterChipActive: {
@@ -468,6 +503,15 @@ const styles = StyleSheet.create({
 
   filterChipTextActive: {
     color: '#007045',
+  },
+
+  filterChipRoleActive: {
+    backgroundColor: '#FFF4E0',
+    borderColor: '#FFA726',
+  },
+
+  filterChipTextRoleActive: {
+    color: '#FF7800',
   },
 
   listContent: {
@@ -519,7 +563,6 @@ const styles = StyleSheet.create({
 
   roleText: {
     fontWeight: '700',
-    color: '#0b1f15',
   },
 
   userMetaRow: {

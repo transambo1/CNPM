@@ -6,7 +6,6 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Pressable,
   Text,
   TextInput,
   TouchableOpacity,
@@ -29,7 +28,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { app } from '../libs/firebase';
 import { useAuth } from '../libs/AuthContext';
 
-/* ========= TYPES ========= */
 type OrderItem = { id: string; name?: string; quantity?: number };
 type OrderRecord = {
   id: string;
@@ -49,28 +47,24 @@ type DroneRecord = {
   currentOrderId?: string | null;
 };
 
-type ViewMode = 'all' | 'processing' | 'delivering' | 'delivered' | 'drones';
+type AdminTab = 'overview' | 'orders' | 'drones' | 'products';
+type OrderFilter = 'all' | 'processing' | 'delivering' | 'delivered';
 type TimeFilter = 'all' | '24h' | '7d' | '30d';
 type DroneFilter = 'idle' | 'delivering' | 'maintaining';
 
-/* ========= HELPERS ========= */
 const normalizeStatus = (value?: string | null) => (value ?? '').toLowerCase();
 
 const parseTimestamp = (v: any): Date | null => {
   if (!v) return null;
   if (v instanceof Date) return v;
   if (v instanceof Timestamp) return v.toDate();
-  if (typeof v === 'object' && typeof v.seconds === 'number')
-    return new Date(v.seconds * 1000);
+  if (typeof v === 'object' && typeof v.seconds === 'number') return new Date(v.seconds * 1000);
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-const formatCurrency = (v?: number | null) =>
-  `${Number(v ?? 0).toLocaleString('vi-VN')} đ`;
-
-const formatDateTime = (v?: Date | null) =>
-  v ? v.toLocaleString('vi-VN') : '';
+const formatCurrency = (v?: number | null) => `${Number(v ?? 0).toLocaleString('vi-VN')} đ`;
+const formatDateTime = (v?: Date | null) => (v ? v.toLocaleString('vi-VN') : '');
 
 const isProcessingStatus = (s?: string) =>
   normalizeStatus(s).includes('cho') ||
@@ -90,19 +84,13 @@ const isDeliveredStatus = (s?: string) =>
   normalizeStatus(s).includes('đã giao') ||
   normalizeStatus(s).includes('delivered');
 
-const isDroneIdle = (s?: string) =>
-  ['ranh', 'rảnh', 'idle', 'available', ''].includes(normalizeStatus(s));
-
-const isDroneDelivering = (s?: string) =>
-  normalizeStatus(s).includes('giao') ||
-  normalizeStatus(s).includes('deliver');
-
+const isDroneIdle = (s?: string) => ['ranh', 'rảnh', 'idle', 'available', ''].includes(normalizeStatus(s));
+const isDroneDelivering = (s?: string) => normalizeStatus(s).includes('giao') || normalizeStatus(s).includes('deliver');
 const isDroneMaintaining = (s?: string) =>
   normalizeStatus(s).includes('bao tri') ||
   normalizeStatus(s).includes('bảo trì') ||
   normalizeStatus(s).includes('maintain');
 
-/* ========= FADE ========= */
 function FadeIn({ children, depsKey }: { children: React.ReactNode; depsKey: string }) {
   const opacity = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -112,19 +100,19 @@ function FadeIn({ children, depsKey }: { children: React.ReactNode; depsKey: str
   return <Animated.View style={{ opacity }}>{children}</Animated.View>;
 }
 
-/* ========= MAIN SCREEN ========= */
 export default function RestaurantAdminScreen() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
   const db = useMemo(() => getFirestore(app), []);
 
-  /* ========= STATES ========= */
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [drones, setDrones] = useState<DroneRecord[]>([]);
 
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [dronesLoaded, setDronesLoaded] = useState(false);
 
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
   const [pickerOrder, setPickerOrder] = useState<OrderRecord | null>(null);
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
   const [markingOrderId, setMarkingOrderId] = useState<string | null>(null);
@@ -133,10 +121,6 @@ export default function RestaurantAdminScreen() {
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [droneFilter, setDroneFilter] = useState<DroneFilter>('idle');
 
-  const [viewMode, setViewMode] = useState<ViewMode>('all');
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  /* ========= AUTH GUARD ========= */
   useEffect(() => {
     if (loading) return;
     if (!user) {
@@ -144,9 +128,8 @@ export default function RestaurantAdminScreen() {
       return;
     }
     if (user.role !== 'restaurant') router.replace('/');
-  }, [loading, user]);
+  }, [loading, user, router]);
 
-  /* ========= FIRESTORE SUBSCRIBE ========= */
   useEffect(() => {
     if (!user?.restaurantId) {
       setOrders([]);
@@ -207,7 +190,6 @@ export default function RestaurantAdminScreen() {
     };
   }, [db, user?.restaurantId]);
 
-  /* ========= FILTERED LISTS ========= */
   const availableDrones = useMemo(
     () => drones.filter((d) => isDroneIdle(d.status) && !d.currentOrderId),
     [drones]
@@ -221,6 +203,27 @@ export default function RestaurantAdminScreen() {
       return true;
     });
   }, [drones, droneFilter]);
+
+  const overviewStats = useMemo(() => {
+    const delivered = orders.filter((o) => isDeliveredStatus(o.status)).length;
+    const delivering = orders.filter((o) => isDeliveringStatus(o.status)).length;
+    const processing = orders.filter((o) => isProcessingStatus(o.status)).length;
+    const revenue = orders
+      .filter((o) => isDeliveredStatus(o.status))
+      .reduce((sum, o) => sum + Number(o.total ?? o.totalPrice ?? 0), 0);
+    const droneIdle = drones.filter((d) => isDroneIdle(d.status)).length;
+
+    return {
+      orders: orders.length,
+      delivered,
+      delivering,
+      processing,
+      revenue,
+      drones: drones.length,
+      droneIdle,
+      droneBusy: Math.max(0, drones.length - droneIdle),
+    };
+  }, [orders, drones]);
 
   const filteredOrders = useMemo(() => {
     const term = search.toLowerCase().trim();
@@ -242,17 +245,16 @@ export default function RestaurantAdminScreen() {
       return matches && inRange(o.createdAt);
     });
 
-    if (viewMode === 'processing') return list.filter((o) => isProcessingStatus(o.status));
-    if (viewMode === 'delivering') return list.filter((o) => isDeliveringStatus(o.status));
-    if (viewMode === 'delivered') return list.filter((o) => isDeliveredStatus(o.status));
+    if (orderFilter === 'processing') return list.filter((o) => isProcessingStatus(o.status));
+    if (orderFilter === 'delivering') return list.filter((o) => isDeliveringStatus(o.status));
+    if (orderFilter === 'delivered') return list.filter((o) => isDeliveredStatus(o.status));
     return list;
-  }, [orders, search, timeFilter, viewMode]);
+  }, [orders, search, timeFilter, orderFilter]);
 
   const isLoading = loading || !ordersLoaded || !dronesLoaded;
-  /* ========= ACTIONS ========= */
+
   const handleLogout = useCallback(() => {
-    setMenuVisible(false);
-    Alert.alert('Đăng xuất', 'Bạn có chắc chắn muốn đăng xuất?', [
+    Alert.alert('Đăng xuất', 'Bạn chắc chắn muốn đăng xuất?', [
       { text: 'Huỷ', style: 'cancel' },
       {
         text: 'Đăng xuất',
@@ -265,7 +267,7 @@ export default function RestaurantAdminScreen() {
         },
       },
     ]);
-  }, []);
+  }, [logout, router]);
 
   const handleAssignDrone = useCallback(async (drone: DroneRecord) => {
     if (!pickerOrder) return;
@@ -291,7 +293,7 @@ export default function RestaurantAdminScreen() {
     } finally {
       setAssigningOrderId(null);
     }
-  }, [pickerOrder]);
+  }, [pickerOrder, db]);
 
   const handleMarkDelivered = useCallback(async (order: OrderRecord) => {
     setMarkingOrderId(order.id);
@@ -315,9 +317,16 @@ export default function RestaurantAdminScreen() {
     } finally {
       setMarkingOrderId(null);
     }
-  }, []);
+  }, [db]);
 
-  /* ========= RENDER ========= */
+  const handleSelectTab = useCallback((tab: AdminTab) => {
+    if (tab === 'products') {
+      router.push('/restaurant-admin-products');
+      return;
+    }
+    setActiveTab(tab);
+  }, [router]);
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.centered}>
@@ -326,281 +335,346 @@ export default function RestaurantAdminScreen() {
     );
   }
 
-  const sectionMeta: Record<ViewMode, { title: string; count: number }> = {
-    all: { title: 'Tổng tất cả', count: filteredOrders.length },
+  const orderSectionMeta: Record<OrderFilter, { title: string; count: number }> = {
+    all: { title: 'Tất cả đơn', count: filteredOrders.length },
     processing: { title: 'Đơn đang xử lý', count: filteredOrders.length },
     delivering: { title: 'Đơn đang giao', count: filteredOrders.length },
     delivered: { title: 'Đơn đã giao', count: filteredOrders.length },
-    drones: { title: 'Quản lý Drone', count: filteredDrones.length },
   };
 
-  const fadeKey = `${viewMode}-${filteredOrders.length}-${filteredDrones.length}-${droneFilter}`;
+  const fadeKey = `${activeTab}-${orderFilter}-${filteredOrders.length}-${filteredDrones.length}-${droneFilter}`;
 
-  /* ========= MAIN UI ========= */
+
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Quản lý nhà hàng</Text>
+          <Text style={styles.subtitle}>{user?.restaurantName ?? 'Nhà hàng của bạn'}</Text>
+        </View>
+
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={22} color="#1A1C1E" />
+        </TouchableOpacity>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
-
-        {/* HEADER */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.title}>Quản lý nhà hàng</Text>
-            <Text style={styles.subtitle}>{user?.restaurantName ?? 'Nhà hàng của bạn'}</Text>
-          </View>
-
-          <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
-            <Ionicons name="menu-outline" size={26} color="#1A1C1E" />
-          </TouchableOpacity>
-        </View>
-
-        {/* FILTERS */}
-        <View style={styles.filterBlock}>
-          <View style={styles.searchBox}>
-            <Ionicons name="search" size={16} color="#6C6F75" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Mã đơn, tên khách, địa chỉ"
-              placeholderTextColor="#9CA3AF"
-              value={search}
-              onChangeText={setSearch}
-            />
-          </View>
-
-          {/* ORDER STATUS FILTERS */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {(['all', 'processing', 'delivering', 'delivered'] as ViewMode[]).map((v) => (
-              <TouchableOpacity
-                key={v}
-                style={[styles.chip, viewMode === v && styles.chipActive]}
-                onPress={() => setViewMode(v)}
-              >
-                <Text style={[styles.chipText, viewMode === v && styles.chipTextActive]}>
-                  {v === 'all'
-                    ? 'Tất cả đơn'
-                    : v === 'processing'
-                      ? 'Đang xử lý'
-                      : v === 'delivering'
-                        ? 'Đang giao'
-                        : 'Đã giao'}
+        {activeTab === 'overview' && (
+          <FadeIn depsKey={`overview-${overviewStats.orders}-${overviewStats.revenue}-${overviewStats.drones}`}>
+            <View style={styles.overviewGrid}>
+              <View style={styles.overviewCard}>
+                <Text style={styles.overviewLabel}>Tổng đơn</Text>
+                <Text style={styles.overviewValue}>{overviewStats.orders}</Text>
+                <Text style={styles.overviewHint}>
+                  Đã giao {overviewStats.delivered} | Đang giao {overviewStats.delivering}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-
-          {/* TIME FILTER */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-            {(['all', '24h', '7d', '30d'] as TimeFilter[]).map((tf) => (
-              <TouchableOpacity
-                key={tf}
-                style={[styles.chip, timeFilter === tf && styles.chipActive]}
-                onPress={() => setTimeFilter(tf)}
-              >
-                <Text style={[styles.chipText, timeFilter === tf && styles.chipTextActive]}>
-                  {tf === 'all'
-                    ? 'Tất cả thời gian'
-                    : tf === '24h'
-                      ? '24 giờ'
-                      : tf === '7d'
-                        ? '7 ngày'
-                        : '30 ngày'}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {/* SECTION HEADER */}
-        <FadeIn depsKey={fadeKey}>
-          <View style={styles.sectionHeaderCard}>
-            <Text style={styles.sectionHeaderText}>
-              {sectionMeta[viewMode].title} —{' '}
-              {viewMode === 'drones'
-                ? `${sectionMeta[viewMode].count} drone`
-                : `${sectionMeta[viewMode].count} đơn`}
-            </Text>
-          </View>
-
-          {/* DRONE FILTER (WHEN VIEWMODE = DRONES) */}
-          {viewMode === 'drones' && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-              {(['idle', 'delivering', 'maintaining'] as DroneFilter[]).map((df) => (
-                <TouchableOpacity
-                  key={df}
-                  style={[styles.chip, droneFilter === df && styles.chipActive]}
-                  onPress={() => setDroneFilter(df)}
-                >
-                  <Text style={[styles.chipText, droneFilter === df && styles.chipTextActive]}>
-                    {df === 'idle'
-                      ? 'Rảnh'
-                      : df === 'delivering'
-                        ? 'Đang giao'
-                        : 'Bảo trì'}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-
-          {/* DRONE LIST */}
-          {viewMode === 'drones' ? (
-            <View style={{ marginTop: 10 }}>
-              {filteredDrones.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Ionicons name="airplane-outline" size={48} color="#999" />
-                  <Text style={styles.emptyTitle}>Không có drone phù hợp</Text>
-                  <Text style={styles.emptySubtitle}>Hãy chọn bộ lọc khác.</Text>
-                </View>
-              ) : (
-                filteredDrones.map((drone) => {
-                  const assignedOrder = orders.find((o) => o.id === drone.currentOrderId);
-
-                  return (
-                    <View key={drone.id} style={styles.droneCard}>
-                      <View style={{ flex: 1 }}>
-                        <Text style={styles.droneName}>{drone.name}</Text>
-                        <Text style={styles.droneSub}>
-                          Pin: {drone.battery ?? 0}% | Trạng thái: {drone.status ?? 'Không rõ'}
-                        </Text>
-
-                        {assignedOrder && (
-                          <View style={styles.droneOrderBox}>
-                            <Text style={styles.droneOrderTitle}>Đơn #{assignedOrder.id}</Text>
-                            <Text numberOfLines={2} style={styles.droneOrderSubtitle}>
-                              {assignedOrder.customer?.address ?? 'Không rõ địa chỉ'}
-                            </Text>
-                          </View>
-                        )}
-                      </View>
-
-                      <TouchableOpacity
-                        style={styles.droneBtn}
-                        onPress={async () => {
-                          try {
-                            const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
-                            await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
-                            Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
-                          } catch { }
-                        }}
-                      >
-                        <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
-                      </TouchableOpacity>
-                    </View>
-                  );
-                })
-              )}
+              </View>
+              <View style={styles.overviewCard}>
+                <Text style={styles.overviewLabel}>Doanh thu</Text>
+                <Text style={styles.overviewValue}>{formatCurrency(overviewStats.revenue)}</Text>
+                <Text style={styles.overviewHint}>Tính trên đơn đã giao</Text>
+              </View>
             </View>
-          ) : (
-            /* ORDER LIST */
-            <View style={{ marginTop: 10 }}>
-              {filteredOrders.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Ionicons name="receipt-outline" size={48} color="#999" />
-                  <Text style={styles.emptyTitle}>Không có đơn hàng phù hợp</Text>
-                  <Text style={styles.emptySubtitle}>Hãy thử thay đổi bộ lọc.</Text>
-                </View>
-              ) : (
-                filteredOrders.map((order) => {
-                  const assignedDrone = drones.find((d) => d.id === order.droneId);
-                  const status = order.status ?? '';
 
-                  const canAssign =
-                    !isDeliveredStatus(status) && !isDeliveringStatus(status);
+            <View style={styles.overviewGrid}>
+              <View style={styles.overviewCard}>
+                <Text style={styles.overviewLabel}>Xử lý</Text>
+                <Text style={styles.overviewValue}>{overviewStats.processing} chờ xử lý</Text>
+                <Text style={styles.overviewHint}>Kiểm tra để gán drone sớm</Text>
+              </View>
+              <View style={styles.overviewCard}>
+                <Text style={styles.overviewLabel}>Drone</Text>
+                <Text style={styles.overviewValue}>{overviewStats.drones} drone</Text>
+                <Text style={styles.overviewHint}>Rảnh {overviewStats.droneIdle} | Bận {overviewStats.droneBusy}</Text>
+              </View>
+            </View>
 
-                  return (
-                    <View key={order.id} style={styles.orderCard}>
-                      <View style={styles.orderHeaderRow}>
-                        <View>
-                          <Text style={styles.orderCode}>Đơn #{order.id}</Text>
-                          <Text style={styles.orderDate}>{formatDateTime(order.createdAt)}</Text>
+            <View style={styles.quickActions}>
+              <Text style={styles.sectionHeaderText}>Chuyển nhanh</Text>
+              <View style={styles.quickActionRow}>
+                <TouchableOpacity style={styles.quickAction} onPress={() => setActiveTab('orders')}>
+                  <Ionicons name="receipt-outline" size={18} color="#007C35" />
+                  <Text style={styles.quickActionText}>Đơn hàng</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.quickAction} onPress={() => setActiveTab('drones')}>
+                  <Ionicons name="airplane-outline" size={18} color="#007C35" />
+                  <Text style={styles.quickActionText}>Drone</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.quickAction} onPress={() => handleSelectTab('products')}>
+                  <Ionicons name="cube-outline" size={18} color="#007C35" />
+                  <Text style={styles.quickActionText}>Sản phẩm</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </FadeIn>
+        )}
+
+        {activeTab === 'orders' && (
+          <>
+            <View style={styles.filterBlock}>
+              <View style={styles.searchBox}>
+                <Ionicons name="search" size={16} color="#6C6F75" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Mã đơn, tên khách, địa chỉ"
+                  placeholderTextColor="#9CA3AF"
+                  value={search}
+                  onChangeText={setSearch}
+                />
+              </View>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                {(['all', 'processing', 'delivering', 'delivered'] as OrderFilter[]).map((v) => (
+                  <TouchableOpacity
+                    key={v}
+                    style={[styles.chip, orderFilter === v && styles.chipActive]}
+                    onPress={() => setOrderFilter(v)}
+                  >
+                    <Text style={[styles.chipText, orderFilter === v && styles.chipTextActive]}>
+                      {v === 'all'
+                        ? 'Tất cả'
+                        : v === 'processing'
+                          ? 'Đang xử lý'
+                          : v === 'delivering'
+                            ? 'Đang giao'
+                            : 'Đã giao'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                {(['all', '24h', '7d', '30d'] as TimeFilter[]).map((tf) => (
+                  <TouchableOpacity
+                    key={tf}
+                    style={[styles.chip, timeFilter === tf && styles.chipActive]}
+                    onPress={() => setTimeFilter(tf)}
+                  >
+                    <Text style={[styles.chipText, timeFilter === tf && styles.chipTextActive]}>
+                      {tf === 'all'
+                        ? 'Tất cả thời gian'
+                        : tf === '24h'
+                          ? '24 giờ'
+                          : tf === '7d'
+                            ? '7 ngày'
+                            : '30 ngày'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+
+            <FadeIn depsKey={fadeKey}>
+              <View style={styles.sectionHeaderCard}>
+                <Text style={styles.sectionHeaderText}>
+                  {orderSectionMeta[orderFilter].title} - {orderSectionMeta[orderFilter].count} đơn
+                </Text>
+              </View>
+
+              <View style={{ marginTop: 10 }}>
+                {filteredOrders.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="receipt-outline" size={48} color="#999" />
+                    <Text style={styles.emptyTitle}>Không có đơn hàng phù hợp</Text>
+                    <Text style={styles.emptySubtitle}>Thử thay đổi bộ lọc.</Text>
+                  </View>
+                ) : (
+                  filteredOrders.map((order) => {
+                    const assignedDrone = drones.find((d) => d.id === order.droneId);
+                    const status = order.status ?? '';
+                    const canAssign = !isDeliveredStatus(status) && !isDeliveringStatus(status);
+
+                    return (
+                      <View key={order.id} style={styles.orderCard}>
+                        <View style={styles.orderHeaderRow}>
+                          <View>
+                            <Text style={styles.orderCode}>Đơn #{order.id}</Text>
+                            <Text style={styles.orderDate}>{formatDateTime(order.createdAt)}</Text>
+                          </View>
+
+                          <View style={[styles.statusBadge, getStatusStyle(status)]}>
+                            <Text style={styles.statusText}>{status}</Text>
+                          </View>
                         </View>
 
-                        <View style={[styles.statusBadge, getStatusStyle(status)]}>
-                          <Text style={styles.statusText}>{status}</Text>
+                        <View style={styles.orderInfoRow}>
+                          <Ionicons name="person-outline" size={18} color="#555" />
+                          <View style={styles.orderInfoText}>
+                            <Text style={styles.orderLabel}>{order.customer?.name ?? 'Khách lẻ'}</Text>
+                            <Text style={styles.orderSubLabel}>{order.customer?.phone}</Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.orderInfoRow}>
+                          <Ionicons name="location-outline" size={18} color="#555" />
+                          <View style={styles.orderInfoText}>
+                            <Text style={styles.orderLabel}>{order.customer?.address}</Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.orderFooter}>
+                          <View>
+                            <Text style={styles.totalLabel}>Tổng tiền</Text>
+                            <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
+                          </View>
+
+                          <View style={styles.actionColumn}>
+                            {assignedDrone ? (
+                              <View style={styles.droneTag}>
+                                <Ionicons name="airplane-outline" size={16} color="#00A74F" />
+                                <Text style={styles.droneTagText}>
+                                  {assignedDrone.name} - {assignedDrone.battery ?? 0}%
+                                </Text>
+                              </View>
+                            ) : (
+                              <View style={styles.droneTagMuted}>
+                                <Ionicons name="airplane-outline" size={16} color="#999" />
+                                <Text style={styles.droneMutedText}>Chưa có drone</Text>
+                              </View>
+                            )}
+
+                            {canAssign ? (
+                              <TouchableOpacity
+                                style={styles.primaryButton}
+                                onPress={() => setPickerOrder(order)}
+                                disabled={assigningOrderId === order.id}
+                              >
+                                {assigningOrderId === order.id ? (
+                                  <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                  <Text style={styles.primaryButtonText}>
+                                    Giao bằng drone
+                                  </Text>
+                                )}
+                              </TouchableOpacity>
+                            ) : isDeliveringStatus(status) ? (
+                              <TouchableOpacity
+                                style={[styles.primaryButton, styles.successButton]}
+                                onPress={() => handleMarkDelivered(order)}
+                                disabled={markingOrderId === order.id}
+                              >
+                                {markingOrderId === order.id ? (
+                                  <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                  <Text style={styles.primaryButtonText}>Đã giao xong</Text>
+                                )}
+                              </TouchableOpacity>
+                            ) : (
+                              <View style={styles.disabledButton}>
+                                <Text style={styles.disabledButtonText}>Đơn đã xử lý</Text>
+                              </View>
+                            )}
+                          </View>
                         </View>
                       </View>
+                    );
+                  })
+                )}
+              </View>
+            </FadeIn>
+          </>
+        )}
 
-                      <View style={styles.orderInfoRow}>
-                        <Ionicons name="person-outline" size={18} color="#555" />
-                        <View style={styles.orderInfoText}>
-                          <Text style={styles.orderLabel}>{order.customer?.name ?? 'Khách lẻ'}</Text>
-                          <Text style={styles.orderSubLabel}>{order.customer?.phone}</Text>
-                        </View>
-                      </View>
+        {activeTab === 'drones' && (
+          <>
+            <View style={styles.filterBlock}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                {(['idle', 'delivering', 'maintaining'] as DroneFilter[]).map((df) => (
+                  <TouchableOpacity
+                    key={df}
+                    style={[styles.chip, droneFilter === df && styles.chipActive]}
+                    onPress={() => setDroneFilter(df)}
+                  >
+                    <Text style={[styles.chipText, droneFilter === df && styles.chipTextActive]}>
+                      {df === 'idle'
+                        ? 'Rảnh'
+                        : df === 'delivering'
+                          ? 'Đang giao'
+                          : 'Bảo trì'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
 
-                      <View style={styles.orderInfoRow}>
-                        <Ionicons name="location-outline" size={18} color="#555" />
-                        <View style={styles.orderInfoText}>
-                          <Text style={styles.orderLabel}>{order.customer?.address}</Text>
-                        </View>
-                      </View>
+            <FadeIn depsKey={fadeKey}>
+              <View style={styles.sectionHeaderCard}>
+                <Text style={styles.sectionHeaderText}>Quản lý {filteredDrones.length} drone</Text>
+              </View>
 
-                      <View style={styles.orderFooter}>
-                        <View>
-                          <Text style={styles.totalLabel}>Tổng tiền</Text>
-                          <Text style={styles.totalValue}>{formatCurrency(order.total)}</Text>
-                        </View>
+              <View style={{ marginTop: 10 }}>
+                {filteredDrones.length === 0 ? (
+                  <View style={styles.emptyState}>
+                    <Ionicons name="airplane-outline" size={48} color="#999" />
+                    <Text style={styles.emptyTitle}>Không có drone phù hợp</Text>
+                    <Text style={styles.emptySubtitle}>Hãy chọn bộ lọc khác.</Text>
+                  </View>
+                ) : (
+                  filteredDrones.map((drone) => {
+                    const assignedOrder = orders.find((o) => o.id === drone.currentOrderId);
 
-                        <View style={styles.actionColumn}>
+                    return (
+                      <View key={drone.id} style={styles.droneCard}>
+                        <View style={{ flex: 1 }}>
+                          <Text style={styles.droneName}>{drone.name}</Text>
+                          <Text style={styles.droneSub}>
+                            Pin: {drone.battery ?? 0}% | Trạng thái: {drone.status ?? 'Không rõ'}
+                          </Text>
 
-                          {/* Drone Assigned */}
-                          {assignedDrone ? (
-                            <View style={styles.droneTag}>
-                              <Ionicons name="airplane-outline" size={16} color="#00A74F" />
-                              <Text style={styles.droneTagText}>
-                                {assignedDrone.name} — {assignedDrone.battery ?? 0}%
+                          {assignedOrder && (
+                            <View style={styles.droneOrderBox}>
+                              <Text style={styles.droneOrderTitle}>Đơn #{assignedOrder.id}</Text>
+                              <Text numberOfLines={2} style={styles.droneOrderSubtitle}>
+                                {assignedOrder.customer?.address ?? 'Không rõ địa chỉ'}
                               </Text>
                             </View>
-                          ) : (
-                            <View style={styles.droneTagMuted}>
-                              <Ionicons name="airplane-outline" size={16} color="#999" />
-                              <Text style={styles.droneMutedText}>Chưa có drone</Text>
-                            </View>
-                          )}
-
-                          {/* ACTIONS */}
-                          {canAssign ? (
-                            <TouchableOpacity
-                              style={styles.primaryButton}
-                              onPress={() => setPickerOrder(order)}
-                              disabled={assigningOrderId === order.id}
-                            >
-                              {assigningOrderId === order.id ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                              ) : (
-                                <Text style={styles.primaryButtonText}>
-                                  Giao bằng drone
-                                </Text>
-                              )}
-                            </TouchableOpacity>
-                          ) : isDeliveringStatus(status) ? (
-                            <TouchableOpacity
-                              style={[styles.primaryButton, styles.successButton]}
-                              onPress={() => handleMarkDelivered(order)}
-                              disabled={markingOrderId === order.id}
-                            >
-                              {markingOrderId === order.id ? (
-                                <ActivityIndicator size="small" color="#fff" />
-                              ) : (
-                                <Text style={styles.primaryButtonText}>Đã giao xong</Text>
-                              )}
-                            </TouchableOpacity>
-                          ) : (
-                            <View style={styles.disabledButton}>
-                              <Text style={styles.disabledButtonText}>Đơn đã xử lý</Text>
-                            </View>
                           )}
                         </View>
+
+                        <TouchableOpacity
+                          style={styles.droneBtn}
+                          onPress={async () => {
+                            try {
+                              const newStatus = isDroneIdle(drone.status) ? 'Đang bảo trì' : 'Rảnh';
+                              await updateDoc(doc(db, 'drones', drone.id), { status: newStatus });
+                              Alert.alert('Cập nhật', `Trạng thái drone đã đổi thành "${newStatus}"`);
+                            } catch { }
+                          }}
+                        >
+                          <Text style={styles.droneBtnText}>Đổi trạng thái</Text>
+                        </TouchableOpacity>
                       </View>
-                    </View>
-                  );
-                })
-              )}
-            </View>
-          )}
-        </FadeIn>
+                    );
+                  })
+                )}
+              </View>
+            </FadeIn>
+          </>
+        )}
       </ScrollView>
 
-      {/* DRONE PICKER MODAL */}
+      <View style={styles.bottomTabBar}>
+        {[{ key: 'overview', label: 'Tổng quan', icon: 'grid-outline' },
+        { key: 'orders', label: 'Đơn hàng', icon: 'receipt-outline' },
+        { key: 'drones', label: 'Drone', icon: 'airplane-outline' },
+        { key: 'products', label: 'Sản phẩm', icon: 'cube-outline' }].map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={styles.bottomTabItem}
+            onPress={() => handleSelectTab(tab.key as AdminTab)}
+          >
+            <Ionicons
+              name={tab.icon as any}
+              size={22}
+              color={activeTab === tab.key ? '#00A74F' : '#6C6F75'}
+            />
+            <Text style={[styles.bottomTabLabel, activeTab === tab.key && styles.bottomTabLabelActive]}>
+              {tab.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       <Modal visible={!!pickerOrder} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
@@ -621,7 +695,7 @@ export default function RestaurantAdminScreen() {
                   <View>
                     <Text style={styles.modalOptionTitle}>{d.name}</Text>
                     <Text style={styles.modalOptionSubtitle}>
-                      Pin {d.battery}% — {d.status}
+                      Pin {d.battery}% - {d.status}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={18} color="#00A74F" />
@@ -638,47 +712,9 @@ export default function RestaurantAdminScreen() {
           </View>
         </View>
       </Modal>
-
-      {/* MENU MODAL */}
-      <Modal visible={menuVisible} transparent animationType="fade">
-        <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
-          <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
-            <Text style={styles.menuTitle}>Tuỳ chọn</Text>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setViewMode('all'); setMenuVisible(false); }}>
-              <Text style={styles.menuItemText}>Tổng đơn hàng</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setViewMode('processing'); setMenuVisible(false); }}>
-              <Text style={styles.menuItemText}>Đơn đang xử lý</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setViewMode('delivering'); setMenuVisible(false); }}>
-              <Text style={styles.menuItemText}>Đơn đang giao</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setViewMode('delivered'); setMenuVisible(false); }}>
-              <Text style={styles.menuItemText}>Đơn đã giao</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.menuItem} onPress={() => { setViewMode('drones'); setMenuVisible(false); }}>
-              <Text style={styles.menuItemText}>Quản lý drone</Text>
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={[styles.menuItem, { backgroundColor: '#FDECEA' }]} onPress={handleLogout}>
-              <Ionicons name="log-out-outline" size={18} color="#E53935" />
-              <Text style={[styles.menuItemText, { color: '#E53935' }]}>Đăng xuất</Text>
-            </TouchableOpacity>
-          </Pressable>
-        </Pressable>
-      </Modal>
-
     </SafeAreaView>
   );
 }
-/* ========= STYLES ========= */
 
 const getStatusStyle = (status: string) => {
   if (isDeliveredStatus(status)) return styles.statusDelivered;
@@ -689,7 +725,6 @@ const getStatusStyle = (status: string) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F7FA' },
-
   centered: {
     flex: 1,
     alignItems: 'center',
@@ -697,15 +732,11 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#F5F7FA',
   },
-
-  scrollContent: { padding: 20, paddingBottom: 40, gap: 16 },
-
-  /* Header */
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  scrollContent: { padding: 20, paddingBottom: 140, gap: 16 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 12 },
   title: { fontSize: 24, fontWeight: '700', color: '#1A1C1E' },
   subtitle: { marginTop: 4, fontSize: 15, color: '#4A4C50' },
-
-  menuButton: {
+  logoutButton: {
     padding: 8,
     backgroundColor: '#fff',
     borderRadius: 999,
@@ -715,10 +746,56 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
     elevation: 2,
   },
-
-  /* Search + Filters */
+  bottomTabBar: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+  },
+  bottomTabItem: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  bottomTabLabel: { color: '#6C6F75', fontWeight: '600', fontSize: 12 },
+  bottomTabLabelActive: { color: '#00A74F' },
+  overviewGrid: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', marginTop: 12 },
+  overviewCard: {
+    flex: 1,
+    minWidth: '45%',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  overviewLabel: { color: '#6C6F75', fontWeight: '600', marginBottom: 6 },
+  overviewValue: { fontSize: 20, fontWeight: '800', color: '#1A1C1E' },
+  overviewHint: { marginTop: 4, color: '#6C6F75' },
+  quickActions: {
+    marginTop: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    gap: 10,
+  },
+  quickActionRow: { flexDirection: 'row', gap: 10 },
+  quickAction: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#E6F6EC',
+  },
+  quickActionText: { color: '#007C35', fontWeight: '700' },
   filterBlock: { gap: 12, marginTop: 12 },
-
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -735,9 +812,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1A1C1E',
   },
-
   chipRow: { flexDirection: 'row', gap: 8, paddingVertical: 4 },
-
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -752,8 +827,6 @@ const styles = StyleSheet.create({
   },
   chipText: { color: '#1A1C1E', fontSize: 13, fontWeight: '600' },
   chipTextActive: { color: '#007C35' },
-
-  /* Section Header */
   sectionHeaderCard: {
     marginTop: 16,
     backgroundColor: '#E6F6EC',
@@ -762,8 +835,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   sectionHeaderText: { color: '#007C35', fontWeight: '700', fontSize: 15 },
-
-  /* Drone list */
   droneCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -780,7 +851,6 @@ const styles = StyleSheet.create({
   },
   droneName: { fontSize: 16, fontWeight: '700', color: '#1A1C1E' },
   droneSub: { color: '#6C6F75', fontSize: 13, marginTop: 4 },
-
   droneOrderBox: {
     marginTop: 8,
     backgroundColor: '#F0F4FF',
@@ -792,11 +862,8 @@ const styles = StyleSheet.create({
   },
   droneOrderTitle: { fontWeight: '700', color: '#111827' },
   droneOrderSubtitle: { color: '#4B5563', fontSize: 13 },
-
   droneBtn: { backgroundColor: '#00A74F', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8 },
   droneBtnText: { color: '#FFF', fontWeight: '600', fontSize: 13 },
-
-  /* Orders */
   orderCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
@@ -812,19 +879,14 @@ const styles = StyleSheet.create({
   orderHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   orderCode: { fontSize: 16, fontWeight: '700', color: '#1A1C1E' },
   orderDate: { marginTop: 2, color: '#6C6F75', fontSize: 13 },
-
   orderInfoRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
   orderInfoText: { flex: 1, gap: 2 },
   orderLabel: { fontSize: 14, fontWeight: '600', color: '#1A1C1E' },
   orderSubLabel: { fontSize: 13, color: '#6C6F75' },
-
   orderFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
-
   totalLabel: { fontSize: 13, color: '#6C6F75' },
   totalValue: { marginTop: 4, fontSize: 18, fontWeight: '700', color: '#1A1C1E' },
-
   actionColumn: { alignItems: 'flex-end', gap: 10 },
-
   droneTag: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -835,7 +897,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   droneTagText: { color: '#007C35', fontWeight: '600', fontSize: 13 },
-
   droneTagMuted: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -846,7 +907,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   droneMutedText: { fontSize: 13, color: '#85888E' },
-
   primaryButton: {
     backgroundColor: '#00A74F',
     borderRadius: 12,
@@ -857,7 +917,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryButtonText: { color: '#FFFFFF', fontWeight: '700' },
-
   successButton: { backgroundColor: '#2E7D32' },
   disabledButton: {
     backgroundColor: '#E0E0E0',
@@ -866,8 +925,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   disabledButtonText: { color: '#8C8C8C', fontWeight: '600' },
-
-  /* Empty state */
   emptyState: {
     alignItems: 'center',
     gap: 12,
@@ -877,8 +934,6 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1A1C1E', textAlign: 'center' },
   emptySubtitle: { fontSize: 13, color: '#6C6F75', textAlign: 'center' },
-
-  /* Modal */
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
@@ -888,10 +943,8 @@ const styles = StyleSheet.create({
   },
   modalContent: { width: '100%', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 20, gap: 12 },
   modalTitle: { fontSize: 18, fontWeight: '700', color: '#1A1C1E' },
-
   modalEmpty: { alignItems: 'center', gap: 12, paddingVertical: 12 },
   modalEmptyText: { fontSize: 14, color: '#6C6F75', textAlign: 'center' },
-
   modalOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -902,7 +955,6 @@ const styles = StyleSheet.create({
   },
   modalOptionTitle: { fontSize: 16, fontWeight: '600', color: '#1A1C1E' },
   modalOptionSubtitle: { fontSize: 13, color: '#6C6F75', marginTop: 4 },
-
   modalCancel: {
     marginTop: 4,
     alignSelf: 'center',
@@ -913,43 +965,10 @@ const styles = StyleSheet.create({
     borderColor: '#00A74F',
   },
   modalCancelText: { color: '#00A74F', fontWeight: '600' },
-
-  /* Menu */
-  menuOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  menuContainer: {
-    width: '80%',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-  },
-  menuTitle: { fontSize: 18, fontWeight: '700', color: '#1A1C1E', marginBottom: 10, textAlign: 'center' },
-
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginBottom: 6,
-    backgroundColor: '#F5F7FA',
-  },
-  menuItemText: { fontSize: 15, fontWeight: '600', color: '#1A1C1E' },
-
-  menuDivider: { height: 1, backgroundColor: '#E0E0E0', marginVertical: 8 },
-
-  /* Status */
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 },
   statusText: { fontSize: 13, fontWeight: '600', color: '#1A1C1E' },
-
   statusProcessing: { backgroundColor: '#FFF7E6' },
   statusDelivering: { backgroundColor: '#E6F0FF' },
   statusDelivered: { backgroundColor: '#E6F6EC' },
   statusPending: { backgroundColor: '#F1F2F4' },
 });
-

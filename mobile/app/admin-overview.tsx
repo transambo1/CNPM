@@ -9,6 +9,7 @@ import {
   Modal,
   Pressable,
 } from 'react-native';
+
 import { useRouter } from 'expo-router';
 import { collection, getDocs, getFirestore } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +24,6 @@ type QuickMenuItem = {
   title: string;
   value: string | number;
   subtitle: string;
-  detail: string;
   route: string;
 };
 
@@ -36,6 +36,7 @@ export default function AdminOverviewScreen() {
   const db = useMemo(() => getFirestore(app), []);
 
   const [refreshing, setRefreshing] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
   const [summary, setSummary] = useState({
     orders: 0,
     users: 0,
@@ -48,7 +49,6 @@ export default function AdminOverviewScreen() {
     droneIdle: 0,
     droneBusy: 0,
   });
-  const [menuVisible, setMenuVisible] = useState(false);
 
   const loadSummary = useCallback(async () => {
     setRefreshing(true);
@@ -63,14 +63,26 @@ export default function AdminOverviewScreen() {
       const orders = ordersSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
       const drones = dronesSnap.docs.map((d) => ({ id: d.id, ...(d.data() as any) }));
 
-      const delivered = orders.filter((o) => (o.status || '').toLowerCase().includes('đã giao') || (o.status || '').toLowerCase().includes('da giao')).length;
-      const delivering = orders.filter((o) => (o.status || '').toLowerCase().includes('đang giao') || (o.status || '').toLowerCase().includes('dang giao')).length;
-      const processing = orders.filter((o) => (o.status || '').toLowerCase().includes('chờ') || (o.status || '').toLowerCase().includes('cho')).length;
+      const delivered = orders.filter((o) =>
+        (o.status || '').toLowerCase().includes('đã giao')
+      ).length;
+
+      const delivering = orders.filter((o) =>
+        (o.status || '').toLowerCase().includes('đang giao')
+      ).length;
+
+      const processing = orders.filter((o) =>
+        (o.status || '').toLowerCase().includes('chờ')
+      ).length;
+
       const revenue = orders
-        .filter((o) => (o.status || '').toLowerCase().includes('đã giao') || (o.status || '').toLowerCase().includes('da giao'))
+        .filter((o) => (o.status || '').toLowerCase().includes('đã giao'))
         .reduce((sum, o) => sum + Number(o.total || o.totalPrice || 0), 0);
 
-      const droneIdle = drones.filter((d) => ['rảnh', 'ranh', 'idle', 'available', ''].includes((d.status || '').toLowerCase())).length;
+      const droneIdle = drones.filter((d) =>
+        ['rảnh', 'idle', 'available'].includes((d.status || '').toLowerCase())
+      ).length;
+
       const droneBusy = drones.length - droneIdle;
 
       setSummary({
@@ -85,8 +97,8 @@ export default function AdminOverviewScreen() {
         droneIdle,
         droneBusy,
       });
-    } catch (error) {
-      console.error('Failed to load admin overview', error);
+    } catch (err) {
+      console.log('Admin summary load failed', err);
     } finally {
       setRefreshing(false);
     }
@@ -99,7 +111,7 @@ export default function AdminOverviewScreen() {
       return;
     }
     loadSummary();
-  }, [user, loading, loadSummary, router]);
+  }, [loading, user]);
 
   const quickMenuItems: QuickMenuItem[] = useMemo(
     () => [
@@ -109,16 +121,14 @@ export default function AdminOverviewScreen() {
         title: 'Đơn hàng',
         value: summary.orders,
         subtitle: `Chờ: ${summary.processing} | Đang giao: ${summary.delivering}`,
-        detail: `Đã giao: ${summary.delivered}, Đang giao: ${summary.delivering}, Chờ xử lý: ${summary.processing}`,
-        route: '/admin/orders',
+        route: '/admin/orders?filter=all',
       },
       {
         key: 'users',
         icon: 'people-outline',
         title: 'Người dùng',
         value: summary.users,
-        subtitle: 'Tài khoản hoạt động trên hệ thống',
-        detail: 'Xem danh sách và chi tiết tài khoản.',
+        subtitle: 'Tài khoản hoạt động',
         route: '/admin/users',
       },
       {
@@ -127,7 +137,6 @@ export default function AdminOverviewScreen() {
         title: 'Nhà hàng',
         value: summary.restaurants,
         subtitle: 'Đối tác đang mở bán',
-        detail: 'Quản lý danh sách nhà hàng và trạng thái.',
         route: '/admin/restaurants',
       },
       {
@@ -136,7 +145,6 @@ export default function AdminOverviewScreen() {
         title: 'Drone',
         value: summary.drones,
         subtitle: `Rảnh: ${summary.droneIdle} | Đang giao: ${summary.droneBusy}`,
-        detail: `Sẵn sàng: ${summary.droneIdle}, Đang giao/bảo trì: ${summary.droneBusy}`,
         route: '/admin/drones',
       },
       {
@@ -144,8 +152,7 @@ export default function AdminOverviewScreen() {
         icon: 'cash-outline',
         title: 'Doanh thu',
         value: formatCurrency(summary.revenue),
-        subtitle: 'Cập nhật theo đơn đã giao',
-        detail: `Doanh thu hiện tại: ${formatCurrency(summary.revenue)}`,
+        subtitle: 'Theo đơn đã giao',
         route: '/admin/revenue',
       },
     ],
@@ -163,11 +170,9 @@ export default function AdminOverviewScreen() {
   const handleLogout = useCallback(async () => {
     await logout();
     router.replace('/(auth)/login');
-  }, [logout, router]);
+  }, []);
 
-  if (loading || !user || user.role !== 'admin') {
-    return null;
-  }
+  if (loading) return null;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -179,39 +184,20 @@ export default function AdminOverviewScreen() {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Tổng quan hệ thống</Text>
-            <Text style={styles.subtitle}>Đơn hàng, người dùng, nhà hàng và đội drone trong một màn hình.</Text>
+            <Text style={styles.subtitle}>Đơn hàng, đối tác và drone</Text>
           </View>
+
           <TouchableOpacity style={styles.menuButton} onPress={() => setMenuVisible(true)}>
             <Ionicons name="menu-outline" size={22} color="#0b1f15" />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>Menu dữ liệu</Text>
-          <Text style={styles.menuSubtitle}>Chạm để đi tới màn chi tiết từng mục</Text>
-          {quickMenuItems.map((item) => (
-            <TouchableOpacity
-              key={item.key}
-              style={styles.menuItem}
-              onPress={() => handleNavigate(item.route)}
-              activeOpacity={0.9}
-            >
-              <View style={styles.menuIcon}>
-                <Ionicons name={item.icon} size={18} color="#0b1f15" />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>{item.title}</Text>
-                <Text style={styles.menuSubtitleText}>{item.subtitle}</Text>
-              </View>
-              <Text style={styles.menuValue}>{item.value}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
+        {/* STAT CARDS */}
         <View style={styles.row}>
           <StatCard icon="receipt-outline" label="Tổng đơn" value={summary.orders} color="#00b14f" style={styles.cardSpacer} />
           <StatCard icon="people-outline" label="Người dùng" value={summary.users} color="#007045" />
         </View>
+
         <View style={styles.row}>
           <StatCard icon="business-outline" label="Nhà hàng" value={summary.restaurants} color="#0c8f5f" style={styles.cardSpacer} />
           <StatCard icon="cash-outline" label="Doanh thu" value={formatCurrency(summary.revenue)} color="#00c362" />
@@ -226,60 +212,56 @@ export default function AdminOverviewScreen() {
           </View>
         </View>
 
+        {/* DRONE */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Quản lý drone</Text>
           <View style={styles.row}>
             <StatCard icon="airplane-outline" label="Tổng drone" value={summary.drones} color="#00905a" style={styles.cardSpacer} />
             <StatCard icon="flash-outline" label="Sẵn sàng" value={summary.droneIdle} color="#35c46f" />
           </View>
+
           <View style={styles.row}>
             <StatCard icon="navigate-outline" label="Đang giao" value={summary.droneBusy} color="#f59e0b" />
-            <View style={[styles.card, styles.cardWide]}>
-              <Text style={styles.cardLabel}>Ghi chú vận hành</Text>
-              <Text style={styles.cardValue}>Luôn giữ pin trên 40%, ưu tiên đơn gần.</Text>
-            </View>
           </View>
         </View>
       </ScrollView>
 
+      {/* ========== MENU QUẢN TRỊ ========== */}
       <Modal visible={menuVisible} transparent animationType="fade" onRequestClose={() => setMenuVisible(false)}>
         <Pressable style={styles.menuOverlay} onPress={() => setMenuVisible(false)}>
           <Pressable style={styles.menuContainer} onPress={(e) => e.stopPropagation()}>
             <ScrollView contentContainerStyle={styles.menuContent} showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>Menu quản trị</Text>
-              <Text style={styles.modalSubtitle}>Đi tới màn chi tiết để xem và thao tác dữ liệu.</Text>
+              <Text style={styles.modalSubtitle}>Chọn mục bạn muốn quản lý</Text>
 
               {quickMenuItems.map((item) => (
-                <View key={item.key} style={styles.modalItem}>
+                <TouchableOpacity
+                  key={item.key}
+                  style={styles.modalItem}
+                  onPress={() => handleNavigate(item.route)}
+                >
                   <View style={styles.modalItemHeader}>
                     <View style={styles.menuIcon}>
                       <Ionicons name={item.icon} size={18} color="#0b1f15" />
                     </View>
+
                     <View style={styles.menuInfo}>
                       <Text style={styles.menuTitle}>{item.title}</Text>
                       <Text style={styles.menuSubtitleText}>{item.subtitle}</Text>
                     </View>
+
                     <Text style={styles.menuValue}>{item.value}</Text>
                   </View>
-
-                  <View style={styles.modalActionsRow}>
-                    <TouchableOpacity style={styles.modalActionButton} onPress={() => handleNavigate(item.route)}>
-                      <Ionicons name="eye-outline" size={16} color="#0b1f15" />
-                      <Text style={styles.modalActionText}>Xem chi tiết</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.modalActionButton} onPress={() => handleNavigate(item.route)}>
-                      <Ionicons name="create-outline" size={16} color="#0b1f15" />
-                      <Text style={styles.modalActionText}>Sửa / chỉnh</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+                </TouchableOpacity>
               ))}
 
               <View style={styles.menuDivider} />
 
-              <TouchableOpacity style={[styles.modalActionButton, styles.logoutButton]} onPress={handleLogout}>
-                <Ionicons name="log-out-outline" size={18} color="#E53935" />
-                <Text style={[styles.modalActionText, { color: '#E53935' }]}>Đăng xuất</Text>
+              <TouchableOpacity style={[styles.modalItem, styles.logoutButton]} onPress={handleLogout}>
+                <View style={styles.modalItemHeader}>
+                  <Ionicons name="log-out-outline" size={20} color="#E53935" />
+                  <Text style={[styles.modalActionText, { color: '#E53935' }]}>Đăng xuất</Text>
+                </View>
               </TouchableOpacity>
             </ScrollView>
           </Pressable>
@@ -289,21 +271,28 @@ export default function AdminOverviewScreen() {
   );
 }
 
-function StatCard({ icon, label, value, color, style }: { icon: any; label: string; value: any; color: string; style?: any }) {
+function StatCard({ icon, label, value, color, style }: any) {
   return (
     <View style={[styles.card, { borderColor: color }, style]}>
       <View style={[styles.iconBadge, { backgroundColor: `${color}22` }]}>
-        <Ionicons name={icon} size={20} color={color} />
+        <Ionicons name={icon} size={22} color={color} />
       </View>
+
       <Text style={styles.cardLabel}>{label}</Text>
       <Text style={[styles.cardValue, { color }]}>{value}</Text>
     </View>
   );
 }
 
-function Pill({ label, tone, light, style }: { label: string; tone: string; light?: boolean; style?: any }) {
+function Pill({ label, tone, light, style }: any) {
   return (
-    <View style={[styles.pill, { backgroundColor: light ? `${tone}18` : `${tone}22`, borderColor: `${tone}35` }, style]}>
+    <View
+      style={[
+        styles.pill,
+        { backgroundColor: light ? `${tone}18` : `${tone}22`, borderColor: `${tone}35` },
+        style,
+      ]}
+    >
       <Text style={[styles.pillText, { color: tone }]}>{label}</Text>
     </View>
   );
@@ -315,7 +304,9 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: 24, fontWeight: '800', color: '#0b1f15' },
-  subtitle: { color: '#4b5d52', marginTop: 4, marginBottom: 18, maxWidth: '90%' },
+  subtitle: { color: '#4b5d52', marginTop: 4, marginBottom: 18, maxWidth: '88%' },
+
+  /* ===== MENU BUTTON ===== */
   menuButton: {
     padding: 10,
     backgroundColor: '#fff',
@@ -328,39 +319,13 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
+
+  /* ===== LAYOUT ===== */
   row: { flexDirection: 'row', marginBottom: 12 },
   section: { marginTop: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0b1f15', marginBottom: 8 },
-  menuSection: { marginBottom: 10 },
-  menuSubtitle: { color: '#4b5d52', marginBottom: 6 },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#d9e9df',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 3 },
-  },
-  menuIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: '#e6f7ef',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  menuInfo: { flex: 1 },
-  menuTitle: { fontSize: 15, fontWeight: '700', color: '#0b1f15' },
-  menuSubtitleText: { color: '#4b5d52', marginTop: 2 },
-  menuValue: { fontWeight: '800', color: '#0b1f15' },
+
+  /* ===== CARDS ===== */
   card: {
     flex: 1,
     backgroundColor: '#fff',
@@ -372,19 +337,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
-    elevation: 2,
   },
-  cardWide: { flexBasis: '48%' },
   cardSpacer: { marginRight: 12 },
   cardLabel: { color: '#4b5d52', fontWeight: '600' },
-  cardValue: { fontSize: 20, fontWeight: '800', marginTop: 4 },
+  cardValue: { fontSize: 20, fontWeight: '800', marginTop: 6 },
+
   iconBadge: {
     width: 36,
     height: 36,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 10,
   },
+
+  /* ===== PILL ===== */
   pill: {
     borderWidth: 1,
     borderRadius: 12,
@@ -395,7 +362,10 @@ const styles = StyleSheet.create({
   },
   pillSpacer: { marginRight: 10 },
   pillText: { fontWeight: '700' },
+
+  /* ===== MENU MODAL ===== */
   menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'flex-end' },
+
   menuContainer: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
@@ -409,32 +379,38 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     maxHeight: '80%',
   },
-  menuContent: { gap: 12, paddingBottom: 16 },
+
+  menuContent: { gap: 12, paddingBottom: 20 },
+
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#0b1f15' },
-  modalSubtitle: { color: '#4b5d52' },
+  modalSubtitle: { color: '#4b5d52', marginBottom: 6 },
+
   modalItem: {
     backgroundColor: '#f7fff9',
     borderRadius: 14,
     padding: 12,
     borderWidth: 1,
     borderColor: '#d9e9df',
-    gap: 10,
   },
+
   modalItemHeader: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  modalActionsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
-  modalActionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#d9e9df',
-    paddingVertical: 10,
-    backgroundColor: '#fff',
-  },
+
   modalActionText: { fontWeight: '700', color: '#0b1f15' },
   logoutButton: { backgroundColor: '#fdecea', borderColor: '#f8b4ab' },
-  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#e0efe6', marginVertical: 4 },
+
+  menuDivider: { borderBottomWidth: 1, borderBottomColor: '#e0efe6', marginVertical: 10 },
+
+  /* ===== SMALL ICON ===== */
+  menuIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#e6f7ef',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuInfo: { flex: 1 },
+  menuTitle: { fontSize: 15, fontWeight: '700', color: '#0b1f15' },
+  menuSubtitleText: { color: '#4b5d52', marginTop: 2 },
+  menuValue: { fontWeight: '800', color: '#0b1f15' },
 });

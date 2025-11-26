@@ -4,16 +4,25 @@ import {
   Alert,
   FlatList,
   Modal,
-  Pressable,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
+  StyleSheet
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { addDoc, collection, deleteDoc, doc, getDocs, getFirestore, query, updateDoc, where } from 'firebase/firestore';
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  getFirestore,
+  query,
+  updateDoc,
+  where
+} from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 
 import { app } from '../libs/firebase';
@@ -24,7 +33,7 @@ type ProductRecord = {
   name?: string;
   price?: number;
   img?: string;
-  isActive?: boolean;
+  isActive?: boolean;   // ← dùng để ẩn khỏi menu
   category?: string | null;
   description?: string;
 };
@@ -37,15 +46,24 @@ export default function RestaurantAdminProducts() {
   const [products, setProducts] = useState<ProductRecord[]>([]);
   const [pageLoading, setPageLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // tìm kiếm
   const [search, setSearch] = useState('');
+
+  // edit/create modal
   const [editingProduct, setEditingProduct] = useState<ProductRecord | null>(null);
   const [modalMode, setModalMode] = useState<'edit' | 'create'>('edit');
+  const [formVisible, setFormVisible] = useState(false);
+
+  // form input
   const [nameInput, setNameInput] = useState('');
   const [priceInput, setPriceInput] = useState('');
   const [categoryInput, setCategoryInput] = useState('');
   const [descInput, setDescInput] = useState('');
-  const [formVisible, setFormVisible] = useState(false);
 
+  // ================================
+  // 📌 Lấy sản phẩm của nhà hàng
+  // ================================
   const fetchProducts = useCallback(async () => {
     if (!user?.restaurantId) {
       setProducts([]);
@@ -53,29 +71,36 @@ export default function RestaurantAdminProducts() {
       setRefreshing(false);
       return;
     }
+
     setRefreshing(true);
+
     try {
-      const snap = await getDocs(query(collection(db, 'products'), where('restaurantId', '==', user.restaurantId)));
-      const data = snap.docs.map((d) => {
-        const val = d.data() as any;
+      const snap = await getDocs(
+        query(collection(db, 'products'), where('restaurantId', '==', user.restaurantId))
+      );
+
+      const data = snap.docs.map(d => {
+        const val: any = d.data();
         return {
           id: d.id,
-          name: val.name ?? 'San pham',
+          name: val.name ?? '',
           price: Number(val.price ?? 0),
-          img: val.img ?? val.image ?? '',
-          isActive: val.isActive ?? val.available ?? true,
-          category: val.category ?? val.categoryId ?? null,
-          description: val.description ?? val.desc ?? '',
-        } as ProductRecord;
+          img: val.img ?? '',
+          isActive: val.isActive ?? true,   // ← trạng thái hiển thị
+          category: val.category ?? null,
+          description: val.description ?? ''
+        };
       });
+
+      // sắp xếp: sản phẩm đang mở bán → lên trước
       data.sort((a, b) => {
-        if ((a.isActive ? 1 : 0) === (b.isActive ? 1 : 0)) return (b.price ?? 0) - (a.price ?? 0);
-        return (b.isActive ? 1 : 0) - (a.isActive ? 1 : 0);
+        if (a.isActive === b.isActive) return (b.price ?? 0) - (a.price ?? 0);
+        return Number(b.isActive) - Number(a.isActive);
       });
+
       setProducts(data);
-    } catch (error) {
-      console.error('fetch products error', error);
-      Alert.alert('Loi', 'Khong the tai san pham. Kiem tra ket noi Firestore.');
+    } catch (err) {
+      Alert.alert('Lỗi', 'Không thể tải danh sách sản phẩm.');
     } finally {
       setPageLoading(false);
       setRefreshing(false);
@@ -92,49 +117,65 @@ export default function RestaurantAdminProducts() {
       router.replace('/');
       return;
     }
-    fetchProducts();
-  }, [loading, user, fetchProducts, router]);
 
+    fetchProducts();
+  }, [loading, user]);
+
+  // ================================
+  // 📌 Lọc sản phẩm theo tìm kiếm
+  // ================================
   const filteredProducts = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return products.filter((p) => {
+
+    return products.filter(p => {
       if (!term) return true;
       return (
-        (p.name ?? '').toLowerCase().includes(term) ||
-        (p.category ?? '').toString().toLowerCase().includes(term) ||
-        (p.description ?? '').toLowerCase().includes(term)
+        p.name?.toLowerCase().includes(term) ||
+        p.category?.toLowerCase().includes(term) ||
+        p.description?.toLowerCase().includes(term)
       );
     });
   }, [products, search]);
 
-  const handleToggleActive = useCallback(
-    async (product: ProductRecord) => {
-      try {
-        await updateDoc(doc(db, 'products', product.id), {
-          isActive: !product.isActive,
-          available: !product.isActive,
-        });
-        Alert.alert('Da cap nhat', `${!product.isActive ? 'Da mo ban' : 'Da an'} ${product.name ?? 'mon an'}.`);
-        fetchProducts();
-      } catch (error) {
-        console.error('toggle product error', error);
-        Alert.alert('Loi', 'Khong the cap nhat trang thai san pham.');
-      }
-    },
-    [db, fetchProducts]
-  );
+  // ================================
+  // 📌 Ẩn / hiện khỏi menu (FIX LOGIC)
+  // ================================
+  const handleToggleActive = useCallback(async (product: ProductRecord) => {
+    try {
+      const next = !product.isActive;
 
-  const openEditProduct = useCallback((product: ProductRecord) => {
+      await updateDoc(doc(db, 'products', product.id), {
+        isActive: next
+      });
+
+      Alert.alert(
+        'Thành công',
+        next ? 'Sản phẩm đã được mở bán trở lại.' : 'Sản phẩm đã bị ẩn khỏi menu.'
+      );
+
+      fetchProducts();
+    } catch (err) {
+      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái.');
+    }
+  }, [db, fetchProducts]);
+
+  // ================================
+  // 📌 Mở modal chỉnh sửa
+  // ================================
+  const openEditProduct = (product: ProductRecord) => {
     setModalMode('edit');
     setEditingProduct(product);
     setNameInput(product.name ?? '');
     setPriceInput(String(product.price ?? ''));
-    setCategoryInput(String(product.category ?? ''));
+    setCategoryInput(product.category ?? '');
     setDescInput(product.description ?? '');
     setFormVisible(true);
-  }, []);
+  };
 
-  const openCreateProduct = useCallback(() => {
+  // ================================
+  // 📌 Mở modal tạo mới
+  // ================================
+  const openCreateProduct = () => {
     setModalMode('create');
     setEditingProduct(null);
     setNameInput('');
@@ -142,81 +183,77 @@ export default function RestaurantAdminProducts() {
     setCategoryInput('');
     setDescInput('');
     setFormVisible(true);
-  }, []);
+  };
 
-  const handleSaveProduct = useCallback(async () => {
-    const trimmedName = nameInput.trim();
-    const trimmedCategory = categoryInput.trim();
-    const trimmedDesc = descInput.trim();
-    const parsedPrice = Number(priceInput);
+  // ================================
+  // 📌 Lưu sản phẩm
+  // ================================
+  const handleSaveProduct = async () => {
+    const name = nameInput.trim();
+    const desc = descInput.trim();
+    const category = categoryInput.trim();
+    const price = Number(priceInput);
 
-    if (!trimmedName) {
-      Alert.alert('Thiếu tên', 'Nhập tên sản phẩm.');
+    if (!name) {
+      Alert.alert('Thiếu thông tin', 'Vui lòng nhập tên sản phẩm.');
       return;
     }
-    if (Number.isNaN(parsedPrice) || parsedPrice < 0) {
-      Alert.alert('Giá không hợp lí', 'Vui lòng nhập số lớn hơn hoặc bằng 0.');
+    if (isNaN(price) || price < 0) {
+      Alert.alert('Sai giá', 'Giá phải là số ≥ 0.');
       return;
     }
 
     try {
       if (modalMode === 'edit' && editingProduct) {
         await updateDoc(doc(db, 'products', editingProduct.id), {
-          name: trimmedName,
-          price: parsedPrice,
-          category: trimmedCategory || null,
-          description: trimmedDesc,
+          name,
+          price,
+          category: category || null,
+          description: desc
         });
-        Alert.alert('Đã lưu', 'Sản phẩm đã được cập nhật.');
-      } else if (user?.restaurantId) {
-        await addDoc(collection(db, 'products'), {
-          restaurantId: user.restaurantId,
-          name: trimmedName,
-          price: parsedPrice,
-          category: trimmedCategory || null,
-          description: trimmedDesc,
-          isActive: true,
-          available: true,
-          createdAt: Date.now(),
-        });
-        Alert.alert('Đã thêm', 'Sản phẩm mới đã được thêm.');
+
+        Alert.alert('Đã lưu', 'Cập nhật sản phẩm thành công.');
       } else {
-        Alert.alert('Thiếu thông tin', 'Không tìm thấy mã nhà hàng.');
+        await addDoc(collection(db, 'products'), {
+          restaurantId: user?.restaurantId,
+          name,
+          price,
+          category: category || null,
+          description: desc,
+          isActive: true,
+          createdAt: Date.now()
+        });
+
+        Alert.alert('Thành công', 'Đã thêm sản phẩm mới.');
       }
-      setEditingProduct(null);
-      setNameInput('');
-      setPriceInput('');
-      setCategoryInput('');
-      setDescInput('');
+
       setFormVisible(false);
       fetchProducts();
-    } catch (error) {
-      console.error('save product error', error);
+    } catch (err) {
       Alert.alert('Lỗi', 'Không thể lưu sản phẩm.');
     }
-  }, [db, modalMode, editingProduct, nameInput, priceInput, categoryInput, descInput, fetchProducts, user?.restaurantId]);
+  };
 
-  const handleDeleteProduct = useCallback(
-    async (product: ProductRecord) => {
-      Alert.alert('Xóa sản phẩm', `Bạn chắc muốn xóa ${product.name ?? 'sản phẩm'}?`, [
-        { text: 'Hủy', style: 'cancel' },
-        {
-          text: 'Xóa',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteDoc(doc(db, 'products', product.id));
-              fetchProducts();
-            } catch (error) {
-              console.error('delete product error', error);
-              Alert.alert('Lỗi', 'Không thể xóa sản phẩm .');
-            }
-          },
-        },
-      ]);
-    },
-    [db, fetchProducts]
-  );
+  // ================================
+  // 📌 Xóa sản phẩm
+  // ================================
+  const handleDeleteProduct = (product: ProductRecord) => {
+    Alert.alert('Xóa sản phẩm', `Bạn có chắc muốn xóa "${product.name}"?`, [
+      { text: 'Hủy', style: 'cancel' },
+      {
+        text: 'Xóa',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteDoc(doc(db, 'products', product.id));
+            fetchProducts();
+          } catch (err) {
+            Alert.alert('Lỗi', 'Không thể xóa sản phẩm.');
+          }
+        }
+      }
+    ]);
+  };
 
   if (loading || pageLoading) {
     return (
@@ -227,65 +264,108 @@ export default function RestaurantAdminProducts() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
+      {/* ================= HEADER ================= */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={22} color="#0b1f15" />
         </TouchableOpacity>
+
         <View style={{ flex: 1 }}>
-          <Text style={styles.title}>San pham cua nha hang</Text>
-          <Text style={styles.subtitle}>Quan ly gia va trang thai hien thi.</Text>
+          <Text style={styles.title}>Sản phẩm của nhà hàng</Text>
+          <Text style={styles.subtitle}>Quản lý giá, mô tả và trạng thái hiển thị.</Text>
         </View>
       </View>
 
+      {/* ================= THANH TÌM KIẾM ================= */}
       <View style={styles.searchRow}>
-        <Ionicons name="search" size={16} color="#4b5563" style={{ marginRight: 8 }} />
+        <Ionicons name="search" size={16} color="#4b5563" />
         <TextInput
-          placeholder="T?m ki?m theo t?n ho?c danh m?c"
-          style={styles.searchInput}
+          placeholder="Tìm sản phẩm theo tên, mô tả, danh mục..."
           value={search}
           onChangeText={setSearch}
-          placeholderTextColor="#9ca3af"
+          style={styles.searchInput}
         />
+
         <TouchableOpacity onPress={fetchProducts} style={styles.refreshButton}>
           <Ionicons name="refresh" size={16} color="#0b1f15" />
         </TouchableOpacity>
+
         <TouchableOpacity onPress={openCreateProduct} style={styles.addButton}>
           <Ionicons name="add" size={16} color="#fff" />
-          <Text style={styles.addButtonText}>Th?m</Text>
+          <Text style={styles.addButtonText}>Thêm</Text>
         </TouchableOpacity>
       </View>
 
+      {/* ================= LIST ================= */}
       <FlatList
         data={filteredProducts}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={
+          filteredProducts.length === 0 ? styles.emptyList : { paddingBottom: 50 }
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Ionicons name="cube-outline" size={48} color="#9ca3af" />
+            <Text style={styles.emptyTitle}>Không có sản phẩm</Text>
+            <Text style={styles.emptySubtitle}>Thêm sản phẩm để bắt đầu kinh doanh.</Text>
+          </View>
+        }
         renderItem={({ item }) => (
           <View style={styles.productCard}>
             <View style={styles.productHeader}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.productName}>{item.name}</Text>
-                <Text style={styles.productCategory}>{item.category ?? 'Chua co danh muc'}</Text>
+                <Text style={styles.productCategory}>
+                  {item.category || 'Chưa có danh mục'}
+                </Text>
               </View>
-              <View style={[styles.statusTag, item.isActive ? styles.statusActive : styles.statusInactive]}>
-                <Text style={item.isActive ? styles.statusTextActive : styles.statusTextInactive}>
-                  {item.isActive ? 'Dang mo ban' : 'Dang an'}
+
+              {/* Trạng thái hiển thị */}
+              <View
+                style={[
+                  styles.statusTag,
+                  item.isActive ? styles.statusActive : styles.statusInactive
+                ]}
+              >
+                <Text
+                  style={
+                    item.isActive ? styles.statusTextActive : styles.statusTextInactive
+                  }
+                >
+                  {item.isActive ? 'Đang bán' : 'Đã ẩn'}
                 </Text>
               </View>
             </View>
 
             <View style={styles.productMetaRow}>
               <Ionicons name="pricetag-outline" size={16} color="#4b5563" />
-              <Text style={styles.productPrice}>{Number(item.price ?? 0).toLocaleString('vi-VN')}?</Text>
+              <Text style={styles.productPrice}>
+                {item.price?.toLocaleString('vi-VN')}₫
+              </Text>
             </View>
+
             {item.description ? (
               <Text style={styles.productDesc}>{item.description}</Text>
             ) : null}
 
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={() => openEditProduct(item)}>
-                <Ionicons name="create-outline" size={16} color="#0b1f15" style={{ marginRight: 6 }} />
-                <Text style={styles.secondaryText}>Chỉnh sửa</Text>
+              {/* CHỈNH SỬA */}
+              <TouchableOpacity
+                style={styles.secondaryButton}
+                onPress={() => openEditProduct(item)}
+              >
+                <Ionicons
+                  name="create-outline"
+                  size={16}
+                  color="#0b1f15"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.secondaryText}>Sửa</Text>
               </TouchableOpacity>
+
+              {/* ẨN/HIỆN */}
               <TouchableOpacity
                 style={[styles.primaryButton, !item.isActive && styles.outlineButton]}
                 onPress={() => handleToggleActive(item)}
@@ -296,29 +376,27 @@ export default function RestaurantAdminProducts() {
                   color={item.isActive ? '#fff' : '#0b1f15'}
                   style={{ marginRight: 6 }}
                 />
-                <Text style={[styles.primaryText, !item.isActive && styles.outlineText]}>
-                  {item.isActive ? '?n kh?i menu' : 'M? b?n l?i'}
+
+                <Text
+                  style={[styles.primaryText, !item.isActive && styles.outlineText]}
+                >
+                  {item.isActive ? 'Ẩn khỏi menu' : 'Bán trở lại'}
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteProduct(item)}>
+
+              {/* XOÁ */}
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteProduct(item)}
+              >
                 <Ionicons name="trash-outline" size={16} color="#B91C1C" />
               </TouchableOpacity>
             </View>
           </View>
         )}
-        contentContainerStyle={filteredProducts.length === 0 ? styles.emptyList : { paddingBottom: 40 }}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Ionicons name="cube-outline" size={48} color="#9ca3af" />
-            <Text style={styles.emptyTitle}>Chưa có sản phẩm phù hợp</Text>
-            <Text style={styles.emptySubtitle}>Kiểm tra lại bộ lọc hoặc thêm sản phẩm mới.</Text>
-          </View>
-        }
-        refreshing={refreshing}
-        onRefresh={fetchProducts}
-        showsVerticalScrollIndicator={false}
       />
 
+      {/* =============== MODAL SỬA/TẠO =============== */}
       <Modal visible={formVisible} transparent animationType="fade">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContent}>
@@ -327,7 +405,9 @@ export default function RestaurantAdminProducts() {
             </Text>
 
             <Text style={styles.modalSubtitle}>
-              {modalMode === 'edit' ? editingProduct?.name : 'Điền thông tin sản phẩm mới'}
+              {modalMode === 'edit'
+                ? editingProduct?.name
+                : 'Nhập thông tin sản phẩm mới'}
             </Text>
 
             <TextInput
@@ -335,7 +415,6 @@ export default function RestaurantAdminProducts() {
               value={nameInput}
               onChangeText={setNameInput}
               placeholder="Tên sản phẩm"
-              placeholderTextColor="#9ca3af"
             />
 
             <TextInput
@@ -343,8 +422,7 @@ export default function RestaurantAdminProducts() {
               keyboardType="numeric"
               value={priceInput}
               onChangeText={setPriceInput}
-              placeholder="Giá"
-              placeholderTextColor="#9ca3af"
+              placeholder="Giá (VNĐ)"
             />
 
             <TextInput
@@ -352,7 +430,6 @@ export default function RestaurantAdminProducts() {
               value={categoryInput}
               onChangeText={setCategoryInput}
               placeholder="Danh mục"
-              placeholderTextColor="#9ca3af"
             />
 
             <TextInput
@@ -360,17 +437,13 @@ export default function RestaurantAdminProducts() {
               value={descInput}
               onChangeText={setDescInput}
               placeholder="Mô tả"
-              placeholderTextColor="#9ca3af"
               multiline
             />
 
             <View style={styles.modalActions}>
               <TouchableOpacity
                 style={styles.modalCancel}
-                onPress={() => {
-                  setFormVisible(false);
-                  setEditingProduct(null);
-                }}
+                onPress={() => setFormVisible(false)}
               >
                 <Text style={styles.modalCancelText}>Hủy</Text>
               </TouchableOpacity>
@@ -382,10 +455,10 @@ export default function RestaurantAdminProducts() {
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F7FA', padding: 16 },
