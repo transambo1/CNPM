@@ -278,6 +278,7 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<SelectedCategory>({ id: null, name: null });
   const [activeQuickFilters, setActiveQuickFilters] = useState<QuickFilterState>([]);
   const [featuredRestaurant, setFeaturedRestaurant] = useState<Restaurant | null>(null);
+  const [categoriesByRestaurant, setCategoriesByRestaurant] = useState<Record<string, Set<string>>>({});
 
 
   // Derived stats
@@ -311,6 +312,24 @@ export default function HomePage() {
           } as Restaurant;
         });
         setRestaurants(rs);
+
+        /** Products */
+        let allProducts: any[] = [];
+        try {
+          const prodSnap = await getDocs(query(collection(db, "products")));
+          allProducts = prodSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch { allProducts = []; }
+
+        /** Build categoriesByRestaurant */
+        const _catMap: Record<string, Set<string>> = {};
+        allProducts.forEach(p => {
+          const rid = p.restaurantId;
+          const cat = String(p.category ?? "").trim().toLowerCase();
+          if (!rid || !cat) return;
+          if (!_catMap[rid]) _catMap[rid] = new Set();
+          _catMap[rid].add(cat);
+        });
+        setCategoriesByRestaurant(_catMap);
         // 🔥 Random 1 nhà hàng nổi bật
         const available = rs.filter(r => typeof r.image === "string" && r.image.trim().length > 0);
         if (available.length > 0) {
@@ -382,9 +401,8 @@ export default function HomePage() {
         normalizedSearch.length === 0 ||
         [r.name, r.address].filter(Boolean).some(v => v.toLowerCase().includes(normalizedSearch));
 
-      const categoryStr = String(r.category ?? '').trim().toLowerCase();
       const matchesCategory =
-        !selectedKey || categoryStr === selectedKey; // EXACT STRICT
+        !selectedKey || categoriesByRestaurant[r.id]?.has(selectedKey);
 
       return matchesSearch && matchesCategory;
     });
@@ -599,6 +617,7 @@ async function buildDerivedStats(
 
   setDerived((prev) => ({ ...prev, ...derived }));
 }
+
 
 /** =========================
  *          STYLES
