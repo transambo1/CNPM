@@ -85,7 +85,24 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
             setSelectedCategory(defaultCategory);
         }
     }, [categoryKey]);
+// Reset filter khi quay về trang chủ
+useEffect(() => {
+    const search = new URLSearchParams(location.search).get("search") || "";
+    const isHome = location.pathname === "/" && search === "" && !categoryKey;
 
+    if (isHome) {
+        setSelectedCategory("All");
+        setSortOption("default");
+        setCurrentPage(1);
+
+        // reset search
+        setSearchTerm("");
+
+        // reset giá
+        setMinPrice(priceRange.min);
+        setMaxPrice(priceRange.max);
+    }
+}, [location.pathname, location.search, categoryKey, priceRange]);
     // Categories
     const categories = ["All", ...new Set(products.map((p) => p.category))];
 
@@ -140,8 +157,10 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
             <div className="content-wrapper">
 
                 {/* ẨN SIDEBAR KHI KHÔNG CÓ SẢN PHẨM */}
-                {!(searchTerm.trim() !== "" && filteredProducts.length === 0) && (
-                    <aside className="sidebar">
+               {!(searchTerm.trim() !== "" &&
+  products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0
+) && (
+    <aside className="sidebar">
 
                        {/* DANH MỤC — ẨN KHI ĐANG TÌM KIẾM */}
 {searchTerm.trim() === "" && (

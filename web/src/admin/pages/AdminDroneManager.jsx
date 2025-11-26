@@ -26,7 +26,7 @@ export default function AdminDroneManager() {
   });
 
   // ================================
-  // 🔹 FETCH dữ liệu ban đầu
+  // Fetch dữ liệu
   // ================================
   const fetchAll = async () => {
     try {
@@ -52,7 +52,7 @@ export default function AdminDroneManager() {
   }, []);
 
   // ================================
-  // 🔹 Helper format
+  // Helper format
   // ================================
   const renderStatus = (status) => {
     switch (status) {
@@ -71,7 +71,7 @@ export default function AdminDroneManager() {
   const getRestaurantName = (id) => restaurants.find((r) => r.id === id)?.name || "—";
 
   // ================================
-  // 🔹 Thêm drone
+  // Thêm drone
   // ================================
   const handleAdd = async () => {
     if (!form.name.trim() || !form.restaurantId) {
@@ -109,10 +109,14 @@ export default function AdminDroneManager() {
   };
 
   // ================================
-  // 🔹 Cập nhật drone
+  // Cập nhật drone
   // ================================
-  const handleUpdate = async () => {
-    if (!editingDrone) return;
+const handleUpdate = async () => {
+  if (!editingDrone) return;
+
+  if (editingDrone.status === "Đang giao") {
+    return message.error("🚫 Drone đang giao, không thể chỉnh sửa!");
+  }
 
     try {
       const droneRef = doc(db, "drones", editingDrone.id);
@@ -125,7 +129,7 @@ export default function AdminDroneManager() {
         restaurantName: getRestaurantName(form.restaurantId),
       });
 
-      // Xử lý đơn hàng nếu chuyển từ “Đang giao” → “Rảnh”
+      // Nếu chuyển từ "Đang giao" → "Rảnh"
       if (editingDrone.status === "Đang giao" && form.status === "Rảnh") {
         if (editingDrone.currentOrderId) {
           const orderRef = doc(db, "orders", editingDrone.currentOrderId);
@@ -150,7 +154,7 @@ export default function AdminDroneManager() {
   };
 
   // ================================
-  // 🔹 Xóa drone
+  // Xóa drone
   // ================================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa drone này không?")) return;
@@ -166,7 +170,7 @@ export default function AdminDroneManager() {
   };
 
   // ================================
-  // 🔹 Lọc drone
+  // Lọc drone
   // ================================
   const filteredDrones = drones.filter((d) => {
     const matchName = d.name.toLowerCase().includes(searchText.toLowerCase());
@@ -177,7 +181,7 @@ export default function AdminDroneManager() {
   });
 
   // ================================
-  // 🔹 Columns table
+  // Columns
   // ================================
   const columns = [
     { title: "ID", dataIndex: "id", width: 80 },
@@ -189,40 +193,58 @@ export default function AdminDroneManager() {
       title: "Đơn đang giao",
       render: (_, d) => {
         const order = d.currentOrderId ? getOrder(d.currentOrderId) : null;
-        return order ? (
-          <span>#{order.id} — {order.customer?.name}</span>
-        ) : (
-          "—"
-        );
+        return order ? <span>#{order.id} — {order.customer?.name}</span> : "—";
       },
     },
     {
-      title: "Hành động",
-      render: (_, d) => (
-        <div style={{ display: "flex", gap: 8 }}>
-          <button
-            className="edit-btn"
-            onClick={() => {
-              setEditingDrone(d);
-              setForm({
-                name: d.name,
-                status: d.status,
-                battery: d.battery,
-                restaurantId: d.restaurantId,
-                restaurantName: getRestaurantName(d.restaurantId),
-              });
-              setModalVisible(true);
-            }}
-          >
-            ✏️ Sửa
-          </button>
+  title: "Hành động",
+  render: (_, d) => {
+    const isBusy = d.status === "Đang giao";
 
-          <button className="delete-btn" onClick={() => handleDelete(d.id)}>
-            ❌ Xóa
-          </button>
-        </div>
-      ),
-    },
+    return (
+      <div style={{ display: "flex", gap: 8 }}>
+        <button
+          className="edit-btn"
+          disabled={isBusy}
+          style={{
+            opacity: isBusy ? 0.4 : 1,
+            cursor: isBusy ? "not-allowed" : "pointer",
+          }}
+          onClick={() => {
+            if (isBusy) return message.warning("🚫 Drone đang giao, không thể chỉnh sửa!");
+
+            setEditingDrone(d);
+            setForm({
+              name: d.name,
+              status: d.status,
+              battery: d.battery,
+              restaurantId: d.restaurantId,
+              restaurantName: getRestaurantName(d.restaurantId),
+            });
+            setModalVisible(true);
+          }}
+        >
+          ✏️ Sửa
+        </button>
+
+        <button
+          className="delete-btn"
+          disabled={isBusy}
+          style={{
+            opacity: isBusy ? 0.4 : 1,
+            cursor: isBusy ? "not-allowed" : "pointer",
+          }}
+          onClick={() => {
+            if (isBusy) return message.warning("🚫 Drone đang giao, không thể xóa!");
+            handleDelete(d.id);
+          }}
+        >
+          ❌ Xóa
+        </button>
+      </div>
+    );
+  },
+},
   ];
 
   if (loading) {
@@ -230,7 +252,7 @@ export default function AdminDroneManager() {
   }
 
   // ================================
-  // 🔹 Render UI
+  // Render UI
   // ================================
   return (
     <div className="admin-drones-page">
@@ -249,7 +271,11 @@ export default function AdminDroneManager() {
 
         <div className="filter-item">
           <label>Nhà hàng:</label>
-          <Select value={restaurantFilter} onChange={setRestaurantFilter} style={{ width: "100%" }}>
+          <Select
+            value={restaurantFilter}
+            onChange={setRestaurantFilter}
+            style={{ width: "100%" }}
+          >
             {["Tất cả", ...restaurants.map((r) => r.name)].map((name) => (
               <Select.Option key={name} value={name}>
                 {name}
@@ -296,7 +322,7 @@ export default function AdminDroneManager() {
         className="drone-table"
       />
 
-      {/* Modal Thêm / Sửa */}
+      {/* Modal */}
       <Modal
         open={modalVisible}
         title={editingDrone ? "Chỉnh sửa Drone" : "Thêm Drone"}
@@ -307,6 +333,8 @@ export default function AdminDroneManager() {
         onOk={editingDrone ? handleUpdate : handleAdd}
         okText={editingDrone ? "Cập nhật" : "Thêm"}
         centered
+        style={{ zIndex: 1000 }}
+        modalRender={(node) => <div style={{ overflow: "visible" }}>{node}</div>}
       >
         <label>Tên drone</label>
         <Input
@@ -315,15 +343,24 @@ export default function AdminDroneManager() {
         />
 
         <label>Trạng thái</label>
-        <Select
-          value={form.status}
-          onChange={(v) => setForm({ ...form, status: v })}
-          style={{ width: "100%" }}
-        >
-          <Select.Option value="Rảnh">🟢 Rảnh</Select.Option>
-          <Select.Option value="Đang giao">🔵 Đang giao</Select.Option>
-          <Select.Option value="Bảo trì">🔴 Bảo trì</Select.Option>
-        </Select>
+<Select
+  value={form.status}
+  disabled={editingDrone?.status === "Đang giao"} 
+  onChange={(v) => setForm({ ...form, status: v })}
+  style={{ width: "100%" }}
+ getPopupContainer={(trigger) => trigger.parentNode}
+>
+  {/* Nếu đang giao: chỉ hiển thị trạng thái hiện tại */}
+  {editingDrone?.status === "Đang giao" ? (
+    <Select.Option value="Đang giao">🔵 Đang giao</Select.Option>
+  ) : (
+    <>
+      <Select.Option value="Rảnh">🟢 Rảnh</Select.Option>
+      <Select.Option value="Bảo trì">🔴 Bảo trì</Select.Option>
+    </>
+  )}
+</Select>
+
 
         <label>Mức pin (%)</label>
         <Input
@@ -346,6 +383,7 @@ export default function AdminDroneManager() {
             })
           }
           style={{ width: "100%" }}
+          getPopupContainer={() => document.body}
         >
           {restaurants.map((r) => (
             <Select.Option key={r.id} value={r.id}>

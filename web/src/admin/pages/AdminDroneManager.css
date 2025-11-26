@@ -52,3 +52,8 @@
   background: #ff4d4f;
   color: white;
 }
+
+/* 🔥 FIX SELECT DROPDOWN BỊ CHE */
+.ant-select-dropdown {
+  z-index: 99999 !important;
+}
