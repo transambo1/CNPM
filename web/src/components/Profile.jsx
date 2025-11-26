@@ -64,9 +64,6 @@ export default function Profile() {
           onChange={(e) => handleChange("firstname", e.target.value)}
         />
 
-        <label>Email</label>
-        <input type="text" value={userData.email} disabled />
-
         <label>Số điện thoại</label>
         <input
           type="text"

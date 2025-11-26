@@ -1,6 +1,6 @@
 .profile-page {
   width: 100%;
-  min-height: 100vh;
+  min-height: fit-content;
   background: #fff7f0;
   padding: 50px 20px;
   display: flex;

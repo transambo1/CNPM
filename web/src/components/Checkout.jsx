@@ -251,22 +251,22 @@ export default function Checkout({ cart, setCart }) {
               </div>
 
               {/* 💳 CHỌN PHƯƠNG THỨC THANH TOÁN */}
-            <div className="payment-section">
-  <h2>Phương thức thanh toán</h2>
-  <div className="payment-option">
-    <input
-      type="radio"
-      id="qr"
-      name="paymentMethod"
-      value="qr"
-      checked={paymentMethod === "qr"}
-      onChange={(e) => setPaymentMethod(e.target.value)}
-    />
-    <label htmlFor="qr">
-      Thanh toán bằng quét mã QR
-    </label>
-  </div>
-</div>
+              <div className="payment-section">
+                <h2>Phương thức thanh toán</h2>
+                <div className="payment-option">
+                  <input
+                    type="radio"
+                    id="qr"
+                    name="paymentMethod"
+                    value="qr"
+                    checked={paymentMethod === "qr"}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                  />
+                  <label htmlFor="qr">
+                    Thanh toán bằng quét mã QR
+                  </label>
+                </div>
+              </div>
 
               <button type="submit" className="checkout-btn-primary" disabled={isProcessing}>
                 {isProcessing ? "Đang xử lý..." : "Xác nhận đặt hàng"}
