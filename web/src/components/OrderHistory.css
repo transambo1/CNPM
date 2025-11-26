@@ -29,13 +29,13 @@
   border-radius: 14px;
   margin-bottom: 18px;
   padding: 20px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   transition: 0.25s ease;
 }
 
 .order-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
 }
 
 .order-header {
@@ -78,7 +78,8 @@
 
 .order-total strong {
   font-size: 17px;
-  color: #d4aa00; /* Vàng đậm */
+  color: #d4aa00;
+  /* Vàng đậm */
 }
 
 /* Status */
@@ -123,6 +124,7 @@
 .track-btn:hover {
   opacity: 0.85;
 }
+
 /* Detail Button – P-B Layout */
 .detail-btn {
   background: #ff7a00;

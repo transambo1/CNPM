@@ -85,20 +85,20 @@ function OrderHistory() {
 
               <div className="order-body">
                 <ul className="order-items-list">
-  {order.items?.map((item, index) => (
-    <li
-      key={`${order.id}-${index}`}
-      className="order-item clickable-item"
-      onClick={(e) => {
-        e.stopPropagation();       // tránh trigger click vào order-card
-        navigate(`/product-detail/${item.id}`);
-      }}
-    >
-      <span>{item.quantity}x {item.name}</span>
-      <span>{(item.price * item.quantity).toLocaleString()}₫</span>
-    </li>
-  ))}
-</ul>
+                  {order.items?.map((item, index) => (
+                    <li
+                      key={`${order.id}-${index}`}
+                      className="order-item clickable-item"
+                      onClick={(e) => {
+                        e.stopPropagation();       // tránh trigger click vào order-card
+                        navigate(`/product-detail/${item.id}`);
+                      }}
+                    >
+                      <span>{item.quantity}x {item.name}</span>
+                      <span>{(item.price * item.quantity).toLocaleString()}₫</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
 
               <div className="order-footer">
@@ -125,16 +125,16 @@ function OrderHistory() {
                 {/* Nút theo dõi đơn */}
                 {(order.status === "Chờ xác nhận" ||
                   order.status === "Đang giao") && (
-                  <button
-                    className="track-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/waiting/${order.id}`);
-                    }}
-                  >
-                    Theo dõi đơn
-                  </button>
-                )}
+                    <button
+                      className="track-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/waiting/${order.id}`);
+                      }}
+                    >
+                      Theo dõi đơn
+                    </button>
+                  )}
 
                 {/* Nút xem chi tiết */}
                 {order.status !== "Đang giao" &&

@@ -17,6 +17,7 @@
 .order-detail-card {
   width: 100%;
   max-width: 900px;
+  min-height: fit-content;
   background: #fff;
   border-radius: 14px;
   padding: 30px;
@@ -38,7 +39,8 @@
 
 /* ================= ORDER INFO ================= */
 .order-info.enhanced {
-  background: #fff3e6; /* cam nhạt */
+  background: #fff3e6;
+  /* cam nhạt */
   border: 2px solid #ff7a00;
   padding: 22px;
   border-radius: 14px;
@@ -97,8 +99,10 @@
   padding: 20px;
   margin: 0;
   border-radius: 12px;
-  background: #fff3e6; /* cam nhạt */
-  border: 1px solid #ffbc80; /* viền cam */
+  background: #fff3e6;
+  /* cam nhạt */
+  border: 1px solid #ffbc80;
+  /* viền cam */
 }
 
 .order-item {
@@ -116,7 +120,8 @@
 
 /* Hiệu ứng hover */
 .order-item:hover {
-  background: #ffe9d6; /* cam highlight nhẹ */
+  background: #ffe9d6;
+  /* cam highlight nhẹ */
   border-radius: 8px;
   padding-left: 8px;
 }
@@ -138,7 +143,8 @@
   text-align: right;
   font-size: 1.35rem;
   font-weight: 800;
-  color: #e85d04; /* cam đậm */
+  color: #e85d04;
+  /* cam đậm */
 }
 
 /* Remove back button completely */

@@ -13,7 +13,6 @@ export default function AdminDroneManager() {
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDrone, setEditingDrone] = useState(null);
 
-  // Filter state
   const [searchText, setSearchText] = useState("");
   const [restaurantFilter, setRestaurantFilter] = useState("Tất cả");
   const [statusFilter, setStatusFilter] = useState("Tất cả");
@@ -26,7 +25,9 @@ export default function AdminDroneManager() {
     restaurantName: "",
   });
 
-  // 🔹 Fetch toàn bộ dữ liệu
+  // ================================
+  // 🔹 FETCH dữ liệu ban đầu
+  // ================================
   const fetchAll = async () => {
     try {
       const [dronesSnap, restaurantsSnap, ordersSnap] = await Promise.all([
@@ -50,7 +51,9 @@ export default function AdminDroneManager() {
     fetchAll();
   }, []);
 
-  // 🔹 Render trạng thái drone
+  // ================================
+  // 🔹 Helper format
+  // ================================
   const renderStatus = (status) => {
     switch (status) {
       case "Đang giao":
@@ -64,13 +67,12 @@ export default function AdminDroneManager() {
     }
   };
 
-  // 🔹 Tìm đơn hàng đang giao
   const getOrder = (id) => orders.find((o) => o.id === id);
-
-  // 🔹 Tìm tên nhà hàng
   const getRestaurantName = (id) => restaurants.find((r) => r.id === id)?.name || "—";
 
-  // 🔹 Xử lý thêm mới
+  // ================================
+  // 🔹 Thêm drone
+  // ================================
   const handleAdd = async () => {
     if (!form.name.trim() || !form.restaurantId) {
       return message.warning("⚠️ Nhập tên drone và chọn nhà hàng!");
@@ -82,14 +84,23 @@ export default function AdminDroneManager() {
         status: form.status,
         battery: Number(form.battery),
         restaurantId: form.restaurantId,
-        restaurantName: form.restaurantName || getRestaurantName(form.restaurantId),
+        restaurantName: getRestaurantName(form.restaurantId),
+        currentOrderId: null,
         createdAt: new Date().toISOString(),
       };
 
       await addDoc(collection(db, "drones"), payload);
       message.success("✅ Đã thêm drone mới!");
+
       setModalVisible(false);
-      setForm({ name: "", status: "Rảnh", battery: 100, restaurantId: "", restaurantName: "" });
+      setForm({
+        name: "",
+        status: "Rảnh",
+        battery: 100,
+        restaurantId: "",
+        restaurantName: "",
+      });
+
       fetchAll();
     } catch (err) {
       console.error("🔥 Lỗi thêm drone:", err);
@@ -97,35 +108,33 @@ export default function AdminDroneManager() {
     }
   };
 
+  // ================================
   // 🔹 Cập nhật drone
+  // ================================
   const handleUpdate = async () => {
-    try {
-      if (!editingDrone) return;
+    if (!editingDrone) return;
 
+    try {
       const droneRef = doc(db, "drones", editingDrone.id);
 
-      // Cập nhật cơ bản
       await updateDoc(droneRef, {
         name: form.name.trim(),
         status: form.status,
         battery: Number(form.battery),
         restaurantId: form.restaurantId,
-        restaurantName: form.restaurantName || getRestaurantName(form.restaurantId),
+        restaurantName: getRestaurantName(form.restaurantId),
       });
 
-      // ✅ Nếu chuyển từ "Đang giao" → "Rảnh"
+      // Xử lý đơn hàng nếu chuyển từ “Đang giao” → “Rảnh”
       if (editingDrone.status === "Đang giao" && form.status === "Rảnh") {
         if (editingDrone.currentOrderId) {
           const orderRef = doc(db, "orders", editingDrone.currentOrderId);
           await updateDoc(orderRef, {
             status: "Đã giao",
-            statusText: "Đơn hàng đã được giao thành công 🎉",
             deliveredAt: new Date().toISOString(),
             droneId: null,
           });
-          console.log("✅ Đơn hàng", editingDrone.currentOrderId, "→ Đã giao");
 
-          // Xóa liên kết đơn khỏi drone
           await updateDoc(droneRef, { currentOrderId: null });
         }
       }
@@ -135,14 +144,17 @@ export default function AdminDroneManager() {
       setEditingDrone(null);
       fetchAll();
     } catch (err) {
-      console.error("🔥 Lỗi cập nhật drone:", err);
+      console.error("🔥 Lỗi update drone:", err);
       message.error("❌ Cập nhật thất bại!");
     }
   };
 
+  // ================================
   // 🔹 Xóa drone
+  // ================================
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xóa drone này không?")) return;
+
     try {
       await deleteDoc(doc(db, "drones", id));
       message.success("🗑️ Đã xóa drone!");
@@ -153,7 +165,9 @@ export default function AdminDroneManager() {
     }
   };
 
-  // ✅ Lọc danh sách drone
+  // ================================
+  // 🔹 Lọc drone
+  // ================================
   const filteredDrones = drones.filter((d) => {
     const matchName = d.name.toLowerCase().includes(searchText.toLowerCase());
     const matchRestaurant =
@@ -162,6 +176,9 @@ export default function AdminDroneManager() {
     return matchName && matchRestaurant && matchStatus;
   });
 
+  // ================================
+  // 🔹 Columns table
+  // ================================
   const columns = [
     { title: "ID", dataIndex: "id", width: 80 },
     { title: "Tên Drone", dataIndex: "name" },
@@ -173,9 +190,7 @@ export default function AdminDroneManager() {
       render: (_, d) => {
         const order = d.currentOrderId ? getOrder(d.currentOrderId) : null;
         return order ? (
-          <span>
-            #{order.id} — {order.customer?.name || "Khách không rõ"}
-          </span>
+          <span>#{order.id} — {order.customer?.name}</span>
         ) : (
           "—"
         );
@@ -194,13 +209,14 @@ export default function AdminDroneManager() {
                 status: d.status,
                 battery: d.battery,
                 restaurantId: d.restaurantId,
-                restaurantName: d.restaurantName || getRestaurantName(d.restaurantId),
+                restaurantName: getRestaurantName(d.restaurantId),
               });
               setModalVisible(true);
             }}
           >
             ✏️ Sửa
           </button>
+
           <button className="delete-btn" onClick={() => handleDelete(d.id)}>
             ❌ Xóa
           </button>
@@ -210,13 +226,12 @@ export default function AdminDroneManager() {
   ];
 
   if (loading) {
-    return (
-      <div className="loading">
-        <Spin tip="Đang tải danh sách drone..." fullscreen />
-      </div>
-    );
+    return <Spin tip="Đang tải danh sách drone..." fullscreen />;
   }
 
+  // ================================
+  // 🔹 Render UI
+  // ================================
   return (
     <div className="admin-drones-page">
       <h1 className="page-title">🚁 Quản lý Drone (Admin)</h1>
@@ -234,11 +249,7 @@ export default function AdminDroneManager() {
 
         <div className="filter-item">
           <label>Nhà hàng:</label>
-          <Select
-            value={restaurantFilter}
-            onChange={setRestaurantFilter}
-            style={{ width: "100%" }}
-          >
+          <Select value={restaurantFilter} onChange={setRestaurantFilter} style={{ width: "100%" }}>
             {["Tất cả", ...restaurants.map((r) => r.name)].map((name) => (
               <Select.Option key={name} value={name}>
                 {name}
@@ -249,11 +260,7 @@ export default function AdminDroneManager() {
 
         <div className="filter-item">
           <label>Trạng thái:</label>
-          <Select
-            value={statusFilter}
-            onChange={setStatusFilter}
-            style={{ width: "100%" }}
-          >
+          <Select value={statusFilter} onChange={setStatusFilter} style={{ width: "100%" }}>
             {["Tất cả", "Rảnh", "Đang giao", "Bảo trì"].map((s) => (
               <Select.Option key={s} value={s}>
                 {s}
@@ -262,12 +269,25 @@ export default function AdminDroneManager() {
           </Select>
         </div>
 
-        <button className="add-btn" onClick={() => setModalVisible(true)}>
+        <button
+          className="add-btn"
+          onClick={() => {
+            setEditingDrone(null);
+            setForm({
+              name: "",
+              status: "Rảnh",
+              battery: 100,
+              restaurantId: "",
+              restaurantName: "",
+            });
+            setModalVisible(true);
+          }}
+        >
           ➕ Thêm drone
         </button>
       </div>
 
-      {/* Bảng danh sách */}
+      {/* Bảng */}
       <Table
         columns={columns}
         dataSource={filteredDrones}
@@ -276,7 +296,7 @@ export default function AdminDroneManager() {
         className="drone-table"
       />
 
-      {/* Modal thêm / sửa */}
+      {/* Modal Thêm / Sửa */}
       <Modal
         open={modalVisible}
         title={editingDrone ? "Chỉnh sửa Drone" : "Thêm Drone"}
@@ -284,7 +304,7 @@ export default function AdminDroneManager() {
           setModalVisible(false);
           setEditingDrone(null);
         }}
-        onOk={handleUpdate}
+        onOk={editingDrone ? handleUpdate : handleAdd}
         okText={editingDrone ? "Cập nhật" : "Thêm"}
         centered
       >
@@ -299,7 +319,6 @@ export default function AdminDroneManager() {
           value={form.status}
           onChange={(v) => setForm({ ...form, status: v })}
           style={{ width: "100%" }}
-          getPopupContainer={(trigger) => trigger.parentNode}
         >
           <Select.Option value="Rảnh">🟢 Rảnh</Select.Option>
           <Select.Option value="Đang giao">🔵 Đang giao</Select.Option>
@@ -319,17 +338,14 @@ export default function AdminDroneManager() {
         <Select
           placeholder="Chọn nhà hàng"
           value={form.restaurantId || undefined}
-          onChange={(v, option) =>
+          onChange={(v) =>
             setForm({
               ...form,
               restaurantId: v,
-              restaurantName: option?.children || "",
+              restaurantName: getRestaurantName(v),
             })
           }
           style={{ width: "100%" }}
-          getPopupContainer={(trigger) => trigger.parentNode}
-          showSearch
-          optionFilterProp="children"
         >
           {restaurants.map((r) => (
             <Select.Option key={r.id} value={r.id}>

@@ -1,78 +1,141 @@
 import React, { useState } from "react";
-import { collection, doc, setDoc, getDoc } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs } from "firebase/firestore";
 import { db } from "../../firebase";
 import "./AdminCreateRestaurant.css";
 
 export default function AdminCreateRestaurant() {
   const [form, setForm] = useState({
-    id: "",
     name: "",
     address: "",
-    phone: "",
+
+    description: "",
     image: "",
+    phone: "",
     password: "",
   });
+
   const [loading, setLoading] = useState(false);
 
+  // ⚙️ Cập nhật input form
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 🟩 Tự tạo ID dạng r1, r2, r3... và không trùng
+  const generateRestaurantId = async () => {
+    const snapshot = await getDocs(collection(db, "restaurants"));
+    let maxNumber = 0;
+
+    snapshot.forEach((doc) => {
+      const id = doc.id;
+      if (id.startsWith("r")) {
+        const num = parseInt(id.substring(1));
+        if (!isNaN(num) && num > maxNumber) maxNumber = num;
+      }
+    });
+
+    return `r${maxNumber + 1}`;
+  };
+
+  // 🟦 Geocoding địa chỉ → lat/lng
+  const geocodeAddress = async (address) => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+        address + ", Vietnam"
+      )}&format=json&limit=1&countrycodes=vn`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (data.length === 0) return null;
+
+      return {
+        lat: parseFloat(data[0].lat),
+        lng: parseFloat(data[0].lon),
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  // 🟥 Submit tạo nhà hàng
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.id || !form.name || !form.phone || !form.password) {
-      alert("⚠️ Vui lòng nhập đủ ID, Tên, SĐT và Mật khẩu!");
+    if (!form.name || !form.phone || !form.password) {
+      alert("⚠️ Vui lòng nhập đầy đủ Tên nhà hàng, Số điện thoại và Mật khẩu!");
       return;
     }
 
     try {
       setLoading(true);
 
-      const restRef = doc(db, "restaurants", form.id);
-      const userRef = doc(db, "users", form.id);
+      // 1️⃣ KIỂM TRA SỐ ĐIỆN THOẠI CÓ BỊ TRÙNG KHÔNG
+      const usersRef = collection(db, "users");
+      const userSnap = await getDocs(usersRef);
 
-      const [restSnap, userSnap] = await Promise.all([
-        getDoc(restRef),
-        getDoc(userRef),
-      ]);
+      let phoneExists = false;
+      userSnap.forEach((d) => {
+        if (d.data().phonenumber === form.phone) {
+          phoneExists = true;
+        }
+      });
 
-      if (restSnap.exists() || userSnap.exists()) {
-        alert("❌ ID này đã tồn tại, vui lòng chọn ID khác!");
+      if (phoneExists) {
+        alert("❌ Số điện thoại này đã tồn tại! Vui lòng dùng số khác.");
         setLoading(false);
         return;
       }
 
-      // 🏪 Ghi vào collection "restaurants"
-      await setDoc(restRef, {
-        id: form.id,
+      // 2️⃣ Tạo ID mới r1, r2, r3...
+      const newId = await generateRestaurantId();
+
+      // 3️⃣ Geocode địa chỉ
+      const coords = await geocodeAddress(form.address);
+      if (!coords) {
+        alert("❌ Không tìm thấy tọa độ của địa chỉ! Vui lòng nhập đúng và cụ thể hơn.");
+        setLoading(false);
+        return;
+      }
+
+      // 4️⃣ Lưu nhà hàng vào Firestore
+      await setDoc(doc(db, "restaurants", newId), {
+        id: newId,
         name: form.name,
-        address: form.address || "",
+        address: form.address,
+
+        description: form.description || "",
         image: form.image || "",
+        latitude: coords.lat,
+        longitude: coords.lng,
         status: "active",
       });
 
-      // 👤 Ghi vào collection "users"
-      await setDoc(userRef, {
-        uid: form.id,
+      // 5️⃣ Lưu user đăng nhập (role: restaurant)
+      await setDoc(doc(db, "users", newId), {
+        uid: newId,
         phonenumber: form.phone,
         password: form.password,
         role: "restaurant",
-        restaurantId: form.id,
-        restaurantName: form.name, // ✅ Lưu thêm tên nhà hàng vào user
+        restaurantId: newId,
+        restaurantName: form.name,
         status: "active",
       });
 
-      alert("✅ Tạo nhà hàng & tài khoản (SĐT) thành công!");
+      alert(`🎉 Tạo nhà hàng thành công! Mã nhà hàng: ${newId}`);
+
+      // Reset form
       setForm({
-        id: "",
         name: "",
         address: "",
-        phone: "",
+
+        description: "",
         image: "",
+        phone: "",
         password: "",
       });
+
     } catch (err) {
       console.error("🔥 Lỗi khi tạo:", err);
       alert("❌ Có lỗi xảy ra, vui lòng thử lại!");
@@ -88,27 +151,22 @@ export default function AdminCreateRestaurant() {
       <form className="acr-form" onSubmit={handleSubmit}>
         <div className="acr-grid">
           <label>
-            ID Nhà hàng
-            <input
-              name="id"
-              value={form.id}
-              onChange={handleChange}
-              required
-            />
-          </label>
-          <label>
             Tên Nhà hàng
-            <input
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-            />
+            <input name="name" value={form.name} onChange={handleChange} required />
           </label>
+
           <label>
             Địa chỉ
-            <input name="address" value={form.address} onChange={handleChange} />
+            <input name="address" value={form.address} onChange={handleChange} required />
           </label>
+
+
+
+          <label>
+            Mô tả
+            <input name="description" value={form.description} onChange={handleChange} />
+          </label>
+
           <label>
             Ảnh/logo
             <input name="image" value={form.image} onChange={handleChange} />
@@ -117,27 +175,17 @@ export default function AdminCreateRestaurant() {
 
         <hr className="acr-divider" />
 
-        <h3 className="acr-subtitle">🔑 Thông tin đăng nhập</h3>
+        <h3 className="acr-subtitle">🔑 Tài khoản đăng nhập Nhà hàng</h3>
+
         <div className="acr-grid">
           <label>
-            Số điện thoại (dùng để đăng nhập)
-            <input
-              name="phone"
-              type="text"
-              value={form.phone}
-              onChange={handleChange}
-              required
-            />
+            Số điện thoại
+            <input name="phone" value={form.phone} onChange={handleChange} required />
           </label>
+
           <label>
             Mật khẩu
-            <input
-              name="password"
-              type="text"
-              value={form.password}
-              onChange={handleChange}
-              required
-            />
+            <input name="password" type="password" value={form.password} onChange={handleChange} required />
           </label>
         </div>
 
