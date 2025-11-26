@@ -186,7 +186,7 @@ export default function OrderTrackingScreen() {
   const [droneEtaMinutes, setDroneEtaMinutes] = useState<number | null>(null);
 
   const db = useMemo(() => getFirestore(app), []);
-  const mapRef = useRef<MapView | null>(null);
+ const mapRef = useRef<any>(null);
 
   // Bạn đã nói "Có icon rồi"
   const droneIcon = require('../../assets/images/drone.png'); // PNG 40–60px
@@ -634,63 +634,53 @@ export default function OrderTrackingScreen() {
             </View>
           );
         })()}
-        {/* Nút hành động thay đổi trạng thái */}
-        {(() => {
-          // pending → nút "Xác nhận đơn"
-          if (normalizedStatus === 'pending') {
-            return (
-              <TouchableOpacity
-                style={styles.confirmBtn}
-                onPress={async () => {
-                  try {
-                    const orderRef = doc(db, "orders", order.id);
-                    await updateDoc(orderRef, {
-                      status: "confirmed",
-                      statusText: "Nhà hàng đã xác nhận đơn hàng",
-                      updatedAt: serverTimestamp(),
-                    });
-                    Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận!");
-                  } catch (err) {
-                    console.error(err);
-                    Alert.alert("Lỗi", "Không thể xác nhận đơn hàng.");
-                  }
-                }}
-              >
-                <Ionicons name="checkmark-done" size={22} color="#fff" />
+    {(() => {
+ // ❌ Không hiện khi đang xử lý
+if (normalizedStatus === "pending") return null;
 
-              </TouchableOpacity>
-            );
+// ✅ Đang giao → hiện nút "Đã nhận hàng"
+if (normalizedStatus === "delivering") {
+  return (
+    <TouchableOpacity
+      style={[styles.confirmBtn, { backgroundColor: '#0EA5E9' }]}
+      onPress={async () => {
+        try {
+          const orderRef = doc(db, "orders", order.id);
+          await updateDoc(orderRef, {
+            status: "Đã giao",
+            statusText: "Đơn hàng đã được giao thành công",
+            updatedAt: serverTimestamp(),
+          });
+
+          // 🟢 Giải phóng drone
+          if (order.droneId) {
+            await updateDoc(doc(db, "drones", order.droneId), {
+              status: "Rảnh",
+              currentOrderId: null,
+              destination: null,
+            });
           }
 
-          // confirmed hoặc delivering → nút "Đã nhận hàng"
-          if (normalizedStatus === 'confirmed' || normalizedStatus === 'delivering') {
-            return (
-              <TouchableOpacity
-                style={[styles.confirmBtn, { backgroundColor: '#0EA5E9' }]}
-                onPress={async () => {
-                  try {
-                    const orderRef = doc(db, "orders", order.id);
-                    await updateDoc(orderRef, {
-                      status: "Đã giao",
-                      statusText: "Đơn hàng đã được giao thành công",
-                      updatedAt: serverTimestamp(),
-                    });
-                    Alert.alert("🎉 Thành công", "Đơn hàng đã chuyển sang Đã giao!");
-                  } catch (err) {
-                    console.error(err);
-                    Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
-                  }
-                }}
-              >
-                <Ionicons name="cube-outline" size={22} color="#fff" />
-                <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
-              </TouchableOpacity>
-            );
-          }
+          Alert.alert("🎉 Thành công", "Đơn hàng đã giao thành công");
+        } catch (err) {
+          console.error(err);
+          Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
+        }
+      }}
+    >
+      <Ionicons name="cube-outline" size={22} color="#fff" />
+      <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
+    </TouchableOpacity>
+  );
+}
 
-          // completed → không hiển thị nút
-          return null;
-        })()}
+
+  // ❌ Hoàn tất → ẩn
+  if (normalizedStatus === "completed") return null;
+
+  return null;
+})()}
+
 
 
         {/* Map card */}
@@ -803,9 +793,7 @@ export default function OrderTrackingScreen() {
               <Text style={styles.successTitle}>Đơn hàng đã hoàn tất!</Text>
               <Text style={styles.successSubtitle}>Cảm ơn bạn đã sử dụng dịch vụ.</Text>
             </View>
-            <TouchableOpacity style={styles.rateBtn}>
-              <Text style={styles.rateBtnText}>Đánh giá</Text>
-            </TouchableOpacity>
+            
           </View>
         ) : null}
 

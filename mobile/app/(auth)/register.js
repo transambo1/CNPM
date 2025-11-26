@@ -141,14 +141,76 @@ export default function Register() {
   );
 }
 
-// 💅 Styles
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: "center", padding: 20, backgroundColor: "#fff" },
-  title: { fontSize: 28, fontWeight: "bold", marginBottom: 30, textAlign: "center", color: "#333" },
-  input: { height: 50, borderWidth: 1, borderColor: "#ddd", borderRadius: 8, marginBottom: 15, paddingHorizontal: 15, backgroundColor: "#f9f9f9" },
-  registerButton: { backgroundColor: "#007AFF", paddingVertical: 15, borderRadius: 8, alignItems: "center" },
-  registerButtonText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
-  loginContainer: { flexDirection: "row", justifyContent: "center", marginTop: 20 },
-  loginText: { color: "#555", fontSize: 14 },
-  loginLink: { color: "#007AFF", fontWeight: "bold" },
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    padding: 24,
+    backgroundColor: "#FFFFFF",
+  },
+
+  title: {
+    fontSize: 30,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 32,
+    color: "#FF7A00", // cam chủ đạo
+    letterSpacing: 0.5,
+  },
+
+  input: {
+    height: 52,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    paddingHorizontal: 16,
+    marginBottom: 16,
+    fontSize: 15,
+    backgroundColor: "#FAFAFA",
+
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+
+  registerButton: {
+    backgroundColor: "#FF7A00",
+    paddingVertical: 14,
+    borderRadius: 14,
+    alignItems: "center",
+
+    shadowColor: "#FF7A00",
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
+    marginTop: 4,
+  },
+
+  registerButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 16,
+    letterSpacing: 0.5,
+  },
+
+  loginContainer: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginTop: 26,
+  },
+
+  loginText: {
+    color: "#555",
+    fontSize: 14,
+  },
+
+  loginLink: {
+    color: "#FF7A00",
+    fontWeight: "700",
+    marginLeft: 4,
+  },
 });
+

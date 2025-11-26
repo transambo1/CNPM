@@ -294,111 +294,252 @@ export default function RestaurantMenu() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#F6F8FB' },
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff", // nền cam nhạt nhẹ
+  },
+
+  /* ===================== APP BAR ===================== */
   appBar: {
     height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 12,
-    backgroundColor: '#fff',
-    borderBottomColor: '#E5E9F0',
+    backgroundColor: "#fff",  // Nền trắng cho app bar
     borderBottomWidth: 1,
+    borderBottomColor: "#ffd6b0",
+    shadowColor: "#000",
+    shadowOpacity: 0.05,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 6,
+    elevation: 3,
   },
+
   backBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F0F3F6',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",  // Nền trắng nhạt cho back button
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
   },
+
   appBarTitle: {
-    flex: 1, textAlign: 'center',
-    fontSize: 18, fontWeight: '700', color: '#111',
+    flex: 1,
+    textAlign: "center",
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1a1a1a",
   },
+
   cartButton: {
-    width: 36, height: 36, borderRadius: 18,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: '#F0F3F6',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",  // Nền trắng nhạt cho cart button
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
   },
+
   cartBadge: {
-    position: 'absolute', top: -4, right: -4,
-    minWidth: 18, height: 18, borderRadius: 9,
-    backgroundColor: '#FF3B30', alignItems: 'center', justifyContent: 'center',
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#ff7a00",
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 4,
   },
-  cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+  cartBadgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "700",
+    
+  },
 
+  /* ===================== FILTER BAR ===================== */
   filterBar: {
-    backgroundColor: '#fff',
-    borderBottomColor: '#E5E9F0',
+    backgroundColor: "#fff",  // Nền trắng cho filter bar
+    borderBottomColor: "#ffd6b0",
     borderBottomWidth: 1,
     paddingVertical: 8,
     paddingHorizontal: 12,
   },
+
   filterButton: {
-    paddingHorizontal: 14, paddingVertical: 8,
-    borderRadius: 20, backgroundColor: '#F1F5F9',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
     marginRight: 8,
   },
-  filterButtonActive: { backgroundColor: '#00A74F' },
-  filterText: { fontSize: 14, color: '#111', fontWeight: '500' },
-  filterTextActive: { color: '#fff', fontWeight: '700' },
 
+  filterButtonActive: {
+    backgroundColor: "#ff7a00",
+    borderColor: "#ff7a00",
+  },
+
+  filterText: {
+    fontSize: 14,
+    color: "#1a1a1a",
+    fontWeight: "600",
+  },
+
+  filterTextActive: {
+    color: "#fff",
+    fontWeight: "700",
+  },
+
+  /* ===================== SEARCH BOX ===================== */
   searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F1F5F9',
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff", // Nền trắng nhạt cho search box
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
   },
-  searchInput: { flex: 1, fontSize: 15, color: '#111' },
 
-  heroWrapper: {
-    margin: 16, borderRadius: 18, overflow: 'hidden', height: 200,
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: "#1a1a1a",
+    fontWeight: "500",
   },
-  heroImage: { width: '100%', height: '100%' },
+
+  /* ===================== HERO ===================== */
+  heroWrapper: {
+    margin: 16,
+    borderRadius: 18,
+    overflow: "hidden",
+    height: 200,
+  },
+  heroImage: {
+    width: "100%",
+    height: "100%",
+  },
   heroOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: "rgba(0,0,0,0.28)",
   },
-  heroContent: { position: 'absolute', bottom: 18, left: 18, right: 18 },
-  heroName: { fontSize: 24, fontWeight: '800', color: '#fff', marginBottom: 6 },
-  heroAddress: { color: '#F1F5F9', fontSize: 14 },
+  heroContent: {
+    position: "absolute",
+    bottom: 18,
+    left: 18,
+    right: 18,
+  },
+  heroName: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: "#fff",
+    marginBottom: 6,
+  },
+  heroAddress: {
+    color: "#FFEFE6",
+    fontSize: 14,
+  },
+
+  /* ===================== LIST + CARDS ===================== */
+  listContent: {
+    paddingBottom: 32,
+    paddingHorizontal: 16,
+  },
+
+  emptyListContent: {
+    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
+
   sectionTitle: {
-    marginTop: 26, marginBottom: 12,
-    marginHorizontal: 16, fontSize: 20,
-    fontWeight: '700', color: '#111',
+    marginTop: 26,
+    marginBottom: 12,
+    marginHorizontal: 16,
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#1a1a1a",
   },
-  listContent: { paddingBottom: 32, paddingHorizontal: 16 },
-  emptyListContent: { flexGrow: 1, paddingHorizontal: 16, paddingBottom: 32 },
+
   menuCard: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    backgroundColor: "#fff",  // Nền trắng cho menu card
     borderRadius: 16,
     padding: 12,
-    shadowColor: '#000',
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
+    shadowColor: "#000",
     shadowOpacity: 0.05,
-    shadowRadius: 8,
+    shadowRadius: 6,
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
+
   menuImage: {
     width: 92,
     height: 92,
     borderRadius: 14,
     marginRight: 12,
-    backgroundColor: '#F1F5F9',
+    backgroundColor: "#fff", // Nền trắng nhạt cho ảnh menu
+    borderWidth: 1,
+    borderColor: "#ffd6b0",
   },
-  menuContent: { flex: 1, justifyContent: 'space-between' },
-  menuHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
-  menuTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#111' },
-  menuPrice: { fontSize: 15, fontWeight: '700', color: '#00A74F' },
+
+  menuContent: { flex: 1, justifyContent: "space-between" },
+
+  menuHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+
+  menuTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#1a1a1a",
+  },
+
+  menuPrice: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#ff5a00",
+  },
+
   menuMeta: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 14,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
   },
-  metaGroup: { flexDirection: 'row', alignItems: 'center' },
-  metaText: { marginLeft: 6, fontSize: 13, color: '#111', fontWeight: '600' },
-  metaSub: { marginLeft: 4, fontSize: 12, color: '#6B7280' },
+
+  metaGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
+  metaText: {
+    marginLeft: 6,
+    fontSize: 13,
+    color: "#1a1a1a",
+    fontWeight: "700",
+  },
+
+  metaSub: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: "#6B7280",
+    fontWeight: "500",
+  },
 });
+

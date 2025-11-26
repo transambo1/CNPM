@@ -94,15 +94,78 @@ const Login = () => {
 };
 
 const styles = StyleSheet.create({
-    /* copy styles từ file bạn đang dùng */
-    container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
-    title: { fontSize: 28, fontWeight: 'bold', marginBottom: 30, textAlign: 'center', color: '#333' },
-    input: { height: 50, borderColor: '#ddd', borderWidth: 1, borderRadius: 8, marginBottom: 15, paddingHorizontal: 15, fontSize: 16, backgroundColor: '#f9f9f9' },
-    loginButton: { backgroundColor: '#007AFF', paddingVertical: 15, borderRadius: 8, alignItems: 'center' },
-    loginButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    registerContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 30 },
-    registerText: { fontSize: 14, color: '#555' },
-    registerLink: { color: '#007AFF', fontWeight: 'bold' },
+    container: {
+        flex: 1,
+        justifyContent: "center",
+        padding: 24,
+        backgroundColor: "#FFFFFF",
+    },
+
+    title: {
+        fontSize: 30,
+        fontWeight: "700",
+        textAlign: "center",
+        marginBottom: 32,
+        color: "#FF7A00",          // cam thương hiệu
+        letterSpacing: 0.5,
+    },
+
+    input: {
+        height: 52,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: "#E5E7EB",
+        paddingHorizontal: 16,
+        marginBottom: 16,
+        fontSize: 15,
+        backgroundColor: "#FAFAFA",
+
+        // Shadow nhẹ
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 1,
+    },
+
+    loginButton: {
+        backgroundColor: "#FF7A00",      // cam
+        paddingVertical: 14,
+        borderRadius: 14,
+        alignItems: "center",
+
+        // bóng nhẹ xịn
+        shadowColor: "#FF7A00",
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 2,
+        marginTop: 4,
+    },
+
+    loginButtonText: {
+        color: "#FFF",
+        fontWeight: "700",
+        fontSize: 16,
+        letterSpacing: 0.5,
+    },
+
+    registerContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 26,
+    },
+
+    registerText: {
+        fontSize: 14,
+        color: "#555",
+    },
+
+    registerLink: {
+        color: "#FF7A00",
+        fontWeight: "700",
+        marginLeft: 4,
+    },
 });
 
 export default Login;

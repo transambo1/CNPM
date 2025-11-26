@@ -32,7 +32,7 @@ export default function ProtectedLayout() {
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: '#00A74F',
+        tabBarActiveTintColor: '#ff5400',
         tabBarInactiveTintColor: '#555',
         tabBarLabelStyle: {
           fontSize: 11,
