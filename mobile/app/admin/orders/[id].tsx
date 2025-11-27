@@ -185,9 +185,7 @@ export default function AdminOrderDetail() {
                     <Text style={styles.itemLine}>
                         Tạo đơn: {formatDate(order.createdAt)}
                     </Text>
-                    <Text style={styles.itemLine}>
-                        Giao xong: {formatDate(order.deliveredAt)}
-                    </Text>
+
                 </View>
             </ScrollView>
         </SafeAreaView>

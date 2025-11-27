@@ -173,14 +173,15 @@ export default function RestaurantMenu() {
           <Text style={styles.menuTitle} numberOfLines={2}>
             {item.name}
           </Text>
-          <Text style={styles.menuPrice}>{formatCurrency(item.price ?? 0)}</Text>
-        </View>
-        <View style={styles.menuMeta}>
           <View style={styles.metaGroup}>
             <Ionicons name="star" size={14} color="#FFC107" />
             <Text style={styles.metaText}>{(item.rating ?? 4.5).toFixed(1)}</Text>
             <Text style={styles.metaSub}>({item.reviews ?? 120})</Text>
           </View>
+
+        </View>
+        <View style={styles.menuMeta}>
+          <Text style={styles.menuPrice}>{formatCurrency(item.price ?? 0)}</Text>
           <View style={styles.metaGroup}>
             <Ionicons name="flame-outline" size={14} color="#FF6B6B" />
             <Text style={styles.metaSub}>Bán chạy</Text>
@@ -361,7 +362,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 10,
     fontWeight: "700",
-    
+
   },
 
   /* ===================== FILTER BAR ===================== */

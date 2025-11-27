@@ -255,7 +255,7 @@ export default function RestaurantDashboard() {
           CHART REVENUE
       ========================= */}
       <div className="chart-container">
-        <h3>💰 Doanh thu theo ngày</h3>
+        <h3> Doanh thu theo ngày</h3>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -278,7 +278,7 @@ export default function RestaurantDashboard() {
           CHART ORDER COUNT
       ========================= */}
       <div className="chart-container">
-        <h3>📦 Số đơn theo ngày</h3>
+        <h3> Số đơn theo ngày</h3>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={orderChart}>
             <CartesianGrid strokeDasharray="3 3" />

@@ -311,9 +311,9 @@ export default function PaymentScreen() {
     });
     const [savingAddress, setSavingAddress] = useState(false);
     const [placingOrder, setPlacingOrder] = useState(false);
-const [showQR, setShowQR] = useState(false);
-const [qrPaid, setQrPaid] = useState(false);
-const [qrProcessing, setQrProcessing] = useState(false);
+    const [showQR, setShowQR] = useState(false);
+    const [qrPaid, setQrPaid] = useState(false);
+    const [qrProcessing, setQrProcessing] = useState(false);
     // Undo snackbar
     const [undoItem, setUndoItem] = useState<null | {
         id: string; name: string; img: string; price: number; quantity: number; restaurantId: string; restaurantName?: string;
@@ -531,10 +531,10 @@ const [qrProcessing, setQrProcessing] = useState(false);
             restaurantName: it.restaurantName,
         });
         if (undoTimer.current) clearTimeout(undoTimer.current);
-       undoTimer.current = setTimeout(() => {
-    setUndoItem(null);
-    undoTimer.current = null;
-}, 3000) as any;
+        undoTimer.current = setTimeout(() => {
+            setUndoItem(null);
+            undoTimer.current = null;
+        }, 3000) as any;
     }, [items, removeFromCart]);
 
     // Undo
@@ -706,10 +706,10 @@ const [qrProcessing, setQrProcessing] = useState(false);
             openAddressSheet();
             return;
         }
-if (payment === "qr" && !qrPaid && !qrProcessing) {
-    setShowQR(true);
-    return;
-}
+        if (payment === "qr" && !qrPaid && !qrProcessing) {
+            setShowQR(true);
+            return;
+        }
         const addressDetail = sanitizeAddressDetail(selectedAddress.detail);
         if (!addressDetail) {
             Alert.alert("Thiếu địa chỉ", "Địa chỉ giao hàng không hợp lệ. Vui lòng cập nhật lại.");
@@ -838,8 +838,8 @@ if (payment === "qr" && !qrPaid && !qrProcessing) {
             const docRef = await addDoc(ordersRef, newOrder);
 
             clearCart(activeRestaurantId ?? undefined);
-     setQrPaid(false);        // 🔥 reset để lần sau QR hoạt động đúng
-setQrProcessing(false); 
+            setQrPaid(false);        // 🔥 reset để lần sau QR hoạt động đúng
+            setQrProcessing(false);
             router.replace(`/order/${docRef.id}` as never);
         } catch (error) {
             console.error("Không thể đặt đơn:", error);
@@ -867,12 +867,17 @@ setQrProcessing(false);
     ]);
 
     const total = totalPrice;
-const confirmQRPayment = async () => {
-    setShowQR(false);   // tắt popup QR
-    setQrPaid(true);    // đánh dấu đã thanh toán
+    const confirmQRPayment = async () => {
+        setQrProcessing(true);   // 🛑 khóa handleOrder gọi thêm lần nữa
+        setQrPaid(true);
+        setShowQR(false);
 
-    await handleOrder();  // tiến hành tạo đơn
-};
+        await handleOrder();     // chạy lần duy nhất
+
+        setQrProcessing(false);  // mở khóa sau khi đặt đơn xong
+    };
+
+
 
     return (
         <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -957,30 +962,30 @@ const confirmQRPayment = async () => {
                         )}
                     </View>
 
-            
+
                     {/* Phương thức thanh toán */}
-                  {/* ===== PHƯƠNG THỨC THANH TOÁN — CHỈ HIỆN COD ===== */}
-<View style={styles.card}>
-    <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>Thông tin thanh toán</Text>
-        {/* đã xóa nút "Xem tất cả" */}
-    </View>
+                    {/* ===== PHƯƠNG THỨC THANH TOÁN — CHỈ HIỆN COD ===== */}
+                    <View style={styles.card}>
+                        <View style={styles.cardHeader}>
+                            <Text style={styles.cardTitle}>Thông tin thanh toán</Text>
+                            {/* đã xóa nút "Xem tất cả" */}
+                        </View>
 
-    <View style={[styles.payMethodRow, { opacity: 1 }]}>
-        <View style={styles.payMethodLeft}>
-            <View style={styles.pmIcon}>
-                <Text style={styles.pmIconTxt}>QR</Text>
-            </View>
+                        <View style={[styles.payMethodRow, { opacity: 1 }]}>
+                            <View style={styles.payMethodLeft}>
+                                <View style={styles.pmIcon}>
+                                    <Text style={styles.pmIconTxt}>QR</Text>
+                                </View>
 
-            <Text style={styles.payMethodText}>
-                Thanh toán bằng mã QR
-            </Text>
-        </View>
+                                <Text style={styles.payMethodText}>
+                                    Thanh toán bằng mã QR
+                                </Text>
+                            </View>
 
-        {/* Radio chọn cố định */}
-        <View style={[styles.radio, styles.radioActive]} />
-    </View>
-</View>
+                            {/* Radio chọn cố định */}
+                            <View style={[styles.radio, styles.radioActive]} />
+                        </View>
+                    </View>
 
 
                     {/* Tạm tính */}
@@ -989,7 +994,7 @@ const confirmQRPayment = async () => {
                             <Text style={styles.muted}>Tạm tính</Text>
                             <Text style={styles.bold}>{VND(totalPrice)}</Text>
                         </View>
-                      
+
                         <View style={[styles.rowSplit, { marginTop: 8 }]}>
                             <Text style={styles.totalTxt}>Tổng cộng</Text>
                             <Text style={styles.totalPrice}>{VND(total)}</Text>
@@ -1027,7 +1032,7 @@ const confirmQRPayment = async () => {
                     </View>
                     <TouchableOpacity
                         style={[styles.primaryBtn, (items.length === 0 || placingOrder) && { opacity: 0.5 }]}
-       onPress={handleOrder}
+                        onPress={handleOrder}
 
 
                         disabled={items.length === 0 || placingOrder}
@@ -1191,24 +1196,24 @@ const confirmQRPayment = async () => {
                         />
                         <View style={styles.defaultRow}>
                             <Text style={styles.defaultLabel}>Đặt làm địa chỉ mặc định</Text>
-                           <View style={styles.switchWrapper}>
-    <Switch
-        value={newAddressForm.isDefault || addresses.length === 0}
-        onValueChange={(value) =>
-            setNewAddressForm((prev) => ({ ...prev, isDefault: value }))
-        }
-        disabled={addresses.length === 0}
-        trackColor={{
-            true: "#ffb899",
-            false: "#ffe8d9",
-        }}
-        thumbColor={
-            newAddressForm.isDefault || addresses.length === 0
-                ? "#ff6200ff"
-                : "#fff"
-        }
-    />
-</View>
+                            <View style={styles.switchWrapper}>
+                                <Switch
+                                    value={newAddressForm.isDefault || addresses.length === 0}
+                                    onValueChange={(value) =>
+                                        setNewAddressForm((prev) => ({ ...prev, isDefault: value }))
+                                    }
+                                    disabled={addresses.length === 0}
+                                    trackColor={{
+                                        true: "#ffb899",
+                                        false: "#ffe8d9",
+                                    }}
+                                    thumbColor={
+                                        newAddressForm.isDefault || addresses.length === 0
+                                            ? "#ff6200ff"
+                                            : "#fff"
+                                    }
+                                />
+                            </View>
 
                         </View>
                         <TouchableOpacity
@@ -1268,43 +1273,43 @@ const confirmQRPayment = async () => {
                 </View>
             </Animated.View>
 
-          {/* Sheet: Chọn phương thức thanh toán  */}
-<Animated.View
-    style={[styles.sheet, { height: paySheet.snapHeight, transform: [{ translateY: paySheet.translateY }] }]}
-    {...paySheet.pan.panHandlers}
->
-    <View style={styles.grabber} />
-    <View style={styles.sheetHeader}>
-        <Text style={styles.sheetTitle}>Chọn phương thức thanh toán</Text>
-        <TouchableOpacity onPress={paySheet.closeSheet}>
-            <Text style={styles.sheetClose}>Đóng</Text>
-        </TouchableOpacity>
-    </View>
-
-    <View style={{ paddingHorizontal: 16, gap: 10 }}>
-        {(["cod", "qr"] as PaymentMethod[]).map((m) => (
-            <TouchableOpacity
-                key={m}
-                style={[styles.pmRow, payment === m && { borderColor: "#16A34A" }]}
-                onPress={() => { setPayment(m); paySheet.closeSheet(); }}
-                activeOpacity={0.85}
+            {/* Sheet: Chọn phương thức thanh toán  */}
+            <Animated.View
+                style={[styles.sheet, { height: paySheet.snapHeight, transform: [{ translateY: paySheet.translateY }] }]}
+                {...paySheet.pan.panHandlers}
             >
-                <View style={styles.pmIcon}>
-                    <Text style={styles.pmIconTxt}>
-                        {m === "cod" ? "COD" : "QR"}
-                    </Text>
+                <View style={styles.grabber} />
+                <View style={styles.sheetHeader}>
+                    <Text style={styles.sheetTitle}>Chọn phương thức thanh toán</Text>
+                    <TouchableOpacity onPress={paySheet.closeSheet}>
+                        <Text style={styles.sheetClose}>Đóng</Text>
+                    </TouchableOpacity>
                 </View>
 
-                <Text style={styles.pmLabel}>
-                    {m === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Thanh toán bằng mã QR"}
-                </Text>
+                <View style={{ paddingHorizontal: 16, gap: 10 }}>
+                    {(["cod", "qr"] as PaymentMethod[]).map((m) => (
+                        <TouchableOpacity
+                            key={m}
+                            style={[styles.pmRow, payment === m && { borderColor: "#16A34A" }]}
+                            onPress={() => { setPayment(m); paySheet.closeSheet(); }}
+                            activeOpacity={0.85}
+                        >
+                            <View style={styles.pmIcon}>
+                                <Text style={styles.pmIconTxt}>
+                                    {m === "cod" ? "COD" : "QR"}
+                                </Text>
+                            </View>
 
-                <View style={{ flex: 1 }} />
-                <View style={[styles.radio, payment === m && styles.radioActive]} />
-            </TouchableOpacity>
-        ))}
-    </View>
-</Animated.View>
+                            <Text style={styles.pmLabel}>
+                                {m === "cod" ? "Thanh toán khi nhận hàng (COD)" : "Thanh toán bằng mã QR"}
+                            </Text>
+
+                            <View style={{ flex: 1 }} />
+                            <View style={[styles.radio, payment === m && styles.radioActive]} />
+                        </TouchableOpacity>
+                    ))}
+                </View>
+            </Animated.View>
 
 
             {/* Snackbar Undo */}
@@ -1315,32 +1320,32 @@ const confirmQRPayment = async () => {
                 </View>
             )}
             {showQR && (
-    <View style={styles.qrOverlay}>
-        <View style={styles.qrBox}>
-            <Text style={styles.qrTitle}>Quét mã để thanh toán</Text>
+                <View style={styles.qrOverlay}>
+                    <View style={styles.qrBox}>
+                        <Text style={styles.qrTitle}>Quét mã để thanh toán</Text>
 
-            <Image
-                source={{
-                    uri: `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=PAY-${total}`,
-                }}
-                style={{ width: 220, height: 220, marginTop: 10 }}
-            />
+                        <Image
+                            source={{
+                                uri: `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=PAY-${total}`,
+                            }}
+                            style={{ width: 220, height: 220, marginTop: 10 }}
+                        />
 
-            <Text style={styles.qrAmount}>
-                Bạn cần thanh toán:{" "}
-                <Text style={{ color: "#ff6200", fontWeight: "800" }}>{VND(total)}</Text>
-            </Text>
+                        <Text style={styles.qrAmount}>
+                            Bạn cần thanh toán:{" "}
+                            <Text style={{ color: "#ff6200", fontWeight: "800" }}>{VND(total)}</Text>
+                        </Text>
 
-            <TouchableOpacity style={styles.qrConfirmBtn} onPress={confirmQRPayment}>
-                <Text style={styles.qrConfirmTxt}>Tôi đã thanh toán</Text>
-            </TouchableOpacity>
+                        <TouchableOpacity style={styles.qrConfirmBtn} onPress={confirmQRPayment}>
+                            <Text style={styles.qrConfirmTxt}>Tôi đã thanh toán</Text>
+                        </TouchableOpacity>
 
-            <TouchableOpacity style={styles.qrCancel} onPress={() => setShowQR(false)}>
-                <Text style={styles.qrCancelTxt}>Đóng</Text>
-            </TouchableOpacity>
-        </View>
-    </View>
-)}
+                        <TouchableOpacity style={styles.qrCancel} onPress={() => setShowQR(false)}>
+                            <Text style={styles.qrCancelTxt}>Đóng</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
 
         </SafeAreaView>
     );
@@ -1607,197 +1612,197 @@ const styles = StyleSheet.create({
     },
     snackText: { color: "#fff", fontSize: 13, flex: 1, marginRight: 10 },
     snackUndo: { color: "#ff7a00", fontWeight: "800" },
-    
-addressItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
-    borderWidth: 1,
-    borderColor: "#ffd6b0",
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 2,
-},
 
-addressItemActive: {
-    borderColor: "#ff7a00",
-    backgroundColor: "#fff5ec",
-},
+    addressItem: {
+        flexDirection: "row",
+        alignItems: "flex-start",
+        gap: 12,
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
+        borderRadius: 16,
+        padding: 14,
+        backgroundColor: "#fff",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 6,
+        elevation: 2,
+    },
 
-addressItemLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#ff7a00",
-    marginBottom: 3,
-},
+    addressItemActive: {
+        borderColor: "#ff7a00",
+        backgroundColor: "#fff5ec",
+    },
 
-addressItemDetail: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#1a1a1a",
-    marginBottom: 3,
-},
+    addressItemLabel: {
+        fontSize: 13,
+        fontWeight: "700",
+        color: "#ff7a00",
+        marginBottom: 3,
+    },
 
-addressItemNote: {
-    fontSize: 13,
-    color: "#777",
-    marginBottom: 4,
-},
+    addressItemDetail: {
+        fontSize: 15,
+        fontWeight: "700",
+        color: "#1a1a1a",
+        marginBottom: 3,
+    },
 
-addressItemMetaRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 4,
-},
+    addressItemNote: {
+        fontSize: 13,
+        color: "#777",
+        marginBottom: 4,
+    },
 
-addressItemMeta: {
-    fontSize: 12,
-    color: "#999",
-},
+    addressItemMetaRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 10,
+        marginTop: 4,
+    },
 
-addressBadge: {
-    marginTop: 6,
-    fontSize: 12,
-    fontWeight: "800",
-    color: "#ff5a00",
-    backgroundColor: "#ffe6d4",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-},
-searchRow: {
-    paddingHorizontal: 16,
-    paddingTop: 6,
-    paddingBottom: 12,
-},
+    addressItemMeta: {
+        fontSize: 12,
+        color: "#999",
+    },
 
-searchInput: {
-    borderWidth: 1,
-    borderColor: "#ffd6b0",
-    backgroundColor: "#fff8f2",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: "#1a1a1a",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 2,
-},
-defaultRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 6,
-    marginTop: 4,
-},
+    addressBadge: {
+        marginTop: 6,
+        fontSize: 12,
+        fontWeight: "800",
+        color: "#ff5a00",
+        backgroundColor: "#ffe6d4",
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 8,
+        alignSelf: "flex-start",
+    },
+    searchRow: {
+        paddingHorizontal: 16,
+        paddingTop: 6,
+        paddingBottom: 12,
+    },
 
-defaultLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#1a1a1a",
-},
-payMethodLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-},
-emptyAddressBox: {
-    borderWidth: 1,
-    borderColor: "#ffd6b0",
-    backgroundColor: "#fff8f2",
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 6,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 6,
-    elevation: 2,
-},
-sep: {
-    height: 1,
-    backgroundColor: "#ffe2c7",
-    marginVertical: 4,
-},
+    searchInput: {
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
+        backgroundColor: "#fff8f2",
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        fontSize: 15,
+        color: "#1a1a1a",
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    defaultRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingVertical: 6,
+        marginTop: 4,
+    },
 
-switchWrapper: {
-    padding: 2,
-    borderWidth: 2,
-    borderColor: "#ffb899",     // viền cam đậm
-    borderRadius: 20,
-},
-qrOverlay: {
-  ...StyleSheet.absoluteFillObject,
-  backgroundColor: "rgba(0,0,0,0.45)",
-  justifyContent: "center",
-  alignItems: "center",
-  padding: 20,
-  zIndex: 999,
-},
+    defaultLabel: {
+        fontSize: 14,
+        fontWeight: "700",
+        color: "#1a1a1a",
+    },
+    payMethodLeft: {
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        flex: 1,
+    },
+    emptyAddressBox: {
+        borderWidth: 1,
+        borderColor: "#ffd6b0",
+        backgroundColor: "#fff8f2",
+        borderRadius: 16,
+        padding: 16,
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 6,
+        shadowColor: "#000",
+        shadowOpacity: 0.05,
+        shadowOffset: { width: 0, height: 3 },
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    sep: {
+        height: 1,
+        backgroundColor: "#ffe2c7",
+        marginVertical: 4,
+    },
 
-qrBox: {
-  width: "100%",
-  backgroundColor: "#fff",
-  borderRadius: 20,
-  padding: 20,
-  alignItems: "center",
-  elevation: 8,
-  shadowColor: "#000",
-  shadowOpacity: 0.15,
-  shadowOffset: { width: 0, height: 6 },
-  shadowRadius: 12,
-},
+    switchWrapper: {
+        padding: 2,
+        borderWidth: 2,
+        borderColor: "#ffb899",     // viền cam đậm
+        borderRadius: 20,
+    },
+    qrOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0,0,0,0.45)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+        zIndex: 999,
+    },
 
-qrTitle: {
-  fontSize: 18,
-  fontWeight: "800",
-  color: "#1a1a1a",
-},
+    qrBox: {
+        width: "100%",
+        backgroundColor: "#fff",
+        borderRadius: 20,
+        padding: 20,
+        alignItems: "center",
+        elevation: 8,
+        shadowColor: "#000",
+        shadowOpacity: 0.15,
+        shadowOffset: { width: 0, height: 6 },
+        shadowRadius: 12,
+    },
 
-qrAmount: {
-  marginTop: 20,
-  fontSize: 16,
-  color: "#333",
-  fontWeight: "600",
-},
+    qrTitle: {
+        fontSize: 18,
+        fontWeight: "800",
+        color: "#1a1a1a",
+    },
 
-qrConfirmBtn: {
-  backgroundColor: "#ff7a00",
-  paddingVertical: 14,
-  paddingHorizontal: 24,
-  borderRadius: 14,
-  marginTop: 24,
-  width: "100%",
-  alignItems: "center",
-},
+    qrAmount: {
+        marginTop: 20,
+        fontSize: 16,
+        color: "#333",
+        fontWeight: "600",
+    },
 
-qrConfirmTxt: {
-  color: "#fff",
-  fontWeight: "800",
-  fontSize: 16,
-},
+    qrConfirmBtn: {
+        backgroundColor: "#ff7a00",
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 14,
+        marginTop: 24,
+        width: "100%",
+        alignItems: "center",
+    },
 
-qrCancel: {
-  marginTop: 12,
-},
+    qrConfirmTxt: {
+        color: "#fff",
+        fontWeight: "800",
+        fontSize: 16,
+    },
 
-qrCancelTxt: {
-  color: "#888",
-  fontWeight: "700",
-},
+    qrCancel: {
+        marginTop: 12,
+    },
+
+    qrCancelTxt: {
+        color: "#888",
+        fontWeight: "700",
+    },
 
 });
 
