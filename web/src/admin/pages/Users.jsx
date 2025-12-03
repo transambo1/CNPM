@@ -10,7 +10,15 @@ import {
   message,
   Popover,
 } from "antd";
-import { collection, getDocs, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  doc,
+  deleteDoc,
+  updateDoc,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "../../firebase";
 
 export default function Users() {
@@ -18,6 +26,7 @@ export default function Users() {
   const [restaurants, setRestaurants] = useState([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+const [deleteUser, setDeleteUser] = useState(null);
 
   const [modalVisible, setModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -117,6 +126,65 @@ export default function Users() {
   };
 
   // ==========================
+  // DELETE USER + RELATED DATA
+  // ==========================
+  const handleDeleteUser = async (user) => {
+  try {
+    // XÓA USER
+    await deleteDoc(doc(db, "users", user.id));
+
+    // Nếu là nhà hàng
+    if (user.role === "restaurant" && user.restaurantId) {
+      // Xóa nhà hàng
+      await deleteDoc(doc(db, "restaurants", user.restaurantId));
+
+      // Xóa sản phẩm
+      const qProducts = query(
+        collection(db, "products"),
+        where("restaurantId", "==", user.restaurantId)
+      );
+      const snapProducts = await getDocs(qProducts);
+      snapProducts.forEach((p) => deleteDoc(doc(db, "products", p.id)));
+
+      // Xóa drone
+      const qDrones = query(
+        collection(db, "drones"),
+        where("restaurantId", "==", user.restaurantId)
+      );
+      const snapDrones = await getDocs(qDrones);
+      snapDrones.forEach((d) => deleteDoc(doc(db, "drones", d.id)));
+
+      // Xóa đơn hàng theo nhà hàng
+      const qOrdersByRestaurant = query(
+        collection(db, "orders"),
+        where("restaurantId", "==", user.restaurantId)
+      );
+      const snapOrdersRestaurant = await getDocs(qOrdersByRestaurant);
+      snapOrdersRestaurant.forEach((o) =>
+        deleteDoc(doc(db, "orders", o.id))
+      );
+    }
+
+    // Xóa đơn hàng do user đặt
+    const qOrdersByUser = query(
+      collection(db, "orders"),
+      where("userId", "==", user.id)
+    );
+    const snapUserOrders = await getDocs(qOrdersByUser);
+    snapUserOrders.forEach((o) =>
+      deleteDoc(doc(db, "orders", o.id))
+    );
+
+    message.success("Đã xóa thành công!");
+    loadUsers();
+  } catch (err) {
+    console.error(err);
+    message.error("Xóa thất bại");
+  }
+};
+
+
+  // ==========================
   // EDIT USER
   // ==========================
   const handleEdit = (user) => {
@@ -141,7 +209,7 @@ export default function Users() {
   // ==========================
   const columns = [
     { title: "ID", dataIndex: "id", key: "id" },
-  // ⭐ CỘT TÊN NHÀ HÀNG
+
     {
       title: "Nhà hàng",
       key: "restaurantName",
@@ -157,7 +225,6 @@ export default function Users() {
       render: (_, r) => `${r.firstname || ""} ${r.lastname || ""}`,
     },
 
-    
     {
       title: "SĐT",
       dataIndex: "phonenumber",
@@ -186,7 +253,6 @@ export default function Users() {
       ),
     },
 
-  
     {
       title: "Trạng thái",
       key: "status",
@@ -243,7 +309,12 @@ export default function Users() {
     {
       title: "Hành động",
       key: "action",
-      render: (_, r) => <Button onClick={() => handleEdit(r)}>Sửa</Button>,
+      render: (_, r) => (
+        <div style={{ display: "flex", gap: 8 }}>
+          <Button onClick={() => handleEdit(r)}>Sửa</Button>
+          <Button danger onClick={() => setDeleteUser(r)}>Xóa</Button>
+        </div>
+      ),
     },
   ];
 
@@ -316,6 +387,22 @@ export default function Users() {
           </Form>
         )}
       </Modal>
+      <Modal
+  title="Xác nhận xóa người dùng"
+  open={!!deleteUser}
+  okText="Xóa"
+  okType="danger"
+  cancelText="Hủy"
+  onCancel={() => setDeleteUser(null)}
+  onOk={() => {
+    handleDeleteUser(deleteUser);
+    setDeleteUser(null);
+  }}
+>
+  <p>Bạn có chắc muốn xóa người dùng này?</p>
+  <p style={{color:"red"}}>Hành động này sẽ xóa TẤT CẢ dữ liệu liên quan!</p>
+</Modal>
+
     </div>
   );
 }
