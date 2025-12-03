@@ -108,41 +108,79 @@ type Coordinates = {
     longitude: number;
 };
 
+// =============================
+// ⚡ AUTO NORMALIZE ADDRESS
+// =============================
+const normalizeForGeocode = (detail: string) => {
+    let d = detail.trim();
+
+    // Thêm Phường nếu thiếu
+    if (!/phường/i.test(d) && !/p\./i.test(d)) {
+        d += ", Phường Bến Nghé";
+    }
+
+    // Thêm Quận nếu thiếu
+    if (!/quận/i.test(d) && !/q\./i.test(d)) {
+        d += ", Quận 1";
+    }
+
+    return d;
+};
+
+// =============================
+// ⚡ FETCH TỌA ĐỘ — 3 LẦN FALLBACK
+// =============================
 const fetchCoordinatesForAddress = async (rawAddress: string): Promise<Coordinates | null> => {
-    const address = rawAddress.trim();
-    if (!address) return null;
+    if (!rawAddress) return null;
 
-    try {
-        const query = `${address}, Ho Chi Minh City, Vietnam`;
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=vn`;
-        const response = await fetch(url, {
-            headers: {
-                Accept: "application/json",
-                "User-Agent": "CNPM-Mobile/1.0 (+https://github.com/transambo1)",
-            },
-        });
+    const normalized = normalizeForGeocode(rawAddress);
 
-        if (!response.ok) {
-            console.warn("Geocode request failed:", response.status, response.statusText);
+    const headers = {
+        Accept: "application/json",
+        "Accept-Language": "vi",
+        "User-Agent":
+            "CNPM-FoodApp/1.0 (https://github.com/transambo1; contact: lamthanh51124@gmail.com)",
+    };
+
+    const tryFetch = async (query: string) => {
+        try {
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(
+                query
+            )}&format=json&limit=1&countrycodes=vn&email=lamthanh51124@gmail.com`;
+
+            const res = await fetch(url, { headers });
+            if (!res.ok) return null;
+
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+
+                if (Number.isFinite(lat) && Number.isFinite(lon)) {
+                    return { latitude: lat, longitude: lon };
+                }
+            }
+            return null;
+        } catch (err) {
+            console.warn("Geocode error:", err);
             return null;
         }
+    };
 
-        const data = await response.json();
-        if (Array.isArray(data) && data.length > 0) {
-            const latitude = Number.parseFloat(data[0].lat);
-            const longitude = Number.parseFloat(data[0].lon);
+    // -------- 3 CHIẾN LƯỢC LẤY TỌA ĐỘ --------
+    const q1 = `${normalized}, Hồ Chí Minh, Việt Nam`;
+    const q2 = `Số ${normalized}, Thành phố Hồ Chí Minh`;
+    const q3 = `${rawAddress}, Hồ Chí Minh`;
 
-            if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-                return { latitude, longitude };
-            }
-        }
-
-        return null;
-    } catch (error) {
-        console.warn("Geocode error:", error);
-        return null;
-    }
+    return (
+        (await tryFetch(q1)) ||
+        (await tryFetch(q2)) ||
+        (await tryFetch(q3)) ||
+        null
+    );
 };
+
+
 
 const screenH = Dimensions.get("window").height;
 
