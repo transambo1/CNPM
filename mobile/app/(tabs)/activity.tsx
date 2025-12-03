@@ -6,6 +6,7 @@ import {
   FlatList,
   RefreshControl,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +17,8 @@ import {
   query,
   Timestamp,
   where,
+  doc,
+  deleteDoc,
 } from 'firebase/firestore';
 
 import { useAuth } from '../../libs/AuthContext';
@@ -175,6 +178,36 @@ export default function OrderHistoryScreen() {
     );
   };
 
+  // 🔥 HỦY ĐƠN HÀNG
+  const cancelOrder = useCallback(
+    (orderId: string) => {
+      Alert.alert(
+        "Hủy đơn hàng",
+        "Bạn có chắc chắn muốn hủy đơn hàng này?",
+        [
+          { text: "Không", style: "cancel" },
+          {
+            text: "Đồng ý",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                await deleteDoc(doc(db, "orders", orderId));
+                Alert.alert("Thành công", "Đơn hàng đã được hủy!");
+
+                // cập nhật UI
+                setOrders((prev) => prev.filter((o) => o.id !== orderId));
+              } catch (err) {
+                console.warn("Lỗi hủy đơn:", err);
+                Alert.alert("Lỗi", "Không thể hủy đơn. Vui lòng thử lại.");
+              }
+            },
+          },
+        ]
+      );
+    },
+    [db]
+  );
+
   const handleOpenOrder = useCallback(
     (orderId: string) => {
       router.push(`/order/${orderId}` as never);
@@ -213,9 +246,25 @@ export default function OrderHistoryScreen() {
         ) : null}
       </View>
       <View style={styles.cardFooter}>
-        <Text style={styles.footerHint}>Nhấn để xem chi tiết và theo dõi đơn</Text>
+        <Text style={styles.footerHint}>Nhấn xem chi tiết và theo dõi đơn</Text>
+
+        {/* ⭐ Chỉ hiện nếu trạng thái = "Đã thanh toán" */}
+        {item.status === "Đã thanh toán" && (
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              cancelOrder(item.id);
+            }}
+          >
+            <Ionicons name="close-circle-outline" size={16} color="#fff" />
+            <Text style={styles.cancelBtnText}>Hủy đơn</Text>
+          </TouchableOpacity>
+        )}
+
         <Ionicons name="chevron-forward" size={18} color="#00A74F" />
       </View>
+
     </TouchableOpacity>
   );
 
@@ -430,4 +479,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
+  cancelBtn: {
+    backgroundColor: "#F44336",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 10,
+  },
+
+  cancelBtnText: {
+    color: "#fff",
+    fontWeight: "700",
+    marginLeft: 4,
+    fontSize: 13,
+  },
+
 });

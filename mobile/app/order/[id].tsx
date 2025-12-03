@@ -186,7 +186,7 @@ export default function OrderTrackingScreen() {
   const [droneEtaMinutes, setDroneEtaMinutes] = useState<number | null>(null);
 
   const db = useMemo(() => getFirestore(app), []);
- const mapRef = useRef<any>(null);
+  const mapRef = useRef<any>(null);
 
   // Bạn đã nói "Có icon rồi"
   const droneIcon = require('../../assets/images/drone.png'); // PNG 40–60px
@@ -634,52 +634,52 @@ export default function OrderTrackingScreen() {
             </View>
           );
         })()}
-    {(() => {
- // ❌ Không hiện khi đang xử lý
-if (normalizedStatus === "pending") return null;
+        {(() => {
+          // ❌ Không hiện khi đang xử lý
+          if (normalizedStatus === "pending") return null;
 
-// ✅ Đang giao → hiện nút "Đã nhận hàng"
-if (normalizedStatus === "delivering") {
-  return (
-    <TouchableOpacity
-      style={[styles.confirmBtn, { backgroundColor: '#0EA5E9' }]}
-      onPress={async () => {
-        try {
-          const orderRef = doc(db, "orders", order.id);
-          await updateDoc(orderRef, {
-            status: "Đã giao",
-            statusText: "Đơn hàng đã được giao thành công",
-            updatedAt: serverTimestamp(),
-          });
+          // ✅ Đang giao → hiện nút "Đã nhận hàng"
+          if (normalizedStatus === "delivering") {
+            return (
+              <TouchableOpacity
+                style={[styles.confirmBtn, { backgroundColor: '#0EA5E9' }]}
+                onPress={async () => {
+                  try {
+                    const orderRef = doc(db, "orders", order.id);
+                    await updateDoc(orderRef, {
+                      status: "Đã giao",
+                      statusText: "Đơn hàng đã được giao thành công",
+                      updatedAt: serverTimestamp(),
+                    });
 
-          // 🟢 Giải phóng drone
-          if (order.droneId) {
-            await updateDoc(doc(db, "drones", order.droneId), {
-              status: "Rảnh",
-              currentOrderId: null,
-              destination: null,
-            });
+                    // 🟢 Giải phóng drone
+                    if (order.droneId) {
+                      await updateDoc(doc(db, "drones", order.droneId), {
+                        status: "Rảnh",
+                        currentOrderId: null,
+                        destination: null,
+                      });
+                    }
+
+                    Alert.alert("🎉 Thành công", "Đơn hàng đã giao thành công");
+                  } catch (err) {
+                    console.error(err);
+                    Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
+                  }
+                }}
+              >
+                <Ionicons name="cube-outline" size={22} color="#fff" />
+                <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
+              </TouchableOpacity>
+            );
           }
 
-          Alert.alert("🎉 Thành công", "Đơn hàng đã giao thành công");
-        } catch (err) {
-          console.error(err);
-          Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
-        }
-      }}
-    >
-      <Ionicons name="cube-outline" size={22} color="#fff" />
-      <Text style={styles.confirmBtnText}>Đã nhận hàng</Text>
-    </TouchableOpacity>
-  );
-}
 
+          // ❌ Hoàn tất → ẩn
+          if (normalizedStatus === "completed") return null;
 
-  // ❌ Hoàn tất → ẩn
-  if (normalizedStatus === "completed") return null;
-
-  return null;
-})()}
+          return null;
+        })()}
 
 
 
@@ -793,7 +793,7 @@ if (normalizedStatus === "delivering") {
               <Text style={styles.successTitle}>Đơn hàng đã hoàn tất!</Text>
               <Text style={styles.successSubtitle}>Cảm ơn bạn đã sử dụng dịch vụ.</Text>
             </View>
-            
+
           </View>
         ) : null}
 

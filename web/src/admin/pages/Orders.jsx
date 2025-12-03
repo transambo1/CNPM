@@ -182,7 +182,7 @@ export default function OrdersList() {
   return (
     <div className="orders-page">
       <div className="orders-header">
-        <h1>📦 Quản lý đơn hàng (Admin)</h1>
+        <h1> Quản lý đơn hàng (Admin)</h1>
       </div>
 
       {/* ===== Bộ lọc ===== */}

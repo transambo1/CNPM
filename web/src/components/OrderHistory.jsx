@@ -1,6 +1,14 @@
 // src/components/OrderHistory.jsx
 import React, { useEffect, useState } from "react";
-import { collection, query, where, getDocs, orderBy } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  orderBy,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -53,7 +61,27 @@ function OrderHistory() {
     fetchOrders();
   }, [currentUser]);
 
-  if (loading) return <p className="loading-message">⏳ Đang tải lịch sử đơn hàng...</p>;
+  // =============================
+  // 🚨 Hàm HỦY ĐƠN HÀNG
+  // =============================
+  const cancelOrder = async (orderId) => {
+    const ok = window.confirm("❗Bạn có chắc chắn muốn hủy đơn hàng này?");
+    if (!ok) return;
+
+    try {
+      await deleteDoc(doc(db, "orders", orderId));
+      alert("✔️ Hủy đơn hàng thành công!");
+
+      // Xóa khỏi UI
+      setOrders((prev) => prev.filter((o) => o.id !== orderId));
+    } catch (err) {
+      console.error("🔥 Lỗi khi hủy đơn:", err);
+      alert("❌ Có lỗi xảy ra khi hủy đơn. Vui lòng thử lại.");
+    }
+  };
+
+  if (loading)
+    return <p className="loading-message">⏳ Đang tải lịch sử đơn hàng...</p>;
 
   return (
     <div className="order-history-page">
@@ -68,7 +96,10 @@ function OrderHistory() {
               key={order.id}
               className="order-card"
               onClick={() => {
-                if (order.status === "Đang giao" || order.status === "Chờ xác nhận") {
+                if (
+                  order.status === "Đang giao" ||
+                  order.status === "Chờ xác nhận"
+                ) {
                   navigate(`/waiting/${order.id}`);
                 } else {
                   navigate(`/order/${order.id}`);
@@ -79,7 +110,9 @@ function OrderHistory() {
               <div className="order-header">
                 <h3>Đơn hàng #{order.id.substring(0, 6)}...</h3>
                 <span>
-                  {order.date ? order.date.toLocaleDateString("vi-VN") : "N/A"}
+                  {order.date
+                    ? order.date.toLocaleDateString("vi-VN")
+                    : "N/A"}
                 </span>
               </div>
 
@@ -90,12 +123,16 @@ function OrderHistory() {
                       key={`${order.id}-${index}`}
                       className="order-item clickable-item"
                       onClick={(e) => {
-                        e.stopPropagation();       // tránh trigger click vào order-card
+                        e.stopPropagation();
                         navigate(`/product-detail/${item.id}`);
                       }}
                     >
-                      <span>{item.quantity}x {item.name}</span>
-                      <span>{(item.price * item.quantity).toLocaleString()}₫</span>
+                      <span>
+                        {item.quantity}x {item.name}
+                      </span>
+                      <span>
+                        {(item.price * item.quantity).toLocaleString()}₫
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -122,7 +159,6 @@ function OrderHistory() {
                   </span>
                 </div>
 
-                {/* Nút theo dõi đơn */}
                 {(order.status === "Chờ xác nhận" ||
                   order.status === "Đang giao") && (
                     <button
@@ -136,7 +172,6 @@ function OrderHistory() {
                     </button>
                   )}
 
-                {/* Nút xem chi tiết */}
                 {order.status !== "Đang giao" &&
                   order.status !== "Chờ xác nhận" && (
                     <button
@@ -149,6 +184,19 @@ function OrderHistory() {
                       Xem chi tiết
                     </button>
                   )}
+
+                {/* BUTTON HỦY ĐƠN nếu ĐÃ THANH TOÁN */}
+                {order.status === "Đã thanh toán" && (
+                  <button
+                    className="cancel-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      cancelOrder(order.id);
+                    }}
+                  >
+                    Hủy đơn hàng
+                  </button>
+                )}
               </div>
             </li>
           ))}

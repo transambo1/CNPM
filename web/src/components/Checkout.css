@@ -378,8 +378,13 @@
 /* ✨ ANIMATION */
 /* ====================== */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes popupZoom {
@@ -387,11 +392,13 @@
     transform: scale(0.75);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
   }
 }
+
 /* ===== PHƯƠNG THỨC THANH TOÁN (CHỈ CÒN 1 MỤC: QR) ===== */
 .payment-section {
   margin-top: 25px;
@@ -445,3 +452,38 @@
   object-fit: contain;
 }
 
+.gps-btn,
+.map-btn {
+  background: #2563eb;
+  color: white;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  margin-top: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.map-popup {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.map-popup-content {
+  background: white;
+  padding: 20px;
+  width: 90%;
+  max-width: 500px;
+  border-radius: 12px;
+}
+
+.map-popup-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
