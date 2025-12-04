@@ -1,4 +1,4 @@
-// app/(tracking)/OrderTrackingScreen.tsx
+// OrderTrackingScreen.tsx — PART 1/2
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -14,28 +14,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-
 // ❗ Expo Go: KHÔNG dùng PROVIDER_GOOGLE
 // Khai báo tạm (để TypeScript không lỗi)
 let MapView: any = null;
 let Marker: any = null;
 let Polyline: any = null;
-
-// 🔒 Chỉ import react-native-maps khi KHÔNG chạy web
-if (Platform.OS !== 'web') {
-  // @ts-ignore
-  const Maps = require('react-native-maps');
-  MapView = Maps.default || Maps.MapView;
-  Marker = Maps.Marker;
-  Polyline = Maps.Polyline;
-}
-
 type Region = {
   latitude: number;
   longitude: number;
   latitudeDelta: number;
   longitudeDelta: number;
 };
+
+// 🔒 Chỉ import react-native-maps khi KHÔNG chạy web
 
 import {
   doc,
@@ -44,7 +35,6 @@ import {
   Timestamp,
   updateDoc,
   serverTimestamp,
-  getDoc,
 } from 'firebase/firestore';
 import { Ionicons } from '@expo/vector-icons';
 import { app } from '../../libs/firebase';
@@ -69,7 +59,6 @@ type OrderDetail = {
   totalPrice: number;
   paymentMethod?: string;
   createdAt?: Date;
-  restaurantId?: string;
   restaurantName?: string;
   restaurantAddress?: string;
   restaurantLocation?: { latitude: number | null; longitude: number | null };
@@ -199,11 +188,12 @@ export default function OrderTrackingScreen() {
   const db = useMemo(() => getFirestore(app), []);
   const mapRef = useRef<any>(null);
 
-  // icon drone
+  // Bạn đã nói "Có icon rồi"
   const droneIcon = require('../../assets/images/drone.png'); // PNG 40–60px
 
   /* ===== LISTEN ORDER ===== */
   useEffect(() => {
+
     const orderId = Array.isArray(id) ? id[0] : id;
     if (!orderId) return;
 
@@ -246,13 +236,8 @@ export default function OrderTrackingScreen() {
           statusText: data.statusText ?? data.status_text,
           code: data.code,
           totalPrice: Number(data.totalPrice ?? data.total ?? 0),
-          paymentMethod: data.paymentMethod ?? 'Quét mã QR',
+          paymentMethod: data.paymentMethod ?? 'Quét mã QR ',
           createdAt,
-          restaurantId:
-            data.restaurantId ??
-            data.restaurant?.id ??
-            (Array.isArray(data.items) && data.items[0]?.restaurantId) ??
-            '',
           restaurantName:
             data.restaurantName ?? data.storeName ?? data.restaurant?.name ?? 'Nhà hàng',
           restaurantAddress: data.restaurantAddress ?? data.restaurant?.address ?? '',
@@ -297,52 +282,9 @@ export default function OrderTrackingScreen() {
     return () => unsub();
   }, [db, id]);
 
-  /* ===== BỔ SUNG: LẤY TOẠ ĐỘ NHÀ HÀNG TỪ COLLECTION restaurants ===== */
-  useEffect(() => {
-    if (!order) return;
-
-    const hasLocation =
-      order.restaurantLocation &&
-      order.restaurantLocation.latitude != null &&
-      order.restaurantLocation.longitude != null;
-
-    const restId =
-      order.restaurantId ||
-      (order.items && order.items[0]?.productId && order.items[0].productId.restaurantId) ||
-      (order.items && order.items[0]?.restaurantId);
-
-    if (hasLocation || !restId) return;
-
-    const run = async () => {
-      try {
-        const ref = doc(db, 'restaurants', String(restId));
-        const snap = await getDoc(ref);
-        if (!snap.exists()) return;
-        const d = snap.data() as any;
-        const coord = buildCoordinate(d.latitude, d.longitude);
-
-        setOrder(prev => {
-          if (!prev || prev.id !== order.id) return prev;
-          return {
-            ...prev,
-            restaurantName: prev.restaurantName || d.name || prev.restaurantName,
-            restaurantAddress: prev.restaurantAddress || d.address || prev.restaurantAddress,
-            restaurantLocation: coord
-              ? { latitude: coord.latitude, longitude: coord.longitude }
-              : prev.restaurantLocation,
-          };
-        });
-      } catch (err) {
-        console.warn('Load restaurant failed:', err);
-      }
-    };
-
-    run();
-  }, [db, order]);
-
   /* ===== LISTEN DRONE DOC + SMOOTH (Expo Go friendly, không dùng AnimatedRegion) ===== */
   useEffect(() => {
-    console.log('🚀 Listening drone:', order?.droneId);
+    console.log("🚀 Listening drone:", order?.droneId);
     if (!order?.droneId) {
       setDroneDoc(null);
       return;
@@ -364,12 +306,14 @@ export default function OrderTrackingScreen() {
         speed: toNumberOrNull(d.speed),
       };
       setDroneDoc(info);
-      console.log('📡 Drone update:', info);
+      console.log("📡 Drone update:", info);
 
       if (nextPos) smoothMoveTo(nextPos, info.speed);
+
     });
     return () => unsub();
   }, [db, order?.droneId]);
+
 
   /* ===== SMOOTH MOVE (requestAnimationFrame) ===== */
   const rAFRef = useRef<number | null>(null);
@@ -381,7 +325,7 @@ export default function OrderTrackingScreen() {
   };
 
   const smoothMoveTo = (target: LatLng, speedKmh?: number | null) => {
-    console.log('Drone moving to:', target);
+    console.log("Drone moving to:", target);
 
     const start = lastDronePos.current ?? dronePos ?? target;
     const end = target;
@@ -423,11 +367,14 @@ export default function OrderTrackingScreen() {
       lastDronePos.current = start;
     }
     rAFRef.current = requestAnimationFrame(step);
+
+
   };
 
   useEffect(() => {
     return () => cancelRAF();
   }, []);
+
 
   /* ===== MAP REGION + ETA ===== */
   useEffect(() => {
@@ -453,16 +400,15 @@ export default function OrderTrackingScreen() {
     if (custPt) points.push(custPt);
     if (dronePos) points.push(dronePos);
 
-    if (points.length) {
+    // 🟢 Fit map chỉ 1 lần (khi drone bắt đầu di chuyển)
+    if (points.length && !lastDronePos.current) {
       const region = computeRegion(points);
       if (region) {
         setMapRegion(region);
-        if (mapRef.current && MapView) {
-          (mapRef.current as any)?.fitToCoordinates?.(points, {
-            edgePadding: { top: 50, left: 50, right: 50, bottom: 50 },
-            animated: true,
-          });
-        }
+        (mapRef.current as any)?.fitToCoordinates(points, {
+          edgePadding: { top: 50, left: 50, right: 50, bottom: 50 },
+          animated: true,
+        });
       }
     }
 
@@ -470,10 +416,7 @@ export default function OrderTrackingScreen() {
     if (custPt && dronePos) {
       const dist = haversineDistanceKm(dronePos, custPt);
       setDroneDistanceKm(dist);
-      const sp =
-        droneDoc?.speed && droneDoc?.speed > 1
-          ? droneDoc.speed
-          : DEFAULT_DRONE_SPEED_KMH;
+      const sp = droneDoc?.speed && droneDoc?.speed > 1 ? droneDoc.speed : DEFAULT_DRONE_SPEED_KMH;
       setDroneEtaMinutes(sp ? (dist / sp) * 60 : null);
     } else {
       setDroneDistanceKm(null);
@@ -524,48 +467,13 @@ export default function OrderTrackingScreen() {
     string,
     { label: string; description: string; color: string; icon: keyof typeof Ionicons.glyphMap }
   > = {
-    pending: {
-      label: 'Đặt đơn thành công',
-      description: 'Đang chờ nhà hàng xác nhận.',
-      color: '#F59E0B',
-      icon: 'time-outline',
-    },
-    confirmed: {
-      label: 'Nhà hàng xác nhận',
-      description: 'Đang chuẩn bị điều phối drone.',
-      color: '#3B82F6',
-      icon: 'restaurant-outline',
-    },
-    drone_assigned: {
-      label: 'Drone chuẩn bị',
-      description: 'Drone đã được gán và sắp cất cánh.',
-      color: '#6366F1',
-      icon: 'airplane-outline',
-    },
-    delivering: {
-      label: 'Drone đang giao',
-      description: 'Drone đang trên đường tới địa chỉ của bạn.',
-      color: '#00A74F',
-      icon: 'rocket-outline',
-    },
-    arrived: {
-      label: 'Drone đã đến',
-      description: 'Vui lòng kiểm tra và xác nhận đã nhận.',
-      color: '#10B981',
-      icon: 'location-outline',
-    },
-    completed: {
-      label: 'Đã giao',
-      description: 'Chúc bạn ngon miệng!',
-      color: '#059669',
-      icon: 'checkmark-circle-outline',
-    },
-    cancelled: {
-      label: 'Đã huỷ',
-      description: 'Đơn đã bị huỷ.',
-      color: '#EF4444',
-      icon: 'close-circle-outline',
-    },
+    pending: { label: 'Đặt đơn thành công', description: 'Đang chờ nhà hàng xác nhận.', color: '#F59E0B', icon: 'time-outline' },
+    confirmed: { label: 'Nhà hàng xác nhận', description: 'Đang chuẩn bị điều phối drone.', color: '#3B82F6', icon: 'restaurant-outline' },
+    drone_assigned: { label: 'Drone chuẩn bị', description: 'Drone đã được gán và sắp cất cánh.', color: '#6366F1', icon: 'airplane-outline' },
+    delivering: { label: 'Drone đang giao', description: 'Drone đang trên đường tới địa chỉ của bạn.', color: '#00A74F', icon: 'rocket-outline' },
+    arrived: { label: 'Drone đã đến', description: 'Vui lòng kiểm tra và xác nhận đã nhận.', color: '#10B981', icon: 'location-outline' },
+    completed: { label: 'Đã giao', description: 'Chúc bạn ngon miệng!', color: '#059669', icon: 'checkmark-circle-outline' },
+    cancelled: { label: 'Đã huỷ', description: 'Đơn đã bị huỷ.', color: '#EF4444', icon: 'close-circle-outline' },
   };
 
   const normalizedStatus = normalizeStatus(order?.status, order?.statusCode);
@@ -590,11 +498,7 @@ export default function OrderTrackingScreen() {
       : null;
 
   const distanceLabel =
-    droneDistanceKm == null
-      ? ''
-      : droneDistanceKm < 0.1
-        ? '< 100m'
-        : `${droneDistanceKm.toFixed(1)} km`;
+    droneDistanceKm == null ? '' : droneDistanceKm < 0.1 ? '< 100m' : `${droneDistanceKm.toFixed(1)} km`;
 
   const etaLabel =
     droneEtaMinutes == null
@@ -612,20 +516,19 @@ export default function OrderTrackingScreen() {
     !isCancelled && !isCompleted && (isArrived || (normalizedStatus === 'delivering' && closeToCustomer));
   const shouldShowMap =
     mapRegion && !isCancelled && mapEnabledStatuses.includes(normalizedStatus) && (restaurantPoint || customerPoint);
-
   const handleConfirmDelivered = async () => {
     try {
       if (!order) return;
-      const orderRef = doc(db, 'orders', order.id);
+      const orderRef = doc(db, "orders", order.id);
       await updateDoc(orderRef, {
-        status: 'Đã giao',
-        statusText: 'Đơn hàng đã hoàn tất',
+        status: "Đã giao",
+        statusText: "Đơn hàng đã hoàn tất",
         updatedAt: serverTimestamp(),
       });
-      Alert.alert('✅ Thành công', 'Đơn hàng đã được xác nhận hoàn tất.');
+      Alert.alert("✅ Thành công", "Đơn hàng đã được xác nhận hoàn tất.");
     } catch (err) {
-      console.error('Lỗi khi xác nhận:', err);
-      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái đơn hàng.');
+      console.error("Lỗi khi xác nhận:", err);
+      Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
     }
   };
 
@@ -647,10 +550,7 @@ export default function OrderTrackingScreen() {
         <Ionicons name="alert-circle-outline" size={64} color="#94A3B8" />
         <Text style={styles.emptyTitle}>Không tìm thấy đơn hàng</Text>
         <Text style={styles.emptySubtitle}>Đơn có thể đã bị xoá hoặc không tồn tại.</Text>
-        <TouchableOpacity
-          style={styles.primaryBtn}
-          onPress={() => router.replace('/(tabs)/activity')}
-        >
+        <TouchableOpacity style={styles.primaryBtn} onPress={() => router.replace('/(tabs)/activity')}>
           <Text style={styles.primaryBtnText}>Về lịch sử đơn</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -664,82 +564,46 @@ export default function OrderTrackingScreen() {
       {/* App Bar */}
       <View style={styles.appBar}>
         <TouchableOpacity
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace('/(tabs)/activity')
-          }
+          onPress={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)/activity'))}
           style={styles.backBtn}
         >
           <Ionicons name="chevron-back" size={26} color="#111" />
         </TouchableOpacity>
         <View style={{ flex: 1 }}>
           <Text style={styles.appBarTitle}>Theo dõi đơn hàng</Text>
-          {order.code ? (
-            <Text style={styles.appBarSubtitle}>Mã đơn: {order.code}</Text>
-          ) : null}
+          {order.code ? <Text style={styles.appBarSubtitle}>Mã đơn: {order.code}</Text> : null}
         </View>
         <TouchableOpacity onPress={() => router.replace('/(tabs)/activity')}>
           <Ionicons name="file-tray-full-outline" size={24} color="#111" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      >
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {/* Status card */}
         <View style={styles.statusCard}>
-          <View
-            style={[
-              styles.statusIconWrapper,
-              { backgroundColor: `${statusMeta.color}15` },
-            ]}
-          >
+          <View style={[styles.statusIconWrapper, { backgroundColor: `${statusMeta.color}15` }]}>
             <Ionicons name={statusMeta.icon} size={26} color={statusMeta.color} />
           </View>
-          <Text style={[styles.statusLabel, { color: statusMeta.color }]}>
-            {statusMeta.label}
-          </Text>
-          <Text style={styles.statusDescription}>
-            {order.statusText ?? statusMeta.description}
-          </Text>
-          {order.createdAt ? (
-            <Text style={styles.statusMeta}>
-              Đặt lúc {formatDateTime(order.createdAt)}
-            </Text>
-          ) : null}
+          <Text style={[styles.statusLabel, { color: statusMeta.color }]}>{statusMeta.label}</Text>
+          <Text style={styles.statusDescription}>{order.statusText ?? statusMeta.description}</Text>
+          {order.createdAt ? <Text style={styles.statusMeta}>Đặt lúc {formatDateTime(order.createdAt)}</Text> : null}
         </View>
 
         {/* Timeline */}
         {(() => {
           const ORDER_STEPS = [
-            {
-              key: 'pending',
-              title: 'Đặt đơn thành công',
-              subtitle: 'Đang chờ nhà hàng xác nhận.',
-            },
-            {
-              key: 'confirmed',
-              title: 'Nhà hàng xác nhận',
-              subtitle: 'Sẽ sớm điều phối drone.',
-            },
-            {
-              key: 'completed',
-              title: 'Đã giao',
-              subtitle: 'Đơn hàng đã được giao thành công.',
-            },
+            { key: 'pending', title: 'Đặt đơn thành công', subtitle: 'Đang chờ nhà hàng xác nhận.' },
+            { key: 'confirmed', title: 'Nhà hàng xác nhận', subtitle: 'Sẽ sớm điều phối drone.' },
+            { key: 'completed', title: 'Đã giao', subtitle: 'Đơn hàng đã được giao thành công.' },
           ];
           const stepKey =
             normalizedStatus === 'completed'
               ? 'completed'
-              : normalizedStatus === 'confirmed' ||
-                normalizedStatus === 'delivering'
+              : normalizedStatus === 'confirmed' || normalizedStatus === 'delivering'
                 ? 'confirmed'
                 : 'pending';
 
-          const stepIndex = Math.max(
-            0,
-            ORDER_STEPS.findIndex(s => s.key === stepKey)
-          );
+          const stepIndex = Math.max(0, ORDER_STEPS.findIndex(s => s.key === stepKey));
 
           return (
             <View style={styles.timeline}>
@@ -751,37 +615,18 @@ export default function OrderTrackingScreen() {
                       <View
                         style={[
                           styles.timelineIndicator,
-                          reached && {
-                            backgroundColor: statusMeta.color,
-                            borderColor: statusMeta.color,
-                          },
+                          reached && { backgroundColor: statusMeta.color, borderColor: statusMeta.color },
                         ]}
                       >
-                        {reached ? (
-                          <Ionicons name="checkmark" size={12} color="#fff" />
-                        ) : null}
+                        {reached ? <Ionicons name="checkmark" size={12} color="#fff" /> : null}
                       </View>
                       {index < ORDER_STEPS.length - 1 ? (
-                        <View
-                          style={[
-                            styles.timelineLine,
-                            reached && { backgroundColor: `${statusMeta.color}55` },
-                          ]}
-                        />
+                        <View style={[styles.timelineLine, reached && { backgroundColor: `${statusMeta.color}55` }]} />
                       ) : null}
                     </View>
                     <View style={styles.timelineContent}>
-                      <Text
-                        style={[
-                          styles.timelineTitle,
-                          reached && { color: '#111827' },
-                        ]}
-                      >
-                        {step.title}
-                      </Text>
-                      <Text style={styles.timelineSubtitle}>
-                        {step.subtitle}
-                      </Text>
+                      <Text style={[styles.timelineTitle, reached && { color: '#111827' }]}>{step.title}</Text>
+                      <Text style={styles.timelineSubtitle}>{step.subtitle}</Text>
                     </View>
                   </View>
                 );
@@ -789,38 +634,37 @@ export default function OrderTrackingScreen() {
             </View>
           );
         })()}
-
         {(() => {
-          if (normalizedStatus === 'pending') return null;
+          // ❌ Không hiện khi đang xử lý
+          if (normalizedStatus === "pending") return null;
 
-          if (normalizedStatus === 'delivering') {
+          // ✅ Đang giao → hiện nút "Đã nhận hàng"
+          if (normalizedStatus === "delivering") {
             return (
               <TouchableOpacity
                 style={[styles.confirmBtn, { backgroundColor: '#0EA5E9' }]}
                 onPress={async () => {
                   try {
-                    const orderRef = doc(db, 'orders', order.id);
+                    const orderRef = doc(db, "orders", order.id);
                     await updateDoc(orderRef, {
-                      status: 'Đã giao',
-                      statusText: 'Đơn hàng đã được giao thành công',
+                      status: "Đã giao",
+                      statusText: "Đơn hàng đã được giao thành công",
                       updatedAt: serverTimestamp(),
                     });
 
+                    // 🟢 Giải phóng drone
                     if (order.droneId) {
-                      await updateDoc(doc(db, 'drones', order.droneId), {
-                        status: 'Rảnh',
+                      await updateDoc(doc(db, "drones", order.droneId), {
+                        status: "Rảnh",
                         currentOrderId: null,
                         destination: null,
                       });
                     }
 
-                    Alert.alert('🎉 Thành công', 'Đơn hàng đã giao thành công');
+                    Alert.alert("🎉 Thành công", "Đơn hàng đã giao thành công");
                   } catch (err) {
                     console.error(err);
-                    Alert.alert(
-                      'Lỗi',
-                      'Không thể cập nhật trạng thái đơn hàng.'
-                    );
+                    Alert.alert("Lỗi", "Không thể cập nhật trạng thái đơn hàng.");
                   }
                 }}
               >
@@ -830,163 +674,35 @@ export default function OrderTrackingScreen() {
             );
           }
 
-          if (normalizedStatus === 'completed') return null;
+
+          // ❌ Hoàn tất → ẩn
+          if (normalizedStatus === "completed") return null;
+
           return null;
         })()}
 
-        {/* Map card - GIỮ LAYOUT, CHỈ THAY PHẦN BÊN TRONG */}
+
+
+        {/* Map card */}
         <View style={[styles.card, styles.mapCard]}>
           <View style={styles.cardHeader}>
             <Text style={styles.cardTitle}>Hành trình giao hàng</Text>
-            {shouldShowMap && droneDistanceKm != null && (
-              <View style={styles.mapBadge}>
-                <Ionicons name="navigate-outline" size={16} color="#1D4ED8" />
-                <Text style={styles.mapBadgeText}>
-                  {distanceLabel}
-                  {etaLabel ? ` • ${etaLabel}` : ''}
-                </Text>
-              </View>
-            )}
           </View>
 
-          {Platform.OS === 'web' || !MapView || !shouldShowMap ? (
-            <View
-              style={{
-                height: 220,
-                borderRadius: 18,
-                borderWidth: 1,
-                borderColor: '#E5E7EB',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: '#F8FAFC',
-              }}
-            >
-              <Ionicons name="earth-outline" size={36} color="#94A3B8" />
-              <Text style={{ color: '#64748B', marginTop: 8 }}>
-                Bản đồ không khả dụng trên Web
-              </Text>
-            </View>
-          ) : (
-            <>
-              <View style={styles.mapContainer}>
-                <MapView
-                  ref={mapRef}
-                  style={styles.mapView}
-                  initialRegion={
-                    mapRegion ||
-                    restaurantPoint ||
-                    customerPoint || {
-                      latitude: 10.776889,
-                      longitude: 106.700806,
-                      latitudeDelta: 0.05,
-                      longitudeDelta: 0.05,
-                    }
-                  }
-                  region={mapRegion || undefined}
-                >
-                  {restaurantPoint && (
-                    <Marker
-                      coordinate={restaurantPoint}
-                      title={order.restaurantName || 'Nhà hàng'}
-                      description={order.restaurantAddress || 'Điểm lấy hàng'}
-                    >
-                      <View
-                        style={{
-                          paddingHorizontal: 6,
-                          paddingVertical: 4,
-                          borderRadius: 8,
-                          backgroundColor: '#fff',
-                          borderWidth: 1,
-                          borderColor: '#6366F1',
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: '700',
-                            color: '#4F46E5',
-                          }}
-                        >
-                          Nhà hàng
-                        </Text>
-                      </View>
-                    </Marker>
-                  )}
-
-                  {customerPoint && (
-                    <Marker
-                      coordinate={customerPoint}
-                      title="Khách hàng"
-                      description={order.deliveryAddress || 'Địa chỉ giao hàng'}
-                    >
-                      <View
-                        style={{
-                          paddingHorizontal: 6,
-                          paddingVertical: 4,
-                          borderRadius: 8,
-                          backgroundColor: '#fff',
-                          borderWidth: 1,
-                          borderColor: '#16A34A',
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 11,
-                            fontWeight: '700',
-                            color: '#16A34A',
-                          }}
-                        >
-                          Khách hàng
-                        </Text>
-                      </View>
-                    </Marker>
-                  )}
-
-                  {dronePos && (
-                    <Marker
-                      coordinate={dronePos}
-                      anchor={{ x: 0.5, y: 0.5 }}
-                      flat
-                      rotation={droneHeading}
-                    >
-                      <Image
-                        source={droneIcon}
-                        style={{ width: 40, height: 40 }}
-                        resizeMode="contain"
-                      />
-                    </Marker>
-                  )}
-
-                  {restaurantPoint && customerPoint && (
-                    <Polyline
-                      coordinates={[restaurantPoint, customerPoint]}
-                      strokeWidth={4}
-                      strokeColor="#2563EB"
-                    />
-                  )}
-                </MapView>
-              </View>
-
-              <View style={styles.mapInfoRow}>
-                {distanceLabel ? (
-                  <View style={styles.mapInfoItem}>
-                    <Ionicons name="walk-outline" size={16} color="#1D4ED8" />
-                    <Text style={styles.mapInfoText}>
-                      Còn {distanceLabel} tới địa chỉ giao
-                    </Text>
-                  </View>
-                ) : null}
-                {etaLabel ? (
-                  <View style={styles.mapInfoItem}>
-                    <Ionicons name="time-outline" size={16} color="#1D4ED8" />
-                    <Text style={styles.mapInfoText}>
-                      Dự kiến {etaLabel} nữa sẽ đến
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-            </>
-          )}
+          <View
+            style={{
+              height: 220,
+              borderRadius: 18,
+              borderWidth: 1,
+              borderColor: '#E5E7EB',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: '#F8FAFC',
+            }}
+          >
+            <Ionicons name="earth-outline" size={36} color="#94A3B8" />
+            <Text style={{ color: '#64748B', marginTop: 8 }}>Bản đồ không khả dụng trên Web</Text>
+          </View>
         </View>
 
         {/* Items */}
@@ -998,28 +714,20 @@ export default function OrderTrackingScreen() {
             </Text>
           </View>
           <View style={{ gap: 16 }}>
-            {order.items.map(it => (
+            {order.items.map((it) => (
               <View key={it.productId} style={styles.itemRow}>
                 {it.img ? (
                   <Image source={{ uri: it.img }} style={styles.itemImage} />
                 ) : (
                   <View style={styles.itemImagePlaceholder}>
-                    <Ionicons
-                      name="fast-food-outline"
-                      size={20}
-                      color="#9CA3AF"
-                    />
+                    <Ionicons name="fast-food-outline" size={20} color="#9CA3AF" />
                   </View>
                 )}
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.itemName} numberOfLines={2}>
-                    {it.name}
-                  </Text>
+                  <Text style={styles.itemName} numberOfLines={2}>{it.name}</Text>
                   <Text style={styles.itemSub}>x{it.quantity}</Text>
                 </View>
-                <Text style={styles.itemPrice}>
-                  {formatCurrency(it.price * it.quantity)}
-                </Text>
+                <Text style={styles.itemPrice}>{formatCurrency(it.price * it.quantity)}</Text>
               </View>
             ))}
           </View>
@@ -1054,20 +762,13 @@ export default function OrderTrackingScreen() {
           ) : null}
           <View style={styles.infoRow}>
             <Ionicons name="card-outline" size={20} color="#475569" />
-            <Text style={styles.infoText}>
-              Thanh toán: {order.paymentMethod ?? 'Tiền mặt'}
-            </Text>
+            <Text style={styles.infoText}>Thanh toán: {order.paymentMethod ?? 'Tiền mặt'}</Text>
           </View>
-          {order.contactName || order.contactPhone ? (
+          {(order.contactName || order.contactPhone) ? (
             <View style={styles.infoRow}>
-              <Ionicons
-                name="person-circle-outline"
-                size={20}
-                color="#475569"
-              />
+              <Ionicons name="person-circle-outline" size={20} color="#475569" />
               <Text style={styles.infoText}>
-                {order.contactName ? `${order.contactName} • ` : ''}
-                {order.contactPhone ?? ''}
+                {order.contactName ? `${order.contactName} • ` : ''}{order.contactPhone ?? ''}
               </Text>
             </View>
           ) : null}
@@ -1075,12 +776,14 @@ export default function OrderTrackingScreen() {
             <View style={styles.infoRow}>
               <Ionicons name="airplane-outline" size={20} color="#475569" />
               <Text style={styles.infoText}>
-                Drone #{order.droneId}
-                {droneDoc?.status ? ` • ${String(droneDoc.status)}` : ''}
+                Drone #{order.droneId}{droneDoc?.status ? ` • ${String(droneDoc.status)}` : ''}
               </Text>
             </View>
           ) : null}
         </View>
+
+        {/* Confirm Delivered Button */}
+
 
         {/* Completed */}
         {isCompleted ? (
@@ -1088,10 +791,9 @@ export default function OrderTrackingScreen() {
             <Ionicons name="happy-outline" size={30} color="#047857" />
             <View style={{ flex: 1, marginLeft: 12 }}>
               <Text style={styles.successTitle}>Đơn hàng đã hoàn tất!</Text>
-              <Text style={styles.successSubtitle}>
-                Cảm ơn bạn đã sử dụng dịch vụ.
-              </Text>
+              <Text style={styles.successSubtitle}>Cảm ơn bạn đã sử dụng dịch vụ.</Text>
             </View>
+
           </View>
         ) : null}
 
@@ -1099,9 +801,7 @@ export default function OrderTrackingScreen() {
         {isCancelled ? (
           <View style={styles.cancelledCard}>
             <Ionicons name="alert" size={26} color="#B91C1C" />
-            <Text style={styles.cancelledText}>
-              Đơn hàng của bạn đã bị huỷ.
-            </Text>
+            <Text style={styles.cancelledText}>Đơn hàng của bạn đã bị huỷ.</Text>
           </View>
         ) : null}
       </ScrollView>
@@ -1126,145 +826,51 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#E2E8F0',
   },
-  backBtn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
+  backBtn: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   appBarTitle: { fontSize: 18, fontWeight: '700', color: '#111827' },
   appBarSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 2 },
 
   statusCard: {
-    margin: 16,
-    marginBottom: 12,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 2,
-    alignItems: 'center',
+    margin: 16, marginBottom: 12, padding: 18, borderRadius: 18, backgroundColor: '#fff',
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 12, elevation: 2, alignItems: 'center',
   },
-  statusIconWrapper: {
-    width: 54,
-    height: 54,
-    borderRadius: 27,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 12,
-  },
+  statusIconWrapper: { width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
   statusLabel: { fontSize: 20, fontWeight: '700', marginBottom: 6 },
   statusDescription: { fontSize: 15, color: '#475569', textAlign: 'center' },
   statusMeta: { fontSize: 13, color: '#6B7280', marginTop: 12 },
 
-  timeline: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    padding: 18,
-  },
+  timeline: { marginHorizontal: 16, marginBottom: 16, borderRadius: 18, backgroundColor: '#fff', padding: 18 },
   timelineRow: { flexDirection: 'row' },
   timelineIndicatorWrapper: { alignItems: 'center', marginRight: 14 },
   timelineIndicator: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#CBD5F5',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: '#CBD5F5',
+    alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff',
   },
-  timelineLine: {
-    width: 2,
-    flex: 1,
-    backgroundColor: '#E2E8F0',
-    marginTop: 4,
-    marginBottom: -4,
-  },
+  timelineLine: { width: 2, flex: 1, backgroundColor: '#E2E8F0', marginTop: 4, marginBottom: -4 },
   timelineContent: { flex: 1, paddingBottom: 18 },
   timelineTitle: { fontSize: 15, fontWeight: '600', color: '#94A3B8' },
   timelineSubtitle: { fontSize: 13, color: '#6B7280', marginTop: 4 },
 
-  card: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 18,
-    borderRadius: 18,
-    backgroundColor: '#fff',
-    gap: 18,
-  },
+  card: { marginHorizontal: 16, marginBottom: 16, padding: 18, borderRadius: 18, backgroundColor: '#fff', gap: 18 },
   mapCard: { paddingBottom: 18 },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   cardTitle: { fontSize: 17, fontWeight: '700', color: '#111827' },
   cardMeta: { fontSize: 14, color: '#6B7280' },
   mapHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
-  mapContainer: {
-    height: Math.min(400, Dimensions.get('window').height * 0.58),
-    borderRadius: 18,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: BORDER,
-  },
+  mapContainer: { height: Math.min(400, Dimensions.get('window').height * 0.58), borderRadius: 18, overflow: 'hidden', borderWidth: 1, borderColor: BORDER },
   mapView: { flex: 1 },
 
-  mapBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: '#EEF2FF',
-  },
-  mapBadgeText: {
-    marginLeft: 4,
-    color: '#1D4ED8',
-    fontSize: 12,
-    fontWeight: '600',
-  },
+  mapBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, backgroundColor: '#EEF2FF' },
+  mapBadgeText: { marginLeft: 4, color: '#1D4ED8', fontSize: 12, fontWeight: '600' },
 
-  mapInfoRow: {
-    marginTop: 14,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  mapInfoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 14,
-    backgroundColor: '#EFF6FF',
-  },
-  mapInfoText: {
-    marginLeft: 6,
-    color: '#1D4ED8',
-    fontSize: 13,
-    fontWeight: '600',
-  },
+  mapInfoRow: { marginTop: 14, flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  mapInfoItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, backgroundColor: '#EFF6FF' },
+  mapInfoText: { marginLeft: 6, color: '#1D4ED8', fontSize: 13, fontWeight: '600' },
 
   itemRow: { flexDirection: 'row', alignItems: 'center' },
   itemImage: { width: 54, height: 54, borderRadius: 12, marginRight: 12 },
-  itemImagePlaceholder: {
-    width: 54,
-    height: 54,
-    borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
+  itemImagePlaceholder: { width: 54, height: 54, borderRadius: 12, backgroundColor: '#F1F5F9', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   itemName: { fontSize: 15, fontWeight: '600', color: '#111827' },
   itemSub: { fontSize: 13, color: '#6B7280', marginTop: 4 },
   itemPrice: { fontSize: 15, fontWeight: '700', color: '#111827', marginLeft: 12 },
@@ -1273,72 +879,24 @@ const styles = StyleSheet.create({
   infoText: { flex: 1, fontSize: 14, color: '#1F2937' },
 
   confirmBtn: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 18,
-    backgroundColor: '#16A34A',
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 18,
-    paddingVertical: 14,
-    gap: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 3,
+    marginHorizontal: 16, marginBottom: 16, borderRadius: 18, backgroundColor: '#16A34A',
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 14, gap: 10,
+    shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 12, elevation: 3,
   },
   confirmBtnText: { color: '#fff', fontSize: 16, fontWeight: '700' },
   confirmBtnHint: { color: '#DCFCE7', fontSize: 12, marginTop: 2 },
 
-  successCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 18,
-    backgroundColor: '#ECFDF5',
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
+  successCard: { marginHorizontal: 16, marginBottom: 16, padding: 16, borderRadius: 18, backgroundColor: '#ECFDF5', flexDirection: 'row', alignItems: 'center' },
   successTitle: { fontSize: 16, fontWeight: '700', color: '#047857' },
   successSubtitle: { fontSize: 13, color: '#047857', marginTop: 4 },
-  rateBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 14,
-    backgroundColor: '#047857',
-  },
+  rateBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 14, backgroundColor: '#047857' },
   rateBtnText: { color: '#fff', fontWeight: '600' },
 
-  cancelledCard: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: '#FEF2F2',
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
-  },
+  cancelledCard: { marginHorizontal: 16, marginBottom: 16, padding: 16, borderRadius: 16, backgroundColor: '#FEF2F2', flexDirection: 'row', gap: 12, alignItems: 'center' },
   cancelledText: { flex: 1, fontSize: 14, color: '#B91C1C' },
 
-  emptyTitle: {
-    marginTop: 18,
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#111827',
-  },
-  emptySubtitle: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#64748B',
-    textAlign: 'center',
-  },
-  primaryBtn: {
-    marginTop: 20,
-    backgroundColor: '#00A74F',
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 20,
-  },
+  emptyTitle: { marginTop: 18, fontSize: 20, fontWeight: '700', color: '#111827' },
+  emptySubtitle: { marginTop: 8, fontSize: 14, color: '#64748B', textAlign: 'center' },
+  primaryBtn: { marginTop: 20, backgroundColor: '#00A74F', paddingHorizontal: 22, paddingVertical: 12, borderRadius: 20 },
   primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
 });

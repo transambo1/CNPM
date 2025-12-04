@@ -868,7 +868,7 @@ export default function PaymentScreen() {
                 },
                 items: orderItems,
                 total,
-                status: "Chờ xử lý",
+                status: "Đã thanh toán",
                 createdAt: serverTimestamp(),
                 droneId: null,
             };
