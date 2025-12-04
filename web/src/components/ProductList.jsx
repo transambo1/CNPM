@@ -24,6 +24,18 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
 
     const productsPerPage = 6;
     const bannerImages = ["/Images/1.png", "/Images/Banner2.png", "/Images/Banner3.png"];
+    const PRICE_LEVELS = [
+        { label: "Tất cả", min: 0, max: 1000000 },
+        { label: "0 - 50.000₫", min: 0, max: 50000 },
+        { label: "50.000₫ - 100.000₫", min: 50000, max: 100000 },
+        { label: "100.000₫ - 150.000₫", min: 100000, max: 150000 },
+        { label: "150.000₫ - 200.000₫", min: 150000, max: 200000 },
+        { label: "200.000₫ - 300.000₫", min: 200000, max: 300000 },
+        { label: "300.000₫ - 400.000₫", min: 300000, max: 400000 },
+        { label: "400.000₫ - 500.000₫", min: 400000, max: 500000 },
+        { label: "500.000₫ - 700.000₫", min: 500000, max: 700000 },
+        { label: "700.000₫ - 1.000.000₫", min: 700000, max: 1000000 },
+    ];
 
     // Load products
     useEffect(() => {
@@ -85,24 +97,24 @@ function ProductList({ onAdd, defaultCategory = "All" }) {
             setSelectedCategory(defaultCategory);
         }
     }, [categoryKey]);
-// Reset filter khi quay về trang chủ
-useEffect(() => {
-    const search = new URLSearchParams(location.search).get("search") || "";
-    const isHome = location.pathname === "/" && search === "" && !categoryKey;
+    // Reset filter khi quay về trang chủ
+    useEffect(() => {
+        const search = new URLSearchParams(location.search).get("search") || "";
+        const isHome = location.pathname === "/" && search === "" && !categoryKey;
 
-    if (isHome) {
-        setSelectedCategory("All");
-        setSortOption("default");
-        setCurrentPage(1);
+        if (isHome) {
+            setSelectedCategory("All");
+            setSortOption("default");
+            setCurrentPage(1);
 
-        // reset search
-        setSearchTerm("");
+            // reset search
+            setSearchTerm("");
 
-        // reset giá
-        setMinPrice(priceRange.min);
-        setMaxPrice(priceRange.max);
-    }
-}, [location.pathname, location.search, categoryKey, priceRange]);
+            // reset giá
+            setMinPrice(priceRange.min);
+            setMaxPrice(priceRange.max);
+        }
+    }, [location.pathname, location.search, categoryKey, priceRange]);
     // Categories
     const categories = ["All", ...new Set(products.map((p) => p.category))];
 
@@ -145,7 +157,7 @@ useEffect(() => {
 
     return (
         <div className="main-home">
-              {searchTerm.trim() === "" && <Banner images={bannerImages} />}
+            {searchTerm.trim() === "" && <Banner images={bannerImages} />}
 
             {/* ẨN TITLE NẾU ĐANG TÌM KIẾM */}
             {searchTerm.trim() === "" && (
@@ -157,89 +169,74 @@ useEffect(() => {
             <div className="content-wrapper">
 
                 {/* ẨN SIDEBAR KHI KHÔNG CÓ SẢN PHẨM */}
-               {!(searchTerm.trim() !== "" &&
-  products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0
-) && (
-    <aside className="sidebar">
+                {!(searchTerm.trim() !== "" &&
+                    products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).length === 0
+                ) && (
+                        <aside className="sidebar">
 
-                       {/* DANH MỤC — ẨN KHI ĐANG TÌM KIẾM */}
-{searchTerm.trim() === "" && (
-    <>
-        <h3>Danh mục</h3>
-        <div className="menu">
-            {categories.map((c) => (
-                <div key={c}>
-                    <button
-                        className={selectedCategory === c ? "active" : ""}
-                        onClick={() => {
-                            setSelectedCategory(c);
-                            const q = new URLSearchParams(location.search).get("search");
-                            if (!q) setSearchTerm("");
-                            setCurrentPage(1);
-                        }}
-                    >
-                        <span>{c === "All" ? "Tất cả" : c}</span>
-                    </button>
-                </div>
-            ))}
-        </div>
-    </>
-)}
+                            {/* DANH MỤC — ẨN KHI ĐANG TÌM KIẾM */}
+                            {searchTerm.trim() === "" && (
+                                <>
+                                    <h3>Danh mục</h3>
+                                    <div className="menu">
+                                        {categories.map((c) => (
+                                            <div key={c}>
+                                                <button
+                                                    className={selectedCategory === c ? "active" : ""}
+                                                    onClick={() => {
+                                                        setSelectedCategory(c);
+                                                        const q = new URLSearchParams(location.search).get("search");
+                                                        if (!q) setSearchTerm("");
+                                                        setCurrentPage(1);
+                                                    }}
+                                                >
+                                                    <span>{c === "All" ? "Tất cả" : c}</span>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
 
-                        <h3>Lọc theo giá</h3>
-                        <div className="price-filter">
-                            <label>Từ:</label>
-                            <input
-                                type="number"
-                                value={minPrice}
-                                onChange={(e) => setMinPrice(Number(e.target.value))}
-                            />
+                            <h3>Lọc theo giá</h3>
+                            <div className="price-filter">
+                                <select
+                                    value={`${minPrice}-${maxPrice}`}
+                                    onChange={(e) => {
+                                        const [min, max] = e.target.value.split("-").map(Number);
+                                        setMinPrice(min);
+                                        setMaxPrice(max);
+                                        setCurrentPage(1);
+                                    }}
+                                >
+                                    {PRICE_LEVELS.map((level, index) => (
+                                        <option key={index} value={`${level.min}-${level.max}`}>
+                                            {level.label}
+                                        </option>
+                                    ))}
+                                </select>
 
-                            <label>Đến:</label>
-                            <input
-                                type="number"
-                                value={maxPrice}
-                                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                            />
-
-                            <div className="range-slider">
-                                <input
-                                    type="range"
-                                    min={priceRange.min}
-                                    max={priceRange.max}
-                                    value={minPrice}
-                                    onChange={(e) => setMinPrice(Number(e.target.value))}
-                                />
-                                <input
-                                    type="range"
-                                    min={priceRange.min}
-                                    max={priceRange.max}
-                                    value={maxPrice}
-                                    onChange={(e) => setMaxPrice(Number(e.target.value))}
-                                />
+                                <p>
+                                    Khoảng giá:{" "}
+                                    <strong>
+                                        {minPrice.toLocaleString()}₫ - {maxPrice.toLocaleString()}₫
+                                    </strong>
+                                </p>
                             </div>
 
-                            <p>
-                                Khoảng giá:{" "}
-                                <strong>
-                                    {minPrice.toLocaleString()}₫ - {maxPrice.toLocaleString()}₫
-                                </strong>
-                            </p>
-                        </div>
+                            <h3>Sắp xếp</h3>
+                            <div className="sort-filter">
+                                <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+                                    <option value="default">Mặc định</option>
+                                    <option value="price-asc">Giá tăng dần</option>
+                                    <option value="price-desc">Giá giảm dần</option>
+                                    <option value="name-asc">Tên A → Z</option>
+                                    <option value="name-desc">Tên Z → A</option>
+                                </select>
+                            </div>
 
-                        <h3>Sắp xếp</h3>
-                        <div className="sort-filter">
-                            <select value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
-                                <option value="default">Mặc định</option>
-                                <option value="price-asc">Giá tăng dần</option>
-                                <option value="price-desc">Giá giảm dần</option>
-                                <option value="name-asc">Tên A → Z</option>
-                                <option value="name-desc">Tên Z → A</option>
-                            </select>
-                        </div>
-
-                    </aside>
-                )}
+                        </aside>
+                    )}
 
                 {/* PRODUCTS */}
                 <div className="product-show">
